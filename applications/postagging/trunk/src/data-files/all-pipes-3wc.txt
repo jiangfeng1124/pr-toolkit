@@ -1,0 +1,9 @@
+WordId 3
+SuffixPipe 2 10
+SuffixPipe 3 10
+WordCountsPipe 0.80
+WordSizePipe 4
+PatternMatchPipe [A-Z].* uppercased
+PatternMatchPipe .*-.* hiffen
+PatternMatchPipe .*_.* underscore
+PatternMatchPipe [A-Z]* AllUpper

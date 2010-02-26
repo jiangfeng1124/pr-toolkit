@@ -1,0 +1,8 @@
+WordId 5
+FileSuffixPipe 0 data-files/posTag-project/pt-suffixes.pt
+WordCountsPipe 0.80
+WordSizePipe 4
+PatternMatchPipe [A-Z].* uppercased
+PatternMatchPipe .*-.* hiffen
+PatternMatchPipe .*_.* underscore
+PatternMatchPipe [A-Z]* AllUpper

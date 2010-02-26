@@ -1,0 +1,10 @@
+WordId 0
+SuffixPipe 2 0
+SuffixPipe 3 0
+WordCountsPipe 0.80
+WordSizePipe 4
+PatternMatchPipe [A-Z].* uppercased
+PatternMatchPipe .*-.* hiffen
+PatternMatchPipe .*_.* underscore
+PatternMatchPipe [A-Z]* AllUpper
+PatternMatchPipe [.|,|!|?|:|;|(|)] punct

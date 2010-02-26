@@ -1,0 +1,13 @@
+WordIdLower 10
+CapitalizationPipe 0.1
+PatternMatchPipe .*-.* hyphen
+PatternMatchPipe .*_.* underscore
+PatternMatchPipe \p{javaUpperCase}+\p{javaLowerCase}*\p{javaUpperCase}+.* mixed_case
+PatternMatchPipe [0-9]+ numbers
+PatternMatchPipe [.,!?:;()\"/\[\\]'`'ÈÇ-#-]+ punct
+WordCountsPipe 0.9
+WordSizePipe 3
+SuffixPipe 2 20
+SuffixPipe 3 20
+SuffixPipe 4 20
+SuffixPipe 5 20
