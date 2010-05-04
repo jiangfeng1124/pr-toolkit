@@ -60,7 +60,11 @@ public class PosCorpus extends Corpus{
 	}
 	
 	public String[] getAllTagsStrings() {
-		return tagAlphabet.feat2index.keys(new String[]{});
+		String[] tags= new String[getNrTags()];
+		for (int i = 0; i < tags.length; i++) {
+			tags[i]=tagAlphabet.index2feat.get(i);
+		}
+		return tags;
 	}
 	
 	@Override 
@@ -77,6 +81,12 @@ public class PosCorpus extends Corpus{
 		}else if(readerType.equalsIgnoreCase("conll-data")){
 			return PosInstanceList.readFromConll(name, fileName, 
 					this.wordAlphabet,this.tagAlphabet, 
+					lowercase,minSentenceLenght,maxSentenceLenght
+					,fullVocab,minWordOccurs);
+		}else if(readerType.equalsIgnoreCase("europarl")){
+			return PosInstanceList.readFromEuroparl
+			(name, fileName, 
+					this.wordAlphabet, 
 					lowercase,minSentenceLenght,maxSentenceLenght
 					,fullVocab,minWordOccurs);
 		}else{

@@ -10,24 +10,24 @@ import java.util.Random;
 
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
-import optimization.gradientBasedMethods.NonMonotoneSpectralProjectedGradient;
+
 import optimization.gradientBasedMethods.ProjectedGradientDescent;
 import optimization.gradientBasedMethods.ProjectedObjective;
-import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.gradientBasedMethods.stats.ProjectedOptimizerStats;
 import optimization.linesearch.ArmijoLineSearchMinimizationAlongProjectionArc;
-import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.LineSearchMethod;
-import optimization.linesearch.NonMonotoneArmijoLineSearchMinimizationAlongProjectionArc;
 import optimization.linesearch.NonNewtonInterpolationPickFirstStep;
 import optimization.projections.SimplexProjection;
-import optimization.util.MathUtils;
+import optimization.stopCriteria.CompositeStopingCriteria;
+import optimization.stopCriteria.NormalizedProjectedGradientL2Norm;
+import optimization.stopCriteria.NormalizedValueDifference;
+import optimization.stopCriteria.ProjectedGradientL2Norm;
+import optimization.stopCriteria.StopingCriteria;
+import optimization.stopCriteria.ValueDifference;
 import postagging.data.PosCorpus;
 import postagging.learning.stats.AccuracyStats;
-import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
-import util.ArrayMath;
-import util.Printing;
+import util.MemoryTracker;
 import learning.CorpusPR;
 import learning.EM;
 import learning.stats.CompositeTrainStats;
@@ -37,7 +37,7 @@ import learning.stats.MemoryStats;
 import learning.stats.TrainStats;
 import model.AbstractCountTable;
 import model.AbstractSentenceDist;
-import model.chain.HMMCountTable;
+import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMM;
 import model.chain.hmm.HMMSentenceDist;
 
@@ -84,14 +84,18 @@ public class L1LMax implements CorpusConstraints{
 	 * @param minOccurences - Min occurrences of a word so that it will be constraint
 	 */
 	public L1LMax(PosCorpus c, HMM model,int minOccurences,double str){
+		MemoryTracker mem = new MemoryTracker();
+		mem.start();
 		this.str = str;
 		this.c = c;
 		this.model = model;
-		nrHiddenStates = c.getNrTags();
+		nrHiddenStates = model.getNrRealStates();
 		this.minOccurences = minOccurences;
 		buildMapping();
 		parameters = new double[numberOfParameters];
 		System.out.println("L1LMax constraints with " + numberOfParameters + " parameters");
+		mem.finish();
+		System.out.println("L1LMax After build mapping: " + mem.print());
 	}
 	
 	
@@ -135,28 +139,44 @@ public class L1LMax implements CorpusConstraints{
 	}
 	
 	public void project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
+		MemoryTracker mem  = new MemoryTracker();
+		mem.start();
+		
 		
 		//Make a copy of the original parameters:
 		//Initialize the gradient and the function values and the original posteriors cache
 		trainStats.eStepStart(model, pr);
-		
-
 		ProjectedObjective objective = new L1LMaxObjective(model,posteriors,numberOfParameters,str,parameters);
+		mem.finish();
+		System.out.println("After creating objective:" + mem.print());
 		//System.out.println("Parameters before optimization:\n" + objective.toString());
 		LineSearchMethod ls = new ArmijoLineSearchMinimizationAlongProjectionArc(new NonNewtonInterpolationPickFirstStep(initialStep));
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(ls);
+		mem.finish();
+		System.out.println("After creating projection and line search:" + mem.print());
 //		LineSearchMethod ls = new NonMonotoneArmijoLineSearchMinimizationAlongProjectionArc(new InterpolationPickFirstStep(40));		
 //		NonMonotoneSpectralProjectedGradient optimizer = new NonMonotoneSpectralProjectedGradient(ls);
 		
 		ProjectedOptimizerStats stats = new ProjectedOptimizerStats();
-		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setValueConvergenceValue(0.0001);
+		StopingCriteria stopGrad = new NormalizedProjectedGradientL2Norm(0.001);
+		StopingCriteria stopValue = new NormalizedValueDifference(0.0001);
+		CompositeStopingCriteria stop = new CompositeStopingCriteria();
+		stop.add(stopGrad);
+		stop.add(stopValue);
 		optimizer.setMaxIterations(40);
-		boolean succed = optimizer.optimize(objective, stats);
+		
+
+		boolean succed = optimizer.optimize(objective, stats,stop);
+		mem.finish();
+		
+		System.out.println("After  optimization:" + mem.print());
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
+		
+		
+
 		//System.out.println("Parameters after optimization:\n" + objective.toString());
-		parameters = objective.parameters;
-		initialStep = optimizer.lastStepUsed;
+		parameters = objective.getParameters();
+		initialStep = optimizer.getCurrentStep();
 		//update the caches of posterior and computer forward backward to compute counts and posterior
 		counts.fill(0);
 		for(int sentenceNr = 0; sentenceNr <posteriors.length; sentenceNr++){
@@ -171,18 +191,20 @@ public class L1LMax implements CorpusConstraints{
 					//For each possible hidden state
 					for(int hs = 0; hs < nrHiddenStates; hs++){
 						//Get the corresponding parameters
-						double parameter = objective.parameters[posteriorMapping[sentenceNr][sentecePosition][hs]];
+						double parameter = objective.getParameters()[posteriorMapping[sentenceNr][sentecePosition][hs]];
 						posterior.observationCache[sentecePosition][hs] *= Math.exp(-parameter);
 					}
 				}
 			}	
 			trainStats.eStepSentenceStart(model,pr,posterior);
 			model.computePosteriors(posterior);
-			posterior.clearCaches();
 			model.addToCounts(posterior, counts);
 			trainStats.eStepSentenceEnd(model,pr,posterior);
+			posterior.clearCaches();
 			posterior.clearPosteriors();
 		}
+		mem.finish();
+		System.out.println("End project objective:" + mem.print());
 		trainStats.eStepEnd(model, pr);
 		System.out.print(trainStats.printEndEStep(model,pr));
 	}
@@ -212,15 +234,13 @@ public class L1LMax implements CorpusConstraints{
 		SimplexProjection projection;
 		
 
-		AbstractSentenceDist[] posteriors;
+		AbstractSentenceDist[] sentencesDists;
 		
 		
 		PosCorpus corpus;
 		
 		double logLikelihood = 0;
-		//Saves the precomputed gradient
-		double[] gradient;
-		
+	
 		
 	
 		/**
@@ -252,18 +272,19 @@ public class L1LMax implements CorpusConstraints{
 //			}
 			
 			//System.out.println("Parameters:\n"+toString());
-			posteriors = sentenceDists;		
-			for(int sentenceNr = 0; sentenceNr <posteriors.length; sentenceNr++){
+			sentencesDists = sentenceDists;		
+			
+			
+			for(int sentenceNr = 0; sentenceNr <sentencesDists.length; sentenceNr++){
 				//For each position in the sentence
-				HMMSentenceDist posterior = (HMMSentenceDist)posteriors[sentenceNr];
-				int[] words = posterior.instance.words;
+				HMMSentenceDist posterior = (HMMSentenceDist)sentencesDists[sentenceNr];
 				//Create the required data structures
 				posterior.initSentenceDist();
 				model.computePosteriors(posterior);
 				logLikelihood += posterior.logLikelihood;
 				//Update the gradient
-				for(int sentecePosition= 0; sentecePosition < words.length; sentecePosition++){
-					int wt = words[sentecePosition];
+				for(int sentecePosition= 0; sentecePosition < posterior.instance.words.length; sentecePosition++){
+					int wt = posterior.instance.words[sentecePosition];
 					if(projectionMapping.contains(wt)){
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							gradient[getParameterIndex(sentenceNr,sentecePosition,hs)] = 
@@ -274,6 +295,8 @@ public class L1LMax implements CorpusConstraints{
 				posterior.clearCaches();
 				posterior.clearPosteriors();
 			}
+			
+			
 		//	System.out.println(util.Printing.doubleArrayToString(gradient, null, "gradient"));
 		}
 	
@@ -308,12 +331,12 @@ public class L1LMax implements CorpusConstraints{
 			//For each sentence
 			
 			//Clear the counts
-			for(int sentenceNr = 0; sentenceNr <posteriors.length; sentenceNr++){
+			for(int sentenceNr = 0; sentenceNr <sentencesDists.length; sentenceNr++){
 				//For each position in the sentence
-				HMMSentenceDist posterior = (HMMSentenceDist)posteriors[sentenceNr];
-				//creates the caches
-				posterior.initSentenceDist();
-				int[] words = posterior.instance.words;
+				HMMSentenceDist sd = (HMMSentenceDist)sentencesDists[sentenceNr];
+				//Only needs to recreat the observation cache all the others are the same
+				sd.initSentenceDist();
+				int[] words = sd.instance.words;
 				for(int sentecePosition= 0; sentecePosition < words.length; sentecePosition++){
 					//Check if we want to constrain this particular word type
 					int wt = words[sentecePosition];
@@ -322,34 +345,35 @@ public class L1LMax implements CorpusConstraints{
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							//Get the corresponding parameters
 							double parameter = getParameter(getParameterIndex(sentenceNr,sentecePosition,hs));
-							posterior.observationCache[sentecePosition][hs] *=Math.exp(-parameter);
+							sd.observationCache[sentecePosition][hs] *=Math.exp(-parameter);
 						}
 					}
 				}
 				
-				model.computePosteriors(posterior);
-				logLikelihood += posterior.logLikelihood;
+				model.computePosteriors(sd);
+				logLikelihood += sd.logLikelihood;
 				//Update the gradient
 				for(int sentecePosition= 0; sentecePosition < words.length; sentecePosition++){
 					int wt = words[sentecePosition];
 					if(projectionMapping.contains(wt)){
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							gradient[getParameterIndex(sentenceNr,sentecePosition,hs)] = 
-							-posterior.observationPosterior[sentecePosition][hs];
+							-sd.observationPosterior[sentecePosition][hs];
 						}
 					}
 				}
-				posterior.clearCaches();
-				posterior.clearPosteriors();
+				sd.clearCaches();
+				sd.clearPosteriors();
 			}
 //			long endTime = System.currentTimeMillis();
 //			System.out.println("Update params took: "+ util.Printing.formatTime(endTime-initTime));
 			//System.out.println(util.Printing.doubleArrayToString(gradient, null, "gradient"));
 		}
 		
-		public void getGradient(double[] gradient) {
+		public double[] getGradient() {
 			gradientCalls++;
-			System.arraycopy(this.gradient, 0, gradient, 0, gradient.length);
+			return this.gradient;
+		//	System.arraycopy(this.gradient, 0, gradient, 0, gradient.length);
 		}
 
 		/**
@@ -361,14 +385,19 @@ public class L1LMax implements CorpusConstraints{
 		}
 
 
+		
+		public double[] projectPoint2(double[] point) {
+			return point;
+		}
+		
 		/**
 		 * Need to project individual parts of the point.
 		 * We want to project all instance of a given
 		 * word type, pos tag.
 		 */
+		double[] newPoint  = new double[numberOfParameters];
 		public double[] projectPoint(double[] point) {
-			//long initTime = System.currentTimeMillis();
-			double[] newPoint  = new double[numberOfParameters];
+			//long initTime = System.currentTimeMillis();		
 			int[] wordTypeKeys = projectionMapping.keys();	
 			for (int i = 0; i < wordTypeKeys.length; i++) {
 				TIntObjectHashMap<TIntArrayList> tagsMapping = projectionMapping.get(wordTypeKeys[i]);

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import data.Corpus;
+import data.InstanceList;
 import model.chain.hmm.HMM;
 import model.distribution.Multinomial;
 import postagging.data.PosCorpus;
@@ -42,6 +43,18 @@ public class PosHMM extends HMM{
 		return model;
 	}
 	
+	public void initializeSupervised(double smoothing, int nrHiddenStates, InstanceList list){
+		super.initializeSupervised(smoothing, nrHiddenStates, list);
+		printModelParameters();
+		
+	}
+	
+	public void printModelParameters(){
+		PosCorpus c = (PosCorpus)corpus;
+		initialProbabilities.print("Initial Parameters",c.getAllTagsStrings(),null);
+		transitionProbabilities.print("Transition Parameters",c.getAllTagsStrings(),c.getAllTagsStrings());
+		//observationProbabilities.print("Observatiob Parameters",null,null);
+	}
 	
 	
 	

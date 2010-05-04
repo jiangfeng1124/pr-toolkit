@@ -31,13 +31,12 @@ import postagging.data.PosCorpus;
 import postagging.data.PosInstance;
 import postagging.evaluation.PosMapping;
 import postagging.learning.stats.AccuracyStats;
-import postagging.learning.stats.L1LMaxStats;
+import postagging.learning.stats.TransitionsTypeL1LMaxStats;
+import postagging.learning.stats.WordTypeL1LMaxStats;
 import postagging.learning.stats.MeParametersStats;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
-import postagging.model.PosHMMFinalState2;
 import postagging.model.PosReverseHMM;
-import postagging.model.PosReverseHMMFinalState;
 import util.InputOutput;
 import data.InstanceList;
 
@@ -63,13 +62,10 @@ public class RunModel {
 	}
 	
 	// Model Selection
-	private enum ModelType {HMM, HMMFinalState,HMMFinalState2, ReverseHMM, ReverseHMMFinalState}
+	private enum ModelType {HMM, HMMFinalState,ReverseHMM}
 	@Option(name="-model-type", usage = "HMM - Regular HMM" +
 			"HMMFinalState - Regular HMM with explicit modelling of the final state" +
-			"HMMFinalState2 - Bg Free Regular HMM with explicit modelling of the final state" +
-			"ReverseHMM - Regular HMM reading the sentence from right to left" +
-			"ReverseHMMFinalState - Regular HMM with explicit modelling of the final state reading the " +
-			"sentence from right to right")
+			"ReverseHMM - Regular HMM reading the sentence from right to left")
 	private ModelType modelType = ModelType.HMMFinalState;
 	
 	@Option(name="-number-states", usage = "Number of hidden states of the HMM")
@@ -118,6 +114,11 @@ public class RunModel {
 	double gaussianPrior = 10;
 	@Option(name="-max-ent-warm-start", usage="use warm start on max-ent optimization")
 	boolean maxEntWarmStart = false;
+	@Option(name="-max-ent-gradient-convergence", usage="max-entropy-convergence value")
+	double maxEntGradientConvergenceValue = 0.001;
+	@Option(name="-max-ent-value-convergence", usage="max-entropy-convergence value")
+	double maxEntValueConvergenceValue = 0.05;
+	
 	
 	@Option(name="-vb-state-state-prior", usage="Variational bayes transition prior")
 	double stateToStatePrior = 000.1;
@@ -130,6 +131,8 @@ public class RunModel {
 			out.println("-max-ent-features-file " + maxEntFeaturesFile);
 			out.println("-max-ent-gaussian-prior " + gaussianPrior);
 			out.println("-max-ent-warm-start " + maxEntWarmStart);
+			out.println("-max-ent-gradient-convergence " + maxEntGradientConvergenceValue);
+			out.println("-max-ent-value-convergence " + maxEntValueConvergenceValue);
 			
 		} else if(updateParams == HMM.Update_Parameters.VB){
 			out.println("-vb-state-state-prior " + stateToStatePrior);
@@ -299,8 +302,9 @@ public class RunModel {
 			}
 			
 			
-			stats.addStats(new L1LMaxStats(corpus,model,"2",minWordOccursL1LMax,baseOutputString+"/l1LMaxClusters/",50));
-			stats.addStats(new MeParametersStats(10,baseOutputString+"/me-parameters/"));
+			stats.addStats(new WordTypeL1LMaxStats(corpus,model,"2",minWordOccursL1LMax,baseOutputString+"/l1LMaxClusters/",50));
+			stats.addStats(new TransitionsTypeL1LMaxStats(corpus,model,"2",baseOutputString+"/l1LMaxClusters/",5));
+			stats.addStats(new MeParametersStats(50,baseOutputString+"/me-parameters/"));
 			trainModel(corpus,model,stats);
 			
 			if(saveModel){
@@ -321,6 +325,7 @@ public class RunModel {
 	}
 
 	public void testModel(HMM model, PosCorpus corpus) throws UnsupportedEncodingException, IOException{
+		
 		if(testSet == TestSet.Train){
 			System.out.println(testModel(model, corpus.trainInstances, "Final",savePredictionsEnd,baseOutputString+"/predictions/final/"));
 		}else if(testSet == TestSet.Dev){
@@ -396,12 +401,8 @@ public class RunModel {
 			model = new PosHMM(c,nrTags);
 		}else if(ModelType.HMMFinalState == modelType){
 			model = new PosHMMFinalState(c,nrTags);
-		}else if(ModelType.HMMFinalState2 == modelType){
-			model = new PosHMMFinalState2(c,nrTags);
 		}else if(ModelType.ReverseHMM == modelType){
 			model = new PosReverseHMM(c,nrTags);
-		}else if(ModelType.ReverseHMMFinalState == modelType){
-			model = new PosReverseHMMFinalState(c,nrTags);
 		}else{
 			System.out.println("Model is non existing");
 			System.exit(-1);
@@ -412,6 +413,8 @@ public class RunModel {
 				System.out.println("Must specify -max-ent-features-file to use max ent or MRF");
 				System.exit(-1);
 			}
+			model.gradientConvergenceValue = maxEntGradientConvergenceValue;
+			model.valueConvergenceValue = maxEntValueConvergenceValue;
 			model.warmStart = maxEntWarmStart;
 			model.gaussianPrior = gaussianPrior;
 			//Create and add feature function
@@ -443,6 +446,11 @@ public class RunModel {
 			gold[i] = inst.getTags();
 		}
 
+		int[][] words = new int[list.instanceList.size()][];
+		for (int i = 0; i < words.length; i++) {
+			words[i] = list.instanceList.get(i).words;
+		}
+		
 		PosteriorDecoder posterior = new PosteriorDecoder();
 		int[][] posteriorResults = model.decode(posterior, list);
 		int[][] mappingCounts = 
@@ -453,12 +461,16 @@ public class RunModel {
 		res.append(PosMapping.printMapping((PosCorpus)model.corpus,posteriorDecoding1ToManyMapping));
 		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, posteriorResults, Integer.MAX_VALUE);
 		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many" + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
+		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many" + 
+				postagging.evaluation.Evaluator.evaluatePerOccurences((PosCorpus)model.corpus, list.instanceList.size(), words,posteriorDecoding1ToMany,  gold)+"\n");
 		int[]  posteriorDecoding1to1Mapping =  
 			postagging.evaluation.PosMapping.oneToOnemapping((PosCorpus)model.corpus, mappingCounts,Integer.MAX_VALUE,model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);;
 			res.append(PosMapping.printMapping((PosCorpus)model.corpus,posteriorDecoding1to1Mapping));
 		int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, posteriorResults, Integer.MAX_VALUE); 
-			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1" + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");	
-		
+			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1" + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
+			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1" + 
+					postagging.evaluation.Evaluator.evaluatePerOccurences((PosCorpus)model.corpus, list.instanceList.size(), words,posteriorDecoding1to1,  gold)+"\n");
+			
 		
     	
     	double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,model.getNrRealStates(),((PosCorpus)model.corpus).getNrTags());

@@ -1,9 +1,14 @@
 package postagging.learning.stats;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+
+import data.Corpus;
 import postagging.data.PosCorpus;
 import postagging.model.PosHMM;
+import util.InputOutput;
 import gnu.trove.TIntDoubleHashMap;
 import learning.EM;
 import learning.stats.TrainStats;
@@ -18,7 +23,7 @@ import model.chain.hmm.HMMSentenceDist;
  * @author javg
  *
  */
-public class L1LMaxStats extends TrainStats{
+public class WordTypeL1LMaxStats extends TrainStats{
 
 		int printEvery;
 		double minOccurences;
@@ -31,7 +36,7 @@ public class L1LMaxStats extends TrainStats{
 		
 		PosCorpus c;
 	
-        public L1LMaxStats(PosCorpus c, HMM model, String printEvery, int minOccurences, String outputDir, int printClustersIter) {
+        public WordTypeL1LMaxStats(PosCorpus c, HMM model, String printEvery, int minOccurences, String outputDir, int printClustersIter) {
         	this.c = c;
         	this.nrHiddenStates = model.getNrRealStates();
 			this.minOccurences = minOccurences;
@@ -98,7 +103,7 @@ public class L1LMaxStats extends TrainStats{
             	if(em.getCurrentIterationNumber() % printClustersIter == 0 && outputDir!= null){
             		PrintStream output;
 					try {
-						output = new PrintStream(outputDir+"/l1lmax-iter."+em.getCurrentIterationNumber());
+						output = InputOutput.openWriter(outputDir+"/wtl1lmax-iter."+em.getCurrentIterationNumber());
 						for (int i = 0; i < keys.length; i++){
 		            		output.println(c.wordAlphabet.index2feat.get(keys[i])+ " "+totals[i]);
 		            		}
@@ -106,19 +111,70 @@ public class L1LMaxStats extends TrainStats{
 					} catch (FileNotFoundException e) {
 						System.out.println("Unable to print l1LmaxValues per word");
 						e.printStackTrace();
+					} catch (UnsupportedEncodingException e) {
+						System.out.println("Unable to print l1LmaxValues per word");
+						e.printStackTrace();
+					} catch (IOException e) {
+						System.out.println("Unable to print l1LmaxValues per word");
+						e.printStackTrace();
 					}
             		
             	}
             	
-            	return "Total L1LMax " + totalL1LMax + " avg " + (totalL1LMax/totalConstrainedWords);
+            	return "Total L1LMax " + totalL1LMax + " avg " + (totalL1LMax/totalConstrainedWords) + l1lMaxPerWordOccurences(c);
         	}else return "";
         }
         
-        
+        /**
+         * Calculates the average l1lmax per number of occurences of words
+         * Looking for words that occure between:
+         * < 20
+         * 20 < x < 40
+         * 40 < x < 80
+         * 80 < x <  150
+         * x > 150
+         */
+        public String l1lMaxPerWordOccurences(Corpus c){
+        	double[] l1lmax = new double[5];
+        	int[] numberOfEntries = new int[5];
+        	int[] keys = maxTable[0].keys();
+        	for (int i = 0; i < keys.length; i++) {
+        		for (int j = 0; j < nrHiddenStates; j++) {
+        			int wordId = keys[i];
+        			int counts = c.getWordTypeCounts(wordId);
+        			if(counts < 20){
+        				l1lmax[0] +=  maxTable[j].get(wordId);
+        				numberOfEntries[0]++;
+        			}else if(counts < 40 ){
+        				l1lmax[1] +=  maxTable[j].get(wordId);
+        				numberOfEntries[1]++;
+        			}else if(counts < 80 ){
+        				l1lmax[2] +=  maxTable[j].get(wordId);
+        				numberOfEntries[2]++;
+        			}else if(counts < 150 ){
+        				l1lmax[3] +=  maxTable[j].get(wordId);
+        				numberOfEntries[3]++;
+        			}else{
+        				l1lmax[4] +=  maxTable[j].get(wordId);
+        				numberOfEntries[4]++;
+        			}
+				}
+			}
+        	for(int i = 0; i < l1lmax.length; i++){
+        		l1lmax[i]=l1lmax[i]*nrHiddenStates/numberOfEntries[i];
+        	}
+        	StringBuffer sb = new StringBuffer();
+        	sb.append("\nL1LMax word occurences < 20: " + l1lmax[0]+"\n");
+        	sb.append("L1LMax word occurences < 40: " + l1lmax[1]+"\n");
+        	sb.append("L1LMax word occurences < 80: " + l1lmax[2]+"\n");
+        	sb.append("L1LMax word occurences < 150: " + l1lmax[3]+"\n");
+        	sb.append("L1LMax word occurences > 150: " + l1lmax[4]);
+        	return sb.toString();
+        }
         
         @Override
         public String getPrefix() {
-                return "L1LMax::";
+                return "WTL1LMax::";
         }
         
        

@@ -45,7 +45,7 @@ public class MeParametersStats extends TrainStats{
         			if(m.updateType == HMM.Update_Parameters.OBS_MAX_ENT){
         			
         			
-        				for(int state = 0; state < m.nrStates; state++){
+        				for(int state = 0; state < m.getNrRealStates(); state++){
         	        		try {
 								PrintStream file = InputOutput.openWriter(saveDir+"me-"+em.getCurrentIterationNumber()+"-"+state);
 								LinearClassifier c = m.maxEntModels[state];

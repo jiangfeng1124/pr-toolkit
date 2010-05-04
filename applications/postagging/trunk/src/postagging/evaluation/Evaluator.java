@@ -57,16 +57,17 @@ public class Evaluator {
 	
 	/**
 	 * Calculates accurancy for words occuring different number
-	 * of times. 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024?
+	 * of times see bins.
+	 * Also the number of errors for the particular "Unk" word in case it exists
 	 * @param maxSentences
 	 * @param predicted
 	 * @param golds
 	 * @return
 	 */
-	public static int[] bins = {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024};
-	public static Evaluation[] evaluatePerOccurences(PosCorpus c, int maxSentences, int[][] words,int[][] predicted, int[][] golds){
-		Evaluation[] results = new Evaluation[bins.length+1];
-		
+	public static int[] bins = {1,5, 10, 50,100,200,Integer.MAX_VALUE};
+	public static EvaluationPerBins evaluatePerOccurences(PosCorpus c, int maxSentences, int[][] words,int[][] predicted, int[][] golds){
+		//Bins +1 is for the words unk
+		Evaluation[] results = new Evaluation[bins.length+1];	
 		int[] corpusNrCorrect=new int[bins.length+1];
 		int[] corpusTotal=new int[bins.length+1];
 		int nrUnk =0;
@@ -83,18 +84,16 @@ public class Evaluator {
 				int word = wordSentence[pos];
 				int wordBin= -1;
 				int nrWordsOccur = c.wordAlphabet.getCounts(word);
-				if(word == unkId){
-				//	System.out.println("Ignoring" + c._wordTokens.get(word));
-					nrUnk++;
-					continue;
-				}
 				//Check word bin
-				for(int i = bins.length-1; i > -1 ; i--){
-				//	System.out.println(i);
-					if(nrWordsOccur <= bins[i]) {
+				if(word != unkId){
+					for(int i = bins.length-1; i > -1 ; i--){
+						//	System.out.println(i);
+						if(nrWordsOccur <= bins[i]) {
 						wordBin = i;
+						}
 					}
 				}
+				
 				if (wordBin == -1){
 					wordBin = bins.length;
 				}
@@ -112,7 +111,10 @@ public class Evaluator {
 		}
 		System.out.println("Ignored " + nrUnk + " unknown");
 		System.out.println("Read " + readSentences + " sentences");
-		return results;
+		EvaluationPerBins eval = new EvaluationPerBins();
+		eval.evaluations = results;
+		eval.bins = bins;
+		return eval;
 	}
 	
 //	public static ArrayList<Pair<Integer, Integer>> errorsByWordType(PosCorpus c, int maxSentences, int[][] predicted, int[][] golds, int[][] wordsSentences){
@@ -139,7 +141,21 @@ public class Evaluator {
 //		return CollectionsUtils.convertHashMapToSortedList(wordCounts);
 //	}
 	
-	
+	public static class EvaluationPerBins{
+		Evaluation[] evaluations;
+		int bins[];
+		
+		public String toString(){
+			StringBuffer sb = new StringBuffer();
+			sb.append("\n");
+			for (int i = 0; i < bins.length; i++) {
+				sb.append("Bin: " + bins[i] + " " + evaluations[i].toString()+"\n");
+			}
+			sb.append("Unk: " + evaluations[bins.length].toString()+"\n");
+			return sb.toString();
+		}
+		
+	}
 	
 	public static class Evaluation{
 		double _corpusAccurancy;
