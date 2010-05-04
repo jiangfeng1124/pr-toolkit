@@ -1,8 +1,8 @@
 package model.chain.hmmFinalState;
 
 
-import model.chain.HMMCountTable;
 import model.chain.hmm.HMM;
+import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMMSentenceDist;
 import data.WordInstance;
 
@@ -27,13 +27,14 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 	}
 	
 	public void initSentenceDist(){
+//		System.out.println("Calline init caches");
 		makeInitCache();
 		makeTransitionCache();
 		makeObservationCahce();
 		//Create Posterior Objects
-		observationPosterior = new double[sentenceSize][nrHiddenStates];
+		//observationPosterior = new double[sentenceSize][nrHiddenStates];
 		//No transitions into the final state
-		transitionPosterior=new double[sentenceSize-1][nrHiddenStates][nrHiddenStates];
+		//transitionPosterior=new double[sentenceSize-1][nrHiddenStates][nrHiddenStates];
 	}
 	
 	public double getInitProb(int state) {
@@ -44,13 +45,16 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 	/**
 	 * position is in range 0..length, 
 	 * where length is the length of the sentence (not the sentenceSize variable, 
-	 * which is larger than the length of the sentence by 1).
-	 * i.e. position corresponds to the position of the prevState
+	 * which is larger than the length of the sentence by 1)
 	 */
 	public double getTransitionProbability(int position,int prevState, int state) {		
 		if(state == nrHiddenStates-1){
 			if(position == (sentenceSize-2)){
-				return transitionCache[prevState][state];
+				if(transitionCache!=null){
+					return transitionCache[prevState][state];
+				}else{
+					return model.transitionProbabilities.getCounts(prevState,state);
+				}
 			}else{
 				return 0;
 			}		
@@ -58,7 +62,11 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 			if(position == (sentenceSize-2)){
 				return 0;
 			}else{
-				return transitionCache[prevState][state];
+				if(transitionCache!=null){
+					return transitionCache[prevState][state];
+				}else{
+					return model.transitionProbabilities.getCounts(prevState,state);
+				}
 			}
 		}
 	}
@@ -66,8 +74,16 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 	public double getObservationProbability(int position, int state) {
 		if(position == sentenceSize-1){
 			return 1;
+		} 
+		//You cannot observe nothing from the faque state
+		if(state == nrHiddenStates - 1){
+			return 0;
 		}
-		return observationCache[position][state];
+		if(observationCache != null){
+			return observationCache[position][state];
+		}else {
+			 return model.observationProbabilities.getCounts(state,instance.getWordId(position));
+		}
 	}
 	
 	@Override
@@ -83,7 +99,7 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 	public void makeObservationCahce(){
 		observationCache=new double[sentenceSize][nrHiddenStates];
 		for(int wordPos = 0;  wordPos < sentenceSize-1; wordPos++){
-			for(int tagID = 0;  tagID < nrHiddenStates; tagID++){
+			for(int tagID = 0;  tagID < model.getNrRealStates(); tagID++){
 				double prob = model.observationProbabilities.getCounts(tagID,instance.getWordId(wordPos));
 				observationCache[wordPos][tagID]=prob;
 			}
@@ -91,8 +107,8 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 	}
 	
 	public void updateObservationCounts(HMMCountTable counts) {
-		//util.Printing.printDoubleArray(observationPosterior,null,null,"observation posteriors");
-		for (int state = 0; state < getNumberOfHiddenStates(); state++) {
+		//Last state is dummy state so its ignored
+		for (int state = 0; state < getNumberOfHiddenStates()-1; state++) {
 			for (int pos = 0; pos < (getNumberOfPositions()-1); pos++) {
 				double prob = getStatePosterior(pos, state);
 				if(Double.isInfinite(prob) || Double.isNaN(prob)){

@@ -4,6 +4,14 @@ import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.WolfRuleLineSearch;
+import optimization.stopCriteria.CompositeStopingCriteria;
+import optimization.stopCriteria.GradientL2Norm;
+import optimization.stopCriteria.NormalizedGradientL2Norm;
+import optimization.stopCriteria.NormalizedProjectedGradientL2Norm;
+import optimization.stopCriteria.NormalizedValueDifference;
+import optimization.stopCriteria.ProjectedGradientL2Norm;
+import optimization.stopCriteria.StopingCriteria;
+import optimization.stopCriteria.ValueDifference;
 import util.Alphabet;
 import util.DifferentiableObjective;
 import util.FeatureFunction;
@@ -56,14 +64,17 @@ public class GenerativeMaxEntropy {
 			new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
 		
 		wolfe.setDebugLevel(0);
-	//	LineSearchMethod ls = new ArmijoLineSearchMinimization();
+//		LineSearchMethod ls = new ArmijoLineSearchMinimization();
 		optimization.gradientBasedMethods.LBFGS optimizer = 
 			new optimization.gradientBasedMethods.LBFGS(wolfe,30);
 		optimization.gradientBasedMethods.stats.OptimizerStats stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(gradientPrecision);
-		optimizer.setValueConvergenceValue(valuePrecision);
+		StopingCriteria stopGrad = new NormalizedGradientL2Norm(gradientPrecision);
+		StopingCriteria stopValue = new ValueDifference(valuePrecision);
+		CompositeStopingCriteria stop = new CompositeStopingCriteria();
+		stop.add(stopGrad);
+		stop.add(stopValue);
 		optimizer.setMaxIterations(maxIterations);
-		boolean succed = optimizer.optimize(obj,stats);
+		boolean succed = optimizer.optimize(obj,stats,stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
 		
 		return obj.classifier;
@@ -94,6 +105,7 @@ public class GenerativeMaxEntropy {
 						labelWeights[y]);
 			}
 			classifier = initialClassifier;
+			gradient = new double[getNumParameters()];
 			//System.out.println("Classifier scores"+util.Printing.doubleArrayToString(initialClassifier.w, null, "w"));
 		}
 
@@ -130,7 +142,8 @@ public class GenerativeMaxEntropy {
 			return val*-1;
 		}
 
-		public void getGradient(double[] gradient) {
+		public double[] getGradient() {
+			
 			gradientCalls++;
 			// gradient = empiricalExpectations - modelExpectations
 			// -2/gaussianPriorVariance * params
@@ -166,6 +179,7 @@ public class GenerativeMaxEntropy {
 			for(int i =0; i < gradient.length; i++){
 				gradient[i]=-gradient[i];
 			}
+			return gradient;
 		}
 
 		public void setParameters(double[] newParameters) {
@@ -173,10 +187,14 @@ public class GenerativeMaxEntropy {
 					newParameters.length);
 			updateCalls++;
 			cacheValid = false;
+			
 		}
 
-		public void getParameters(double[] params) {
-			System.arraycopy(classifier.w, 0, params, 0, params.length);
+		@Override
+		public double[] getParameters() {
+			//System.out.println("Getting correct getParameters");
+			return classifier.w;
+			//System.arraycopy(classifier.w, 0, params, 0, params.length);
 		}
 
 		public int getNumParameters() {

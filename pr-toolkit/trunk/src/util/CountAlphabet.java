@@ -30,6 +30,12 @@ public class CountAlphabet<T> extends Alphabet<T> {
 		stopCounts = flag;
 	}
 	
+	public void compact(){
+		counts.compact();
+		feat2index.compact();
+		index2feat.trimToSize();
+	}
+	
 	/**
 	 * returns the index associated with a feature. This should be the same for
 	 * all features a,b where a.equals(b).

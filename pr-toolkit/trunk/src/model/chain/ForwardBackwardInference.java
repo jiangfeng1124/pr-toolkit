@@ -1,8 +1,6 @@
 package model.chain;
 
 import util.Printing;
-import model.chain.hmm.HMMSentenceDist;
-import model.chain.hmmFinalState.HMMFinalStateSentenceDist;
 
 
 
@@ -20,8 +18,8 @@ public class ForwardBackwardInference {
 	/**
 	 * Index by hidden state / position
 	 */
-	double [][] forward;
-	double [][] backward;
+	public double [][] forward;
+	public double [][] backward;
 	
 	/** Scalors indexed by position */
 	public double[] _inverseLikelihoodScalors;
@@ -52,12 +50,13 @@ public class ForwardBackwardInference {
 	}
 	
 	public void makeInference(){
+//		System.out.println("calling FB make inference");
 		makeForwardTables();
 		makeBacwardTables();
 //		sanityCheckMakeForwardTables();
 //		sanityCheckMakeBacwardTables();
-		makeStatePosteriors(sd);
-		makeTransitionPosteriors(sd);
+//		makeStatePosteriors(sd);
+//		makeTransitionPosteriors(sd);
 		sd.setLogLikelihood(_logLikelihood);
 		//util.Printing.printDoubleArray(((HMMSentenceDist)sd).observationPosterior ,null,null,"posteriors");
 	}
@@ -202,41 +201,41 @@ public class ForwardBackwardInference {
 	}
 
 	
-	public void makeStatePosteriors(ChainSentenceDist sd){		
-		//Calculating the gamma
-		for (int observation = 0; observation < nrPositions; observation++) {
-			for (int state = 0; state < nrHiddenStates; state++) {
-				//Must multiply by the likelihood scallor since its overcounting it.
-				double prob = forward[state][observation]*
-				backward[state][observation]*_inverseLikelihoodScalors[observation];
-				if (prob < 0) {
-					sd.setStatePosterior(observation, state, 0);
-				} else {
-					sd.setStatePosterior(observation, state, prob);
-				}
-			}
-		}	
-	}
+//	public void makeStatePosteriors(ChainSentenceDist sd){		
+//		//Calculating the gamma
+//		for (int observation = 0; observation < nrPositions; observation++) {
+//			for (int state = 0; state < nrHiddenStates; state++) {
+//				//Must multiply by the likelihood scallor since its overcounting it.
+//				double prob = forward[state][observation]*
+//				backward[state][observation]*_inverseLikelihoodScalors[observation];
+//				if (prob < 0) {
+//					sd.setStatePosterior(observation, state, 0);
+//				} else {
+//					sd.setStatePosterior(observation, state, prob);
+//				}
+//			}
+//		}	
+//	}
 	
 	/**
 	 * This is the rescaled version so there is no need to divide by the likelihood since this is already
 	 * incorporated on the scallors. Just as in the state posteriors
 	 *
 	 */
-	public void makeTransitionPosteriors(ChainSentenceDist sd){
-		for (int pos = 0; pos < nrPositions - 1; pos++) {
-			for (int currentState = 0; currentState < nrHiddenStates; currentState++) {
-				for (int nextState = 0; nextState < nrHiddenStates; nextState++) {
-					double transition = sd.getTransitionProbability(pos,currentState,nextState);                                                                                                        					
-					 double observation = sd.getObservationProbability(pos + 1,  nextState);                                                                                                                
-					 double alpha = forward[currentState][pos];                                                                                         
-					 double beta = backward[nextState][pos + 1];                                                                                        
-					 double epsilon = alpha * transition * observation * beta;						  				                                
-					 sd.setTransitionPosterior(pos, currentState, nextState, epsilon);			
-				}	 
-			}
-		}
-	}
+//	public void makeTransitionPosteriors(ChainSentenceDist sd){
+//		for (int pos = 0; pos < nrPositions - 1; pos++) {
+//			for (int currentState = 0; currentState < nrHiddenStates; currentState++) {
+//				for (int nextState = 0; nextState < nrHiddenStates; nextState++) {
+//					double transition = sd.getTransitionProbability(pos,currentState,nextState);                                                                                                        					
+//					 double observation = sd.getObservationProbability(pos + 1,  nextState);                                                                                                                
+//					 double alpha = forward[currentState][pos];                                                                                         
+//					 double beta = backward[nextState][pos + 1];                                                                                        
+//					 double epsilon = alpha * transition * observation * beta;						  				                                
+//					 sd.setTransitionPosterior(pos, currentState, nextState, epsilon);			
+//				}	 
+//			}
+//		}
+//	}
 	
 	@Override
 	public String toString(){

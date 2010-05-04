@@ -2,7 +2,7 @@ package model.chain.hmm;
 
 
 import model.chain.ChainSentenceDist;
-import model.chain.HMMCountTable;
+import model.chain.ForwardBackwardInference;
 import data.WordInstance;
 
 
@@ -15,6 +15,10 @@ import data.WordInstance;
  *
  */
 public class HMMSentenceDist extends ChainSentenceDist{	
+	
+	
+	ForwardBackwardInference inference;
+	
 	//Caches
 	//Index per position/state
 	public double observationCache[][];
@@ -27,7 +31,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	//position, state
 	public double observationPosterior[][];
 	//position, prevState,state
-	public double transitionPosterior[][][];
+	//public double transitionPosterior[][][];
 
 	public double logLikelihood;
 	
@@ -82,12 +86,13 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	}
 	@Override
 	public void initSentenceDist(){
+//		System.out.println("Calling init caches");
 		makeInitCache();
 		makeTransitionCache();
 		makeObservationCahce();
 		//Create Posterior Objects
-		observationPosterior = new double[sentenceSize][nrHiddenStates];
-		transitionPosterior=new double[sentenceSize-1][nrHiddenStates][nrHiddenStates];
+		//observationPosterior = new double[sentenceSize][nrHiddenStates];
+		//transitionPosterior=new double[sentenceSize-1][nrHiddenStates][nrHiddenStates];
 	}
 	
 	public void clearCaches(){
@@ -98,7 +103,9 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	
 	public void clearPosteriors(){
 		observationPosterior = null;
-		transitionPosterior = null;
+		inference.forward = null;
+		inference.backward = null;
+		//transitionPosterior = null;
 	}
 	
 	public void makeObservationCahce(){
@@ -113,7 +120,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	
 	public void makeInitCache(){
 		initialCache=new double[nrHiddenStates];
-		for(int tagID = 0;  tagID < nrHiddenStates; tagID++){
+		for(int tagID = 0;  tagID < model.getNrRealStates(); tagID++){
 			double prob = model.initialProbabilities.getCounts(0,tagID);
 			initialCache[tagID]=prob;
 		}
@@ -134,16 +141,28 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	 * If state is bigger than true hiddenState then we are in the non existing state and 
 	 * we return zero
 	 */
-	public double getTransitionProbability(int position,int prevState, int state) {		
-		return transitionCache[prevState][state];
+	public double getTransitionProbability(int position,int prevState, int state) {
+		if(transitionCache !=  null){
+			return transitionCache[prevState][state];
+		}else{
+			return model.transitionProbabilities.getCounts(prevState,state);
+		}
 	}
 
 	public double getObservationProbability(int position, int state) {
-		return observationCache[position][state];
+		if(observationCache != null){
+			return observationCache[position][state];
+		}else{
+			return model.observationProbabilities.getCounts(state,instance.getWordId(position));
+		}
 	}
 
 	public double getInitProb(int state) {
-		return initialCache[state];
+		if(initialCache != null){
+			return initialCache[state];
+		}else{
+			return model.initialProbabilities.getCounts(0,state);
+		}
 	}
 
 	@Override
@@ -151,21 +170,74 @@ public class HMMSentenceDist extends ChainSentenceDist{
 		return observationPosterior[position][state];
 	}
 
+	
+	@Override
+	public void makeInference() {
+//		System.out.println("calling hmm make inference");
+		inference = new ForwardBackwardInference(this);
+		inference.makeInference();	
+		makeStatePosteriors();
+		//debug
+		//checkStatePosteriors();
+	}
+	
+	public void makeStatePosteriors(){
+//		System.out.println("Making state posteriors");
+		if(observationPosterior == null){
+//			System.out.println("Building new array for  state posteriors");
+			observationPosterior = new double[sentenceSize][nrHiddenStates];
+		}
+		for (int observation = 0; observation < sentenceSize; observation++) {
+			for (int state = 0; state < nrHiddenStates; state++) {
+				//Must multiply by the likelihood scallor since its overcounting it.
+				double prob = inference.forward[state][observation]*
+				inference.backward[state][observation]*inference._inverseLikelihoodScalors[observation];
+				if (prob < 0) {
+					observationPosterior[observation][state] = 0;
+				} else {
+					observationPosterior[observation][state] = prob;
+				}
+			}
+		}	
+	}
+	
+	//State posteriors should sum to one for each position when summed all over states
+	public void checkStatePosteriors(){
+		System.out.println("checking state posteriors");
+		
+		for (int observation = 0; observation < sentenceSize; observation++) {
+			double sum = 0;
+			for (int state = 0; state < nrHiddenStates; state++) {
+				sum+= observationPosterior[observation][state];
+			}
+			//debugging code
+			if(Math.abs(1-sum) > 1.E-5){
+				System.out.println("State posteriors are not correct");
+				throw new RuntimeException();
+			}
+		}
+	}
+	
 	@Override
 	public double getTransitionPosterior(int position, int prevState, int state) {
-		return transitionPosterior[position][prevState][state];
+		double transition = getTransitionProbability(position,prevState,state);                                                                                                        					
+		 double observation = getObservationProbability(position + 1,  state);                                                                                                                
+		 double alpha = inference.forward[prevState][position];                                                                                         
+		 double beta = inference.backward[state][position + 1];                                                                                        
+		 double epsilon = alpha * transition * observation * beta;
+		 return epsilon;
 	}
 
-	@Override
-	public void setStatePosterior(int position, int state, double prob) {
-			observationPosterior[position][state] = prob;
-	}
+//	@Override
+//	public void setStatePosterior(int position, int state, double prob) {
+//			observationPosterior[position][state] = prob;
+//	}
 
-	@Override
-	public void setTransitionPosterior(int position, int prevState, int state,
-			double prob) {
-			transitionPosterior[position][prevState][state] = prob;
-	}
+//	@Override
+//	public void setTransitionPosterior(int position, int prevState, int state,
+//			double prob) {
+//			transitionPosterior[position][prevState][state] = prob;
+//	}
 
 	@Override
 	public int getNumberOfHiddenStates() {
@@ -216,23 +288,29 @@ public class HMMSentenceDist extends ChainSentenceDist{
 				if(Double.isNaN(prob) || Double.isInfinite(prob)){
 					System.out.println("Updating counts for transition prob not a number epsilon" + epsilonSum );
 					prob =0;
+					model.printModelParameters();
+					printStatePosteriors();
 					System.exit(-1);
 				}
-				counts.transitionCounts.addCounts(currentState, nextState, prob);
+					counts.transitionCounts.addCounts(currentState, nextState, prob);
 			}
 		}
 		
 	}
 	
 	public void updateInitCounts(HMMCountTable counts) {
-		for (int state = 0; state < getNumberOfHiddenStates(); state++) {
+		for (int state = 0; state < model.getNrRealStates(); state++) {
 			double prob =  getStatePosterior(0, state);
 			if(Double.isInfinite(prob) || Double.isNaN(prob)){
 				System.out.println("Update init counts not a number");
 				prob=0;
+				model.printModelParameters();
+				printStatePosteriors();
+				System.exit(-1);
 			}
 			counts.initialCounts.addCounts(0, state, prob);
 		}
+		
 	}
 
 	public void printStatePosteriors(){
@@ -245,17 +323,17 @@ public class HMMSentenceDist extends ChainSentenceDist{
 		
 	}
 	
-	public String transitionPosteriorToString(){
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < sentenceSize-1; i++) {
-			sb.append(util.Printing.doubleArrayToString(transitionPosterior[i], null,null,"transition Posteriors pos " +i));
-		}
-		return sb.toString();	
-	}
+//	public String transitionPosteriorToString(){
+//		StringBuffer sb = new StringBuffer();
+//		for (int i = 0; i < sentenceSize-1; i++) {
+//			sb.append(util.Printing.doubleArrayToString(transitionPosterior[i], null,null,"transition Posteriors pos " +i));
+//		}
+//		return sb.toString();	
+//	}
 	
-	public void printTransitionPosteriors(){
-		System.out.println(transitionPosteriorToString());
-	}	
+//	public void printTransitionPosteriors(){
+//		System.out.println(transitionPosteriorToString());
+//	}	
 	public void createRandomPosteriors(){
 		System.out.println("CreateRandomPosteriors Not Implemented");
 		System.exit(-1);

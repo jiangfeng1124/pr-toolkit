@@ -1,6 +1,5 @@
 package data;
 
-import gnu.trove.TIntArrayList;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -164,9 +163,14 @@ public  class Corpus {
 	public void readVocabFromEuroparl(String name, String fileName, CountAlphabet<String> vocab, 
 			boolean lowercase, int minSentenceLenght, int maxSentenceLenght) throws IOException{
 		BufferedReader reader = InputOutput.openReader(fileName);
-		String sentence = reader.readLine();
+		String sentence = reader.readLine().trim();
 		while (sentence != null) {
 			String[] tokens = sentence.split(" ");
+			//debug
+			for (int i = 0; i < tokens.length; i++) {
+				System.out.print(tokens[i]+ ":");
+			}
+			System.out.println();
 			int len = tokens.length;
 			
 			if (len <= maxSentenceLenght && len <= maxSentenceLenght) {
@@ -218,7 +222,7 @@ public  class Corpus {
 				readVocab(testNames.get(i),testFiles.get(i), readerType, lowerCase, minSentenceLenght, maxSentenceLenght, fullVocab);
 			}
 		}
-		
+		fullVocab.compact();
 		//Read in the real structures
 		this.trainInstances = readInstanceList(trainName, trainFile, 
 				readerType,lowerCase, minSentenceLenght,
@@ -366,5 +370,9 @@ public  class Corpus {
 		return true;
 	}
 	
-	
+	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		Corpus c = new Corpus(args[0]);
+		System.out.println("asss");
+		
+	}
 }

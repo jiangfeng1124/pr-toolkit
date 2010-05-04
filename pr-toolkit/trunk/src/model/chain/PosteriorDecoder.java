@@ -1,8 +1,6 @@
 package model.chain;
 
 
-import model.chain.hmm.HMMSentenceDist;
-import model.chain.hmmFinalState.HMMFinalStateSentenceDist;
 
 
 public class PosteriorDecoder extends ChainDecoder{
@@ -29,8 +27,7 @@ public class PosteriorDecoder extends ChainDecoder{
 	@Override
 	public int[] decode(ChainSentenceDist sentence) {
 		sentence.initSentenceDist();
-		ForwardBackwardInference inference  = new ForwardBackwardInference((HMMSentenceDist)sentence);
-		inference.makeInference();
+		sentence.makeInference();
 		return decodeWithoutInit(sentence);
 	}
 

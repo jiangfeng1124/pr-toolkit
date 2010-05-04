@@ -150,7 +150,7 @@ public class InstanceList {
 		il.wordsAlphabet = words;
 		il.name = name;
 		BufferedReader reader = InputOutput.openReader(fileName);
-		String sentence = reader.readLine();
+		String sentence = reader.readLine().trim();
 		while (sentence != null) {
 			String[] tokens = sentence.split(" ");
 			int len = tokens.length;

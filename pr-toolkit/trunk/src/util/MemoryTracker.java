@@ -11,9 +11,7 @@ public class MemoryTracker {
 	}
 	
 	public void start(){
-		System.gc();
-	    System.gc();
-	    System.gc();
+		
 	    initM = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/(1024*1024);  
 	    start = true;
 	}
@@ -22,9 +20,7 @@ public class MemoryTracker {
 		if(!start){
 			throw new RuntimeException("Canot stop before starting");
 		}
-		System.gc();
-	    System.gc();
-	    System.gc();
+		
 	    finalM = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/(1024*1024);  
 	    finish = true;
 	}

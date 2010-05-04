@@ -1,9 +1,18 @@
 package model.chain.hmmFinalState;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Random;
+
+import learning.EM;
+import learning.stats.LikelihoodStats;
 import model.AbstractCountTable;
-import model.chain.HMMCountTable;
+import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
+import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMMSentenceDist;
+import model.chain.hmm.HMM.Update_Parameters;
 import model.distribution.Multinomial;
 import data.Corpus;
 import data.InstanceList;
@@ -22,9 +31,12 @@ import data.WordInstance;
  * @author javg
  *
  */
-public abstract class HMMFinalState extends HMM{
+public  class HMMFinalState extends HMM{
 
 	
+	
+	
+	 int trueNumberOfStates;
 	/**
 	 * Initialize multinomial tables
 	 * @param nrWordTypes
@@ -33,25 +45,28 @@ public abstract class HMMFinalState extends HMM{
 	public HMMFinalState(Corpus c,int nrWordTypes, int nrHiddenStates){
 		corpus = c;
 		//Add the extra state
+		trueNumberOfStates = nrHiddenStates;
 		nrStates = nrHiddenStates+1;
-
 		this.nrWordTypes = nrWordTypes;
 		System.out.println("Creating HMMFInal state with " + nrStates);
-		initialProbabilities = new Multinomial(1,nrStates);
+		initialProbabilities = new Multinomial(1,trueNumberOfStates);
 		transitionProbabilities = new Multinomial(nrStates,nrStates);
-		observationProbabilities = new Multinomial(nrStates,nrWordTypes);
+		observationProbabilities = new Multinomial(trueNumberOfStates,nrWordTypes);
 		
 		
+	}
+	
+	
+	@Override
+	public AbstractCountTable getCountTable() {
+		return new HMMFinalStateCountTable(nrWordTypes,nrStates);
 	}
 	
 	public HMMSentenceDist getSentenceDist(HMM model, WordInstance inst){
 		return new HMMFinalStateSentenceDist(model,inst,nrStates);	
 	}
 
-	@Override
-	public AbstractCountTable getCountTable() {
-		return new HMMCountTable(nrWordTypes,nrStates);
-	}
+	
 	
 	public void proceddDecodingOutput(int[][] output){
 		for (int i = 0; i < output.length; i++) {
@@ -61,7 +76,28 @@ public abstract class HMMFinalState extends HMM{
 		}
 	}
 	public int getNrRealStates(){
-		return nrStates-1;
+		return trueNumberOfStates;
+	}
+	
+	
+	/**
+	 * Should sum to the number of tokens minus the number of sentences,
+	 * since in the final state we are adding a word to every sentence and this is not 
+	 * accounted on the number of tokens we do not need to subtract the number of tokens.
+	 * @param table
+	 */
+	public void checkTransitionCounts(Multinomial table){
+		double sum = 0;
+		for(int i = 0; i < nrStates; i++){
+			for(int j = 0; j < nrStates; j++){
+				sum += table.getCounts(i, j);
+			}
+		}
+		if(Math.abs(sum - corpus.getNumberOfTokens()) > 1.E-5){
+			System.out.println("Transition counts do not sum to the number of tokens minus number of sentences got: "+
+					sum + " true: " + (corpus.getNumberOfTokens()));
+			throw new RuntimeException();
+		}
 	}
 	
 	/**
@@ -94,5 +130,30 @@ public abstract class HMMFinalState extends HMM{
 		updateParameters(count);
 		initialized = true;
 		System.out.println("Finished supervised");
+	}
+	
+	
+	
+	public static void main(String[] args) throws UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Corpus c = new Corpus(args[0]);
+		HMMFinalState hmm =new HMMFinalState(c,c.getNrWordTypes(),5);
+		hmm.updateType  = Update_Parameters.OBS_MAX_ENT;
+		
+		hmm.gaussianPrior = 10;
+		hmm.gradientConvergenceValue = 0.00001;
+		hmm.valueConvergenceValue = 0.0001;
+		hmm.maxIter = 1000;
+		//Create and add feature function
+		hmm.fxy = new model.chain.GenerativeFeatureFunction(c,args[1]);
+		hmm.warmStart = false;
+		hmm.initializeRandom(new Random(1), 1);
+		hmm.printModelParameters();
+		System.out.println("Initialized HMM");
+		EM em = new EM(hmm);
+		LikelihoodStats stats = new LikelihoodStats();
+		em.em(2	, stats);
+		hmm.printModelParameters();
+		PosteriorDecoder decoding = new PosteriorDecoder();
+		decoding.decodeSet(hmm, c.trainInstances);
 	}
 }

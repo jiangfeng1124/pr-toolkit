@@ -1,5 +1,7 @@
 package model.distribution;
 
+import gnu.trove.TIntArrayList;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
@@ -19,7 +21,7 @@ import java.util.zip.GZIPOutputStream;
  * @author javg
  *
  */
-public class Multinomial {
+public class Multinomial implements AbstractMultinomial{
 	double[][] values;
 	int variables;
 	int states;
@@ -38,10 +40,31 @@ public class Multinomial {
 		util.Printing.printDoubleArray(values,labels1,labels2, name);
 	}
 	
+	public String toString(String name, String[] labels1, String[] labels2){
+		return util.Printing.doubleArrayToString(values,labels1,labels2, name);
+	}
+	
 	public void fill(double value){
 		for(int variable =0; variable < variables; variable++){
 			java.util.Arrays.fill(values[variable],value);
 		}
+	}
+	
+	public void fill(AbstractMultinomial other){
+		fill(other);
+	}
+	
+	public Multinomial clone(){
+		Multinomial other = new Multinomial();
+		other.variables = variables;
+		other.states = states;
+		other.values = new double[variables][states];
+		for(int variable =0; variable < variables; variable++){
+			for(int state =0; state < states; state++){
+				other.values[variable][state] = values[variable][state];
+			}
+		}
+		return other;
 	}
 	
 	public void fill(Multinomial other){
@@ -50,6 +73,34 @@ public class Multinomial {
 				values[variable][state] = other.values[variable][state];
 			}
 		}
+	}
+	
+	/**
+	 * In this case this method does not make a lot of sense
+	 * since all values are valid for each position.
+	 */
+	public  TIntArrayList[] getAvailableStates(){
+		TIntArrayList[] results = new TIntArrayList[variables];
+		int[] values = new int[states];
+		for (int i = 0; i < states; i++) {
+			values[i]=i;
+		}
+		for (int i = 0; i < variables; i++) {
+			results[i] = new TIntArrayList(values);
+		}
+		return results;
+	}
+	
+	/**
+	 * In this case this method does not make a lot of sense
+	 * since all values are valid for each position.
+	 */
+	public  TIntArrayList getAvailableStates(int position){
+		int[] values = new int[states];
+		for (int i = 0; i < states; i++) {
+			values[i]=i;
+		}
+		return new TIntArrayList(values);
 	}
 	
 	public final void addCounts(int variable, int state, double value){
@@ -76,6 +127,12 @@ public class Multinomial {
 		}
 	}
 
+	public void copyAndNormalize(AbstractMultinomial other){
+		if(other instanceof Multinomial){
+			copyAndNormalize((Multinomial)other);
+		}
+	}
+	
 	public void copyAndNormalize(Multinomial other){
 		for(int i = 0; i < variables; i++){
 			double sum = 0;
@@ -167,6 +224,10 @@ public class Multinomial {
 			}
 		}
 		return true;
+	}
+	
+	public static void main(String[] args) {
+		
 	}
 	
 }

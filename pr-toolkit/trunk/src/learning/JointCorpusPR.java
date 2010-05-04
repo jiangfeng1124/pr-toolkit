@@ -22,8 +22,8 @@ public class JointCorpusPR extends JointEM {
 	@Override
 	public void corpusEStep(AbstractCountTable[] counts, AbstractSentenceDist[][] sentenceDists, JointTrainStats stats) {
 		for (int i = 0; i < sentenceDists[0].length; i++) {
-				sentenceDists[0][i].initSentenceDist();
-				sentenceDists[1][i].initSentenceDist();
+			sentenceDists[0][i].initSentenceDist();
+			sentenceDists[1][i].initSentenceDist();
 				models[0].computePosteriors(sentenceDists[0][i]);
 				models[1].computePosteriors(sentenceDists[1][i]);
 		}

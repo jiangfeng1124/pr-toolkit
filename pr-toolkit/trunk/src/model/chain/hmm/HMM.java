@@ -6,24 +6,35 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
 
+import learning.EM;
+import learning.stats.LikelihoodStats;
 import model.AbstractCountTable;
 import model.AbstractModel;
 import model.AbstractSentenceDist;
 import model.chain.ChainDecoder;
 import model.chain.ForwardBackwardInference;
 import model.chain.GenerativeFeatureFunction;
-import model.chain.HMMCountTable;
+import model.chain.PosteriorDecoder;
 import model.chain.mrf.MRFObjective;
+import model.distribution.AbstractMultinomial;
 import model.distribution.Multinomial;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.WolfRuleLineSearch;
+import optimization.stopCriteria.CompositeStopingCriteria;
+import optimization.stopCriteria.GradientL2Norm;
+import optimization.stopCriteria.NormalizedGradientL2Norm;
+import optimization.stopCriteria.ProjectedGradientL2Norm;
+import optimization.stopCriteria.StopingCriteria;
+import optimization.stopCriteria.ValueDifference;
 import util.ArrayMath;
 import util.InputOutput;
 import data.Corpus;
@@ -35,26 +46,26 @@ import data.WordInstance;
  * @author javg
  *
  */
-public abstract class HMM extends AbstractModel{
+public  class HMM extends AbstractModel{
 
 	
 	public enum Update_Parameters  {TABLE_UP, OBS_MAX_ENT, VB, MRF};
 	
 	public Update_Parameters updateType = Update_Parameters.TABLE_UP;
-	protected Multinomial initialProbabilities;
-	protected Multinomial transitionProbabilities;
-	public Multinomial observationProbabilities;
+	public AbstractMultinomial initialProbabilities;
+	public AbstractMultinomial transitionProbabilities;
+	public AbstractMultinomial observationProbabilities;
 	
-	public int nrStates;
-	public int nrWordTypes;
+	protected int nrStates;
+	protected int nrWordTypes;
 	
 	protected boolean initialized;
 
 	public Corpus corpus;
 	
 	//Optimization and maxent options
-	public double gradientConvergenceValue = 0.001;
-	public double valueConvergenceValue = 0.05;
+	public double gradientConvergenceValue;
+	public double valueConvergenceValue;
 	public int maxIter = 1000;
 	public double gaussianPrior = 10;
 	//Feature function used for Max Ent
@@ -72,6 +83,10 @@ public abstract class HMM extends AbstractModel{
 	protected 	HMM(){
 		
 	}
+	
+	
+	
+	
 	
 	/**
 	 * Initialize multinomial tables
@@ -105,13 +120,13 @@ public abstract class HMM extends AbstractModel{
 		dist.updateTransitionCounts((HMMCountTable) counts);
 		dist.updateObservationCounts((HMMCountTable) counts);
 		//dist.clearPosteriors();
+		
 	}
 
 	@Override
 	public void computePosteriors(AbstractSentenceDist dist) {
 		HMMSentenceDist d = (HMMSentenceDist)dist;
-		ForwardBackwardInference inference  = new ForwardBackwardInference(d);
-		inference.makeInference();
+		d.makeInference();
 		//d.clearCaches();
 //		d.printStatePosteriors();
 	//	d.printTransitionPosteriors();
@@ -141,6 +156,63 @@ public abstract class HMM extends AbstractModel{
 		return new HMMCountTable(nrWordTypes,nrStates);
 	}
 
+	/**
+	 * Checks if the counts tables make sense:
+	 * Initial Counts - Should sum to the number of sentences
+	 * Transition Counts - Should sum to the number of tokens - number of sentences
+	 * State Counts - Should sum to the number of tokens
+	 * @param counts
+	 */
+	public void checkCountsTable(AbstractCountTable counts){
+		System.out.println("DEBUG:::Checking if counts are correct");
+		checkInitialCounts(((HMMCountTable)counts).initialCounts);
+		checkObservationCounts(((HMMCountTable)counts).observationCounts);
+		checkTransitionCounts(((HMMCountTable)counts).transitionCounts);
+	}
+	
+	public void checkObservationCounts(Multinomial table){
+		double sum = 0;
+		for(int i = 0; i < getNrRealStates(); i++){
+			for(int j = 0; j < corpus.getNrWordTypes(); j++){
+				sum += table.getCounts(i, j);
+			}
+		}
+		if(Math.abs(sum - corpus.getNumberOfTokens()) > 1.E-5){
+			System.out.println("Transition counts do not sum to the number of tokens");
+			throw new RuntimeException();
+		}
+	}
+	
+	//InitialCounts should sum to the number of sentences
+	public void checkInitialCounts(Multinomial table){
+		double sum = 0;
+		for(int i = 0; i < getNrRealStates(); i++){
+			sum += table.getCounts(0, i);
+		}
+		if(Math.abs(sum - corpus.getNrOfTrainingSentences()) > 1.E-5){
+			System.out.println("Initial counts do not sum to the number of sentences got: " + sum + " truth: " + corpus.getNrOfTrainingSentences());
+			throw new RuntimeException();
+		}
+	}
+	
+	/**
+	 * Should sum to the number of tokens minus the number of sentences
+	 * @param table
+	 */
+	public void checkTransitionCounts(Multinomial table){
+		double sum = 0;
+		for(int i = 0; i < nrStates; i++){
+			for(int j = 0; j < nrStates; j++){
+				sum += table.getCounts(i, j);
+			}
+		}
+		if(Math.abs(sum - corpus.getNumberOfTokens() + corpus.getNrOfTrainingSentences()) > 1.E-5){
+			System.out.println("Transition counts do not sum to the number of tokens minus number of sentences got: "+
+					sum + " true: " + (corpus.getNumberOfTokens() - corpus.getNrOfTrainingSentences()));
+			throw new RuntimeException();
+		}
+	}
+	
 	
 	/**
 	 * For now just normalize but this should be a class
@@ -150,6 +222,9 @@ public abstract class HMM extends AbstractModel{
 	 */
 	@Override
 	public void updateParameters(AbstractCountTable counts) {
+//		((HMMCountTable) counts).print();
+		//Debug Check Counts
+		checkCountsTable(counts);
 //		((HMMCountTable)counts).initialCounts.print("Initial Counts", null,null);
 //		((HMMCountTable)counts).transitionCounts.print("Transition Counts", null,null);
 //		((HMMCountTable)counts).observationCounts.print("Observation Counts", null,null);
@@ -246,7 +321,7 @@ public abstract class HMM extends AbstractModel{
 	public void printModelParameters(){
 		initialProbabilities.print("Initial Parameters",null,null);
 		transitionProbabilities.print("Transition Parameters",null,null);
-		observationProbabilities.print("Observatiob Parameters",null,null);
+		//observationProbabilities.print("Observatiob Parameters",null,null);
 	}
 	
 	private void mrfRetrain(AbstractCountTable counts) {
@@ -267,10 +342,13 @@ public abstract class HMM extends AbstractModel{
 		optimization.gradientBasedMethods.LBFGS optimizer = 
 			new optimization.gradientBasedMethods.LBFGS(wolfe,30);
 		optimization.gradientBasedMethods.stats.OptimizerStats stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(gradientConvergenceValue);
-		optimizer.setValueConvergenceValue(valueConvergenceValue);
+		StopingCriteria stopGrad = new NormalizedGradientL2Norm(gradientConvergenceValue);
+		StopingCriteria stopValue = new ValueDifference(valueConvergenceValue);
+		CompositeStopingCriteria stop = new CompositeStopingCriteria();
+		stop.add(stopGrad);
+		stop.add(stopValue);
 		optimizer.setMaxIterations(maxIter);
-		boolean succed = optimizer.optimize(mrf,stats);
+		boolean succed = optimizer.optimize(mrf,stats,stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
 		if(nrStates == getNrRealStates()){
 			System.out.println("WARNING!!! MRF NOT SET UP TO DEAL WITH non-final state HMM!!!");
@@ -337,13 +415,18 @@ public abstract class HMM extends AbstractModel{
 	 * 
 	 */
 	public util.LinearClassifier[] maxEntModels;	
+	//Weigths of the observations 
+	double counts[];
 	
-
+	public void maxEntRetrain(AbstractMultinomial toUpdate, AbstractMultinomial other,Corpus c,GenerativeFeatureFunction fxy, double gaussianPrior
+			,double gradientPrecision,double valuePrecision,int maxIterations){
+		if(other instanceof Multinomial){
+			maxEntRetrain((Multinomial)toUpdate, (Multinomial)other, c, fxy, gaussianPrior, gradientPrecision, valuePrecision, maxIterations);
+		}		
+	}
+	
 	public void maxEntRetrain(Multinomial toUpdate, Multinomial other,Corpus c,GenerativeFeatureFunction fxy, double gaussianPrior
 			,double gradientPrecision,double valuePrecision,int maxIterations){
-		
-		
-		
 		util.DummyAlphabet dummyAlphabet = new util.DummyAlphabet(c.getNrWordTypes());
 		model.chain.GenerativeMaxEntropy maxEnt = new model.chain.GenerativeMaxEntropy(gaussianPrior,dummyAlphabet,dummyAlphabet,fxy);
 		util.SparseVector x = new util.SparseVector();
@@ -354,20 +437,23 @@ public abstract class HMM extends AbstractModel{
 			}
 		}
 		else if(!warmStart){
+			System.out.println("Reseting ME weights");
 			//Fill parameters with zero
 			for(int state = 0; state < nrStates; state++){
 				java.util.Arrays.fill(maxEntModels[state].w, 0);
 			}
 		}
 		//For each hidden state train a maximum entropy model
-		for(int state = 0; state < nrStates; state++){
+		for(int state = 0; state < getNrRealStates(); state++){
 			//Get the weights from the count table for each word
-			double weights[] = new double[c.getNrWordTypes()];
+			if(counts == null){
+				counts = new double[c.getNrWordTypes()];
+			}
 			for(int i = 0; i < c.getNrWordTypes(); i++){
-				weights[i]=other.getCounts(state, i);
+				counts[i]=other.getCounts(state, i);
 			}
 			//Train the classifier 
-			util.LinearClassifier classifier = maxEnt.batchTrain(weights,maxEntModels[state],gradientPrecision,valuePrecision,maxIterations);	
+			util.LinearClassifier classifier = maxEnt.batchTrain(counts,maxEntModels[state],gradientPrecision,valuePrecision,maxIterations);	
 			//Predict
 			classifier.scores(x);
 			double[] scores = classifier.scores(x);
@@ -375,10 +461,29 @@ public abstract class HMM extends AbstractModel{
 			//Update the counts table
 			double[] probs = util.StaticUtils.exp(scores);
 			double Z = util.StaticUtils.sum(probs);
-			for(int i = 0; i < c.getNrWordTypes(); i++){		
+			for(int i = 0; i < c.getNrWordTypes(); i++){
+				
 				double prob = probs[i]/Z;
+				if(Double.isNaN(prob) || Double.isInfinite(prob)){
+					System.out.println("Error probabililty of max-ent is nan");
+					throw new RuntimeException();
+				}
 				toUpdate.setCounts(state, i, prob);
 			}
+			
+			//Debug compute the kl between the probs of doing ME vs the probs of doing ML
+			double MLsum = util.StaticUtils.sum(counts);
+			double kl = 0;
+			for(int i = 0; i < c.getNrWordTypes(); i++){
+				double prob = probs[i]/Z;
+				double mlProb = counts[i]/MLsum;
+				double logP = Math.log(prob/mlProb);
+//				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
+				kl+= prob*logP;
+			}
+			System.out.println("Kl between ME and ML estimates for state "+state+": " + kl);
+			
+			
 		}
 		
 		
@@ -479,6 +584,25 @@ public abstract class HMM extends AbstractModel{
 		transitionProbabilities.saveTable(directory+"/transProb");
 	}
 	
-	
+	public static void main(String[] args) throws UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		Corpus c = new Corpus(args[0]);
+		HMM hmm = new HMM(c,c.getNrWordTypes(),10);
+//		hmm.updateType  = Update_Parameters.OBS_MAX_ENT;
+//		hmm.warmStart = true;
+//		hmm.gaussianPrior = 1;
+//		//Create and add feature function
+//		hmm.fxy = new model.chain.GenerativeFeatureFunction(c,args[1]);
+		hmm.initializeRandom(new Random(), 1);
+		System.out.println("Initialized HMM");
+		EM em = new EM(hmm);
+		LikelihoodStats stats = new LikelihoodStats();
+		em.em(5	, stats);
+		hmm.printModelParameters();
+		PosteriorDecoder decoding = new PosteriorDecoder();
+		decoding.decodeSet(hmm, c.trainInstances);
+		
+		
+		
+	}
 	
 }

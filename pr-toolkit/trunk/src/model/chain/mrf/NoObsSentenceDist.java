@@ -36,6 +36,12 @@ public class NoObsSentenceDist extends ChainSentenceDist{
 	}
 	
 	@Override
+	public void makeInference() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
 	public void clearCaches() {
 	}
 
@@ -114,16 +120,16 @@ public class NoObsSentenceDist extends ChainSentenceDist{
 		return -1;
 	}
 
-	@Override
-	public void setStatePosterior(int position, int state, double prob) {
-		statePosterior[position][state] = prob;
-	}
-
-	@Override
-	public void setTransitionPosterior(int position, int prevState, int state,
-			double prob) {
-		transitionPosterior[position][prevState][state] = prob;
-	}
+//	@Override
+//	public void setStatePosterior(int position, int state, double prob) {
+//		statePosterior[position][state] = prob;
+//	}
+//
+//	@Override
+//	public void setTransitionPosterior(int position, int prevState, int state,
+//			double prob) {
+//		transitionPosterior[position][prevState][state] = prob;
+//	}
 
 	@Override
 	public void setLogLikelihood(double l) {
@@ -149,5 +155,7 @@ public class NoObsSentenceDist extends ChainSentenceDist{
 		sb.append(util.Printing.doubleArrayToString(transitionProbs, null ,null, "transition-Probs"));		
 		return sb.toString();
 	}
+
+	
 
 }

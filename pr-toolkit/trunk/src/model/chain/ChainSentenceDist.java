@@ -22,9 +22,10 @@ public abstract class ChainSentenceDist extends AbstractSentenceDist{
 	
 	
 	/**Access to Posterior*/
-	public abstract void setStatePosterior(int position, int state, double prob);
+	public abstract void makeInference();
+//	public abstract void setStatePosterior(int position, int state, double prob);
 	public abstract double getStatePosterior(int position, int state);
-	public abstract void setTransitionPosterior(int position, int prevState, int state,double prob);
+//	public abstract void setTransitionPosterior(int position, int prevState, int state,double prob);
 	public abstract double getTransitionPosterior(int position, int prevState, int state);
 	
 	/**Cleanup methods*/

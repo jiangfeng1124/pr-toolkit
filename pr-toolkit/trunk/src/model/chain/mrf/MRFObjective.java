@@ -3,7 +3,7 @@ package model.chain.mrf;
 import data.Corpus;
 import model.chain.ForwardBackwardInference;
 import model.chain.GenerativeFeatureFunction;
-import model.chain.HMMCountTable;
+import model.chain.hmm.HMMCountTable;
 import optimization.gradientBasedMethods.Objective;
 import util.ArrayMath;
 import util.LogSummer;
@@ -240,6 +240,7 @@ public class MRFObjective extends Objective {
 				addTransition(state, nextState, empiricalExpectations, counts.transitionCounts.getCounts(state, nextState));
 			}
 		}
+		gradient = new double[getNumParameters()];
 		testGradient();
 	}
 
@@ -255,7 +256,7 @@ public class MRFObjective extends Objective {
 		// check that gradient and value correspond to eachother... 
 		double val = getValue();
 		double[] gradient = new double[parameters.length];
-		getGradient(gradient);
+		gradient = getGradient();
 		double[] numgradient = new double[parameters.length];
 		double epsilon = 0.001;
 		System.out.println("value = "+val);
@@ -280,12 +281,13 @@ public class MRFObjective extends Objective {
 	}
 	
 	@Override
-	public void getGradient(double[] gradient) {
+	public double[] getGradient() {
 		if (cache==null) cache = new MRFCache();
 		double scale = ArrayMath.sum(numSentencesPerLen)/100.0;
 		for (int i = 0; i < gradient.length; i++) {
 			gradient[i] = -cache.gradient[i]/scale;   // minimize, not maximize
 		}
+		return gradient;
 	}
 
 	@Override
