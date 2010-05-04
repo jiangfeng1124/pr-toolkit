@@ -87,6 +87,17 @@ public class MathUtils {
 			w[i] -= a*v[i];
 		}		
 	}
+	/**
+	 * v = w - a*v
+	 * @param w
+	 * @param v
+	 * @param a
+	 */
+	public static void minusEqualsInverse(double[] w, double[] v, double a) {
+		for(int i=0; i<w.length;i++){
+			v[i] = w[i] - a*v[i];
+		}		
+	}
 	
 	public static double dotProduct(double[] w, double[] v){
 		double accum = 0;
@@ -100,6 +111,13 @@ public class MathUtils {
 		double result[] = w.clone();
 		for(int i=0; i<w.length;i++){
 			result[i] -= v[i];
+		}
+		return result;
+	}
+	
+	public static double[] arrayMinus(double[] result , double[]w, double[]v){
+		for(int i=0; i<w.length;i++){
+			result[i] = w[i]-v[i];
 		}
 		return result;
 	}

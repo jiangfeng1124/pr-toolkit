@@ -1,18 +1,19 @@
 package optimization.gradientBasedMethods;
 
 import optimization.gradientBasedMethods.stats.OptimizerStats;
+import optimization.stopCriteria.StopingCriteria;
 
 public interface Optimizer {
-	public boolean optimize(Objective o,OptimizerStats stats);
+	public boolean optimize(Objective o,OptimizerStats stats, StopingCriteria stoping);
 	
-	public int getCurrentIteration();
-	public double[] getCurrentGradient();
+	
 	public double[] getDirection();
 	public double getCurrentStep();
 	public double getCurrentValue();
+	public int getCurrentIteration();
+	
 	
 	public void setMaxIterations(int max);
-	public void setGradientConvergenceValue(double value);
-	public void setValueConvergenceValue(double value);
 	
+		
 }

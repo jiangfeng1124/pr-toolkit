@@ -59,10 +59,10 @@ public class ArmijoLineSearchMinimization implements LineSearchMethod{
 			double alphaTemp = 
 				Interpolation.quadraticInterpolation(o.getOriginalValue(), o.getInitialGradient(), alpha, o.getCurrentValue());
 			if(alphaTemp >= sigma1 || alphaTemp <= sigma2*o.getAlpha()){
-				System.out.println("using alpha temp " + alphaTemp);
+//				System.out.println("using alpha temp " + alphaTemp);
 				alpha = alphaTemp;
 			}else{
-				System.out.println("Discarding alpha temp " + alphaTemp);
+//				System.out.println("Discarding alpha temp " + alphaTemp);
 				alpha = alpha*contractionFactor;
 			}
 //			double alpha =o.getAlpha()*contractionFactor;

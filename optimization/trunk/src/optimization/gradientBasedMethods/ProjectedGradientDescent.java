@@ -1,9 +1,12 @@
 package optimization.gradientBasedMethods;
 
+import java.io.IOException;
+
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.DifferentiableLineSearchObjective;
 import optimization.linesearch.LineSearchMethod;
 import optimization.linesearch.ProjectedDifferentiableLineSearchObjective;
+import optimization.stopCriteria.StopingCriteria;
 import optimization.util.MathUtils;
 
 
@@ -35,102 +38,117 @@ import optimization.util.MathUtils;
 public class ProjectedGradientDescent extends ProjectedAbstractGradientBaseMethod{
 	
 
-	public double lastStepUsed;
-	ProjectedObjective obj;
-	double originalDirenctionL2Norm;
+	
 	
 	public ProjectedGradientDescent(LineSearchMethod lineSearch) {
 		this.lineSearch = lineSearch;
 	}
 	
-	//Use projected gradient norm
-	public boolean stopCriteria(double[] gradient){
-		if(originalDirenctionL2Norm == 0){
-			System.out.println("Leaving original direction norm is zero");
-			return true;	
-		}
-		if(MathUtils.L2Norm(direction)/originalDirenctionL2Norm < gradientConvergenceValue){
-			System.out.println("Leaving projected gradient Norm smaller than epsilon");
-			return true;	
-		}
-		if((previousValue - currValue)/Math.abs(previousValue) < valueConvergenceValue) {
-			System.out.println("Leaving value change below treshold " + previousValue + " - " + currValue);
-			System.out.println(previousValue/currValue + " - " + currValue/currValue 
-					+ " = " + (previousValue - currValue)/Math.abs(previousValue));
-			return true;
-		}
-		return false;
+	//Use projected differential objective instead
+	public void initializeStructures(Objective o, OptimizerStats stats, StopingCriteria stop) {
+		lso = new ProjectedDifferentiableLineSearchObjective(o);
+	};
+	
+	
+	ProjectedObjective obj;
+	public boolean optimize(ProjectedObjective o,OptimizerStats stats, StopingCriteria stop){
+		obj = o;
+		return super.optimize(o, stats, stop);
 	}
 	
-	public boolean optimize(ProjectedObjective o,OptimizerStats stats){
-			stats.collectInitStats(this, o);
-			obj = o;
-			step = 0;
-			currValue = o.getValue();
-			previousValue = Double.MAX_VALUE;
-			gradient = new double[o.getNumParameters()];
-			o.getGradient(gradient);
-			originalGradientL2Norm = MathUtils.L2Norm(gradient);
-			
-			
-			getDirection();
-			originalDirenctionL2Norm = MathUtils.L2Norm(direction);
-			//MatrixOutput.printDoubleArray(currParameters, "parameters");
-			for (currentProjectionIteration = 0; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){		
-			//	System.out.println("Iter " + currentProjectionIteration);
-				//o.printParameters();
-				
-				if(stopCriteria(direction)){
-					stats.collectFinalStats(this, o);
-					lastStepUsed = step;
-					return true;
-				}			
-				
-				
-				
-				ProjectedDifferentiableLineSearchObjective lso = new ProjectedDifferentiableLineSearchObjective(o,direction);
-				step = lineSearch.getStepSize(lso);
-				if(step==-1){
-					System.out.println("Failed to find step");
-					stats.collectFinalStats(this, o);
-					return false;	
-					
-				}
-				
-				//Update the direction for stopping criteria
-				previousValue = currValue;
-				currValue = o.getValue();
-				o.getGradient(gradient);
-				direction = getDirection();		
-				if(MathUtils.dotProduct(gradient, direction) > 0){
-					System.out.println("Not a descent direction");
-					System.out.println(" current stats " + stats.prettyPrint(1));
-					System.exit(-1);
-				}
-				stats.collectIterationStats(this, o);
-			}
-			lastStepUsed = step;
-			stats.collectFinalStats(this, o);
-			return false;
+	public double[] getDirection(){
+		for(int i = 0; i< gradient.length; i++){
+			direction[i] = -gradient[i];
 		}
-	
-	public boolean optimize(Objective o,OptimizerStats stats){
-		System.out.println("Objective is not a projected objective");
-		System.exit(-1);
-		return false;
-	}
-	
-	@Override
-	public double[] getDirection() {
-		double[] currParameters = new double[obj.getNumParameters()];
-		obj.getParameters(currParameters);
-		//Calculating projected gradient take a step and project somewhere
-		//then calculate the direction
-		double[] projectedParameters = currParameters.clone();
-		MathUtils.minusEquals(projectedParameters, gradient, 1000);
-		direction = MathUtils.arrayMinus(projectedParameters, currParameters);
 		return direction;
 	}
+	
+	
 
 		
 }
+
+
+
+
+
+
+
+///OLD CODE
+
+//Use projected gradient norm
+//public boolean stopCriteria(double[] gradient){
+//	if(originalDirenctionL2Norm == 0){
+//		System.out.println("Leaving original direction norm is zero");
+//		return true;	
+//	}
+//	if(MathUtils.L2Norm(direction)/originalDirenctionL2Norm < gradientConvergenceValue){
+//		System.out.println("Leaving projected gradient Norm smaller than epsilon");
+//		return true;	
+//	}
+//	if((previousValue - currValue)/Math.abs(previousValue) < valueConvergenceValue) {
+//		System.out.println("Leaving value change below treshold " + previousValue + " - " + currValue);
+//		System.out.println(previousValue/currValue + " - " + currValue/currValue 
+//				+ " = " + (previousValue - currValue)/Math.abs(previousValue));
+//		return true;
+//	}
+//	return false;
+//}
+//
+
+//public boolean optimize(ProjectedObjective o,OptimizerStats stats, StopingCriteria stop){
+//		stats.collectInitStats(this, o);
+//		obj = o;
+//		step = 0;
+//		currValue = o.getValue();
+//		previousValue = Double.MAX_VALUE;
+//		gradient = o.getGradient();
+//		originalGradientL2Norm = MathUtils.L2Norm(gradient);
+//		parameterChange = new double[gradient.length];
+//		getDirection();
+//		ProjectedDifferentiableLineSearchObjective lso = new ProjectedDifferentiableLineSearchObjective(o,direction);
+//		
+//		originalDirenctionL2Norm = MathUtils.L2Norm(direction);
+//		//MatrixOutput.printDoubleArray(currParameters, "parameters");
+//		for (currentProjectionIteration = 0; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){		
+//		//	System.out.println("Iter " + currentProjectionIteration);
+//			//o.printParameters();
+//			
+//			
+//			
+//			if(stop.stopOptimization(gradient)){
+//				stats.collectFinalStats(this, o);
+//				lastStepUsed = step;
+//				return true;
+//			}			
+//			lso.reset(direction);
+//			step = lineSearch.getStepSize(lso);
+//			if(step==-1){
+//				System.out.println("Failed to find step");
+//				stats.collectFinalStats(this, o);
+//				return false;	
+//				
+//			}
+//			
+//			//Update the direction for stopping criteria
+//			previousValue = currValue;
+//			currValue = o.getValue();
+//			gradient = o.getGradient();
+//			direction = getDirection();		
+//			if(MathUtils.dotProduct(gradient, direction) > 0){
+//				System.out.println("Not a descent direction");
+//				System.out.println(" current stats " + stats.prettyPrint(1));
+//				System.exit(-1);
+//			}
+//			stats.collectIterationStats(this, o);
+//		}
+//		lastStepUsed = step;
+//		stats.collectFinalStats(this, o);
+//		return false;
+//	}
+
+//public boolean optimize(Objective o,OptimizerStats stats, StopingCriteria stop){
+//	System.out.println("Objective is not a projected objective");
+//	throw new RuntimeException();
+//}
+

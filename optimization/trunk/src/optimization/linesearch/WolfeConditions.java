@@ -21,7 +21,7 @@ public class WolfeConditions {
 	
 	public  static boolean suficientDecrease(DifferentiableLineSearchObjective o, double c1){	
 		double value = o.getOriginalValue()+c1*o.getAlpha()*o.getInitialGradient();
-		//System.out.println("Sufficient Decrease original "+value+" new "+  o.getCurrentValue());
+//		System.out.println("Sufficient Decrease original "+value+" new "+  o.getCurrentValue());
 		return o.getCurrentValue() <= value;
 	}
 	

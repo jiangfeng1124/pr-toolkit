@@ -40,21 +40,18 @@ import util.Printing;
  */
 public class DifferentiableLineSearchObjective {
 
-	int nrIterations;
+	
 	
 	Objective o;
+	int nrIterations;
 	TDoubleArrayList steps;
 	TDoubleArrayList values;
 	TDoubleArrayList gradients;
 	
-	double[] originalParameters;
-	public double[] direction;
-	
-	//Auxiliar variables to change
-	double[] parametersChange;
-	double[] realObjectiveGradient;
-	
-	 
+	//This variables cannot change
+	public double[] originalParameters;
+	public double[] searchDirection;
+
 	
 	/**
 	 * Defines a line search objective:
@@ -65,24 +62,58 @@ public class DifferentiableLineSearchObjective {
 	 * @param o
 	 * @param direction
 	 */
-	public DifferentiableLineSearchObjective(Objective o, double[] direction) {
+	public DifferentiableLineSearchObjective(Objective o) {
 		this.o = o;
 		originalParameters = new double[o.getNumParameters()];
-		o.getParameters(originalParameters);
-		parametersChange = new double[o.getNumParameters()];
-		realObjectiveGradient = new double[o.getNumParameters()];
+		searchDirection = new double[o.getNumParameters()];
 		steps = new TDoubleArrayList();
 		values = new TDoubleArrayList();
 		gradients = new TDoubleArrayList();
-		this.direction = direction;
-		//Add initial values
-		o.getGradient(realObjectiveGradient);
-		steps.add(0);
-		values.add(o.getValue());
-		gradients.add(MathUtils.dotProduct(realObjectiveGradient,direction));	
-//		System.out.println("Iter " + nrIterations + " step " + steps.get(nrIterations) +
-//				" value " + values.get(nrIterations) + " grad "  + gradients.get(nrIterations));
 	}
+	/**
+	 * Called whenever we start a new iteration. 
+	 * Receives the ray where we are searching for and resets all values
+	 * 
+	 */
+	public void reset(double[] direction){
+		//Copy initial values
+		System.arraycopy(o.getParameters(), 0, originalParameters, 0, o.getNumParameters());
+		System.arraycopy(direction, 0, searchDirection, 0, o.getNumParameters());
+		
+		//Initialize variables
+		nrIterations = 0;
+		steps.clear();
+		values.clear();
+		gradients.clear();
+	
+		values.add(o.getValue());
+		gradients.add(MathUtils.dotProduct(o.getGradient(),direction));	
+		steps.add(0);
+	}
+	
+	
+	/**
+	 * update the current value of alpha.
+	 * Takes a step with that alpha in direction
+	 * Get the real objective value and gradient and calculate all required information.
+	 */
+	public void updateAlpha(double alpha){
+		if(alpha < 0){
+			System.out.println("alpha may not be smaller that zero");
+			throw new RuntimeException();
+		}
+		nrIterations++;
+		steps.add(alpha);
+		//x_t+1 = x_t + alpha*direction
+		System.arraycopy(originalParameters,0, o.getParameters(), 0, originalParameters.length);
+		MathUtils.plusEquals(o.getParameters(), searchDirection, alpha);
+		o.setParameters(o.getParameters());
+//		System.out.println("Took a step of " + alpha + " new value " + o.getValue());
+		values.add(o.getValue());
+		gradients.add(MathUtils.dotProduct(o.getGradient(),searchDirection));		
+	}
+
+	
 	
 	public int getNrIterations(){
 		return nrIterations;
@@ -122,23 +153,7 @@ public class DifferentiableLineSearchObjective {
 		return gradients.get(0);
 	}
 	
-	/**
-	 * update the current value of alpha.
-	 * Takes a step with that alpha in direction
-	 * Get the real objective value and gradient and calculate all required information.
-	 */
-	public void updateAlpha(double alpha){
-		nrIterations++;
-		steps.add(alpha);
-		//x_t+1 = x_t - alpha*direction
-		parametersChange = originalParameters.clone();
-		MathUtils.plusEquals(parametersChange, direction, alpha);
-		o.setParameters(parametersChange);
-		values.add(o.getValue());
-		o.getGradient(realObjectiveGradient);
-		gradients.add(MathUtils.dotProduct(realObjectiveGradient,direction));		
-	}
-
+	
 	
 	
 	public double getAlpha(){
@@ -161,14 +176,6 @@ public class DifferentiableLineSearchObjective {
 			System.out.print(StaticTools.prettyPrint(steps.get(i), "0.0000E00",8) + " ");
 		}
 		System.out.println();
-	}
-	
-	public String parametersToString(){
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < parametersChange.length; i++) {
-			sb.append("x"+i+":"+parametersChange[i]+" ");
-		}
-		return sb.toString();
 	}
 	
 	public static void main(String[] args) {

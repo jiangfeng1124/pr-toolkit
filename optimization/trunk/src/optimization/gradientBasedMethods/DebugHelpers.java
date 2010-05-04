@@ -24,7 +24,7 @@ public class DebugHelpers {
 			MathUtils.plusEquals(newParameters,direction,step);
 			o.setParameters(newParameters);
 			double newValue = o.getValue();
-			o.getGradient(gradient);
+			gradient = o.getGradient();
 			double newgradDirectionDot = MathUtils.dotProduct(gradient,direction);
 			stepS.add(step);
 			obj.add(newValue);

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
-import optimization.gradientBasedMethods.ProjectedObjective;
 import optimization.util.MathUtils;
 import optimization.util.StaticTools;
 
@@ -39,10 +38,10 @@ public class OptimizerStats {
 					StaticTools.prettyPrint(gradientNorms.get(0), "0.00000E00", 10)+ "\tvalue "+ StaticTools.prettyPrint(value.get(0), "0.000000E00",11)+"\n");
 			}
 			for(int i = 1; i < iterations.size(); i++){
-			res.append("\tIteration"+iterations.get(i)+"\tstep: "+StaticTools.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
+			res.append("\tIteration:\t"+iterations.get(i)+"\tstep:"+StaticTools.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
 					StaticTools.prettyPrint(gradientNorms.get(i), "0.00000E00", 10)+ 
-					"\tvalue "+ StaticTools.prettyPrint(value.get(i), "0.000000E00",11)+
-					"\tvalueDiff "+ StaticTools.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
+					"\tvalue:\t"+ StaticTools.prettyPrint(value.get(i), "0.000000E00",11)+
+					"\tvalueDiff:\t"+ StaticTools.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
 					"\n");
 			}
 		}
@@ -52,11 +51,15 @@ public class OptimizerStats {
 	
 	public void collectInitStats(Optimizer optimizer, Objective objective){
 		startTime();
+		iterations.add(-1);
+		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
+		steps.add(0.0);
+		value.add(objective.getValue());
 	}
 	
 	public void collectIterationStats(Optimizer optimizer, Objective objective){
 		iterations.add(optimizer.getCurrentIteration());
-		gradientNorms.add(MathUtils.L2Norm(optimizer.getCurrentGradient()));
+		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
 		steps.add(optimizer.getCurrentStep());
 		value.add(optimizer.getCurrentValue());
 	}

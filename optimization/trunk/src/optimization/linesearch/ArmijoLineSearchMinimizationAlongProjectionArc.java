@@ -1,5 +1,6 @@
 package optimization.linesearch;
 
+import optimization.gradientBasedMethods.ProjectedObjective;
 import optimization.util.Interpolation;
 import optimization.util.MathUtils;
 
@@ -59,7 +60,6 @@ public class ArmijoLineSearchMinimizationAlongProjectionArc implements LineSearc
 	
 	public ArmijoLineSearchMinimizationAlongProjectionArc(GenericPickFirstStep strategy){
 		this.strategy = strategy;
-		
 		this.initialStep = strategy.getFirstStep(this);
 	}
 	
@@ -73,53 +73,46 @@ public class ArmijoLineSearchMinimizationAlongProjectionArc implements LineSearc
 	 */
 	
 	public double getStepSize(DifferentiableLineSearchObjective o) {	
-		if(!(o instanceof ProjectedDifferentiableLineSearchObjective)){
-			System.out.println("Requires a ProjectedDifferentiableLineSearchObjective");
-			System.exit(-1);
-		}
-		ProjectedDifferentiableLineSearchObjective obj = (ProjectedDifferentiableLineSearchObjective) o;
-		currentInitGradientDot = o.getInitialGradient();	
+
 		
 		//Should update all in the objective
 		initialStep = strategy.getFirstStep(this);
-		obj.updateAlpha(initialStep);	
+		o.updateAlpha(initialStep);	
 		int nrIterations = 0;
 	
-		
-		while(obj.getOriginalValue()-obj.getCurrentValue()  < 
-				c1*(MathUtils.dotProduct(obj.originalGradient,
-						MathUtils.arrayMinus(obj.originalParameters,o.parametersChange))
-						)){			
-//			System.out.println("curr value "+obj.getCurrentValue());
-//			System.out.println("original value "+obj.getOriginalValue());
-//			System.out.println("sufficient decrease" +c1*(MathUtils.dotProduct(obj.originalGradient,
-//					MathUtils.arrayMinus(obj.originalParameters,o.parametersChange))));
+		//Armijo rule, the current value has to be smaller than the original value plus a small step of the gradient
+		while(o.getCurrentValue()  >
+			o.getOriginalValue() + c1*(o.getCurrentGradient())){			
+//			System.out.println("curr value "+o.getCurrentValue());
+//			System.out.println("original value "+o.getOriginalValue());
+//			System.out.println("GRADIENT decrease" +(MathUtils.dotProduct(o.o.gradient,
+//					MathUtils.arrayMinus(o.originalParameters,((ProjectedObjective)o.o).auxParameters))));
+//			System.out.println("GRADIENT SAVED" + o.getCurrentGradient());
 			if(nrIterations >= maxIterations){
 				System.out.println("Could not find a step leaving line search with -1");
 				o.printLineSearchSteps();
 				return -1;
 			}
-			double alpha=obj.getAlpha();
+			double alpha=o.getAlpha();
 			double alphaTemp = 
-				Interpolation.quadraticInterpolation(obj.getOriginalValue(), obj.getInitialGradient(), alpha, obj.getCurrentValue());
-			if(alphaTemp >= sigma1 || alphaTemp <= sigma2*obj.getAlpha()){
+				Interpolation.quadraticInterpolation(o.getOriginalValue(), o.getInitialGradient(), alpha, o.getCurrentValue());
+			if(alphaTemp >= sigma1 || alphaTemp <= sigma2*o.getAlpha()){
 				alpha = alphaTemp;
 			}else{
 				alpha = alpha*contractionFactor;
 			}
 //			double alpha =obj.getAlpha()*contractionFactor;
-			obj.updateAlpha(alpha);
+			o.updateAlpha(alpha);
 			nrIterations++;			
 		}
-//		System.out.println("curr value "+obj.getCurrentValue());
-//		System.out.println("original value "+obj.getOriginalValue());
-//		System.out.println("sufficient decrease" +c1*obj.getCurrentGradient());
-		
+//		System.out.println("curr value "+o.getCurrentValue());
+//		System.out.println("original value "+o.getOriginalValue());
+//		System.out.println("sufficient decrease" +c1*o.getCurrentGradient());
 //		System.out.println("Leavning line search used:");
 		o.printSmallLineSearchSteps();	
-		previousInitGradientDot = currentInitGradientDot;
+		
 		previousStepPicked = o.getAlpha();
-		return obj.getAlpha();
+		return o.getAlpha();
 	}
 	
 	public double getInitialGradient() {

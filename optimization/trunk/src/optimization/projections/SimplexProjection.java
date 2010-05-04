@@ -59,7 +59,6 @@ public class SimplexProjection extends Projection{
 	
 	
 	
-	
 
 	/**
 	 * Samples a point from the simplex of scale. Just sample

@@ -49,7 +49,7 @@ public class ProjectedOptimizerStats extends OptimizerStats{
 	
 	public void collectIterationStats(Optimizer optimizer, Objective objective){		
 		iterations.add(optimizer.getCurrentIteration());
-		gradientNorms.add(MathUtils.L2Norm(optimizer.getCurrentGradient()));
+		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
 		projectedGradientNorms.add(MathUtils.L2Norm(optimizer.getDirection()));
 		steps.add(optimizer.getCurrentStep());
 		value.add(optimizer.getCurrentValue());

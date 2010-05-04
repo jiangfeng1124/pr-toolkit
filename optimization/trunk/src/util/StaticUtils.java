@@ -196,13 +196,5 @@ public class StaticUtils {
 	}
 	
 	
-	public static SparseVector lookupCollection(Collection<String> in, Alphabet a){
-		SparseVector out = new SparseVector();
-		for (String x:in){
-			out.add(a.lookupObject(x), 1);
-		}
-		return out;
-	}
-	
 
 }

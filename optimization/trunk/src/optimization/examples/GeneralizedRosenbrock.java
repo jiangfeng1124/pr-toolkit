@@ -1,6 +1,6 @@
 package optimization.examples;
 
-import optimization.gradientBasedMethods.BFGS;
+
 import optimization.gradientBasedMethods.ConjugateGradient;
 import optimization.gradientBasedMethods.GradientDescent;
 import optimization.gradientBasedMethods.LBFGS;
@@ -9,6 +9,8 @@ import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.ArmijoLineSearchMinimization;
 import optimization.linesearch.LineSearchMethod;
+import optimization.stopCriteria.GradientL2Norm;
+import optimization.stopCriteria.StopingCriteria;
 import optimization.util.MathUtils;
 
 /**
@@ -22,17 +24,14 @@ public class GeneralizedRosenbrock extends Objective{
 	
 	public GeneralizedRosenbrock(int dimensions){
 		parameters = new double[dimensions];		
-		for (int i = 0; i < dimensions; i++){
-			parameters[i] = 0;
-		}
+		java.util.Arrays.fill(parameters, 0);
+		gradient = new double[dimensions];
 		
 	}
 	
 	public GeneralizedRosenbrock(int dimensions, double[] params){
-		parameters = new double[dimensions];		
-		for (int i = 0; i < dimensions; i++){
-			parameters[i] = params[i];
-		}
+		parameters = params;	
+		gradient = new double[dimensions];
 	}
 	
 	
@@ -50,13 +49,14 @@ public class GeneralizedRosenbrock extends Objective{
 	 * gx = -2(1-x) -2x200(y-x^2)
 	 * gy = 200(y-x^2)
 	 */
-	public void getGradient(double[] gradient) {
+	public double[] getGradient() {
 		gradientCalls++;
 		java.util.Arrays.fill(gradient,0);
 		for(int i = 0; i < parameters.length-1; i++){
 			gradient[i]+=-2*(1-parameters[i]) - 400*parameters[i]*(parameters[i+1] - MathUtils.square(parameters[i]));
 			gradient[i+1]+=200*(parameters[i+1] - MathUtils.square(parameters[i]));
 		}	
+		return gradient;
 	}
 
 	
@@ -82,40 +82,27 @@ public class GeneralizedRosenbrock extends Objective{
 
 		System.out.println("Doing Gradient descent");
 		//LineSearchMethod wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.1);
+		StopingCriteria stop = new GradientL2Norm(0.001);		
 		LineSearchMethod ls = new ArmijoLineSearchMinimization();
 		Optimizer optimizer = new GradientDescent(ls);		
 		OptimizerStats stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setMaxIterations(20);
-		boolean succed = optimizer.optimize(o,stats);
+		optimizer.setMaxIterations(1000);
+		boolean succed = optimizer.optimize(o,stats, stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 		System.out.println("Doing Conjugate Gradient descent");
 		o = new GeneralizedRosenbrock(2);
 	//	wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.1);
 		optimizer = new ConjugateGradient(ls);
 		stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setMaxIterations(20);
-		succed = optimizer.optimize(o,stats);
+		optimizer.setMaxIterations(1000);
+		succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 		System.out.println("Doing Quasi newton descent");
 		o = new GeneralizedRosenbrock(2);
-		//wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.9);
-		optimizer = new BFGS(ls);
-		stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setMaxIterations(20);
-		succed = optimizer.optimize(o,stats);
-		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
-//		
-		System.out.println("Doing Limited Quasi newton descent");
-		o = new GeneralizedRosenbrock(2);
-	//	wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.9);
 		optimizer = new LBFGS(ls,10);
 		stats = new OptimizerStats();
-		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setMaxIterations(20);
-		succed = optimizer.optimize(o,stats);
+		optimizer.setMaxIterations(1000);
+		succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 
 	}
