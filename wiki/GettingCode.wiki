@@ -1,0 +1,15 @@
+#summary Getting the code from subversion
+
+= Structure of the Subversion Repository =
+
+This project is divided into three parts: 
+  * an *optimization* library, that is used to optimize the various objectives we use
+  * a *pr-toolkit* library that contains shared code 
+  * a set of *applications* that use the pr-toolkit and optimization library for a variety of applications
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
