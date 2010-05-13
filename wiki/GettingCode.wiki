@@ -3,9 +3,9 @@
 = Structure of the Subversion Repository =
 
 This project is divided into three parts: 
-  * an *optimization* library, that is used to optimize the various objectives we use
-  * a *pr-toolkit* library that contains shared code 
-  * a set of *applications* that use the pr-toolkit and optimization library for a variety of applications
+  * an *optimization* library (CodeOptimization), that is used to optimize the various objectives we use
+  * a *pr-toolkit* (CodePRToolkit) library that contains shared code 
+  * a set of *applications* (CodeApplications) that use the pr-toolkit and optimization library for a variety of applications
 
 = How to get the code =
 
@@ -38,10 +38,3 @@ svn checkout http://pr-toolkit.googlecode.com/svn/applications/postagging/trunk 
 }}}
 
 You can similarly get just the trunk of optizimation or pr-toolkit
-
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
