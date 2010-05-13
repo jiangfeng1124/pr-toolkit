@@ -4,7 +4,7 @@
 
 This project is divided into three parts: 
   * an *optimization* library (CodeOptimization), that is used to optimize the various objectives we use
-  * a *pr-toolkit* (CodePRToolkit) library that contains shared code 
+  * a *pr-toolkit* (CodePrToolkit) library that contains shared code 
   * a set of *applications* (CodeApplications) that use the pr-toolkit and optimization library for a variety of applications
 
 = How to get the code =
