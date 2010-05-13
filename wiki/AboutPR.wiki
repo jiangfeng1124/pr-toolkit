@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary What Posterior Regularization is what it can do for you
 
 = What is Posterior Regularization =
 
