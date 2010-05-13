@@ -1,0 +1,26 @@
+#summary Learning framework structure
+
+= Learning Framework =
+
+Interfaces:
+== EM-Model ==
+Update parameters (CountTable)
+
+== OnlineEM ==
+Following the definition from StepWise EM paper from Liang:
+Online EM for Unsupervised Models
+
+UpdateStepParameter(CountTable, SentenceDist)
+And add a class called OnLineEM Training
+
+
+== GradientBaseEM ==
+Folowing the paper from Painless Unsupervised Learning with Features
+GetOptimizationObjective
+UpdateModelFromOptimizationObjective()
+This is used to pass to the optimization package
+
+==TrainSupervised==
+For training the models in a supervised fashion....
+This should receive an instance list and return the model trained with that list.
+ 
