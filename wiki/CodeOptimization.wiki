@@ -1,9 +1,29 @@
-#summary Optimization portion of the code (overview).
+#summary Numerical Optimization code (overview).
 
 = Introduction =
 
-Add your content here.
+This package contains code for numerical optimization. 
 
+For Unconstrained optimization it contains an implementation of the following gradient based methods:
+  * Gradient Descent
+  * Conjugate Gradient
+  * LBFGS
+and the following Line Search methods:
+
+  * Armijo backtracking line search
+  * Wolfes rule 
+
+For Constrained Optimization contains the implementation of the following methods:
+  * Projected Gradient Descent
+
+and the following Line Search Methods:
+
+  * Armijo Rule along the projection arc
+
+and the projection code for the following constraints:
+
+  *  Box constraints
+  * Simplex Constraints
 
 = Details =
 
