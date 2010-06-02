@@ -1,0 +1,5 @@
+#TODO List
+
+= Optimization =
+
+The stopCriteria package should go inside of the gradientBasedMethods
