@@ -27,6 +27,13 @@ and the projection code for the following constraints:
 
 = Details =
 
+The library is organized in the following packages: 
+  * gradientBasedMethods - Methods that find a descent direction based on the gradient
+  * linesearch - Unidimensional search methods
+  * projections - Methods that perform the projection of a point into a set
+  * stopCriteria - Different stooping criteria for  the optimization algorithm
+  
+
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
   * Headings, paragraphs, and lists
