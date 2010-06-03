@@ -30,6 +30,17 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 	protected LineSearchMethod lineSearch;
 	DifferentiableLineSearchObjective lso;
 	
+	
+	public void reset(){
+		direction = null;
+		gradient = null;
+		previousValue = Double.MAX_VALUE;
+		currentProjectionIteration = 0;
+		originalGradientL2Norm = 0;
+		step = 0;
+		currValue = 0;
+	}
+	
 	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
 		lso =   new DifferentiableLineSearchObjective(o);
 	}
@@ -82,27 +93,6 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 	}
 	
 	
-//	public boolean stopCriteria(double[] gradient){
-//		if(originalGradientL2Norm == 0){
-//			System.out.println("Leaving original norm is zero");
-//			return true;	
-//		}
-//		if (MathUtils.L2Norm(gradient)/originalGradientL2Norm < gradientConvergenceValue) {
-//			System.out.println("Leaving norm below treshold:");
-//			System.out.println("original grad: " + originalGradientL2Norm + " curr: " + MathUtils.L2Norm(gradient));
-//			System.out.println("Prev Value: " + previousValue + " curr value: " + currValue);
-//			return true;
-//		}
-//		if(previousValue - currValue < valueConvergenceValue) {
-//			System.out.println("Leaving value change below treshold:");
-//			System.out.println("original grad: " + originalGradientL2Norm + " curr: " + MathUtils.L2Norm(gradient));
-//			System.out.println("Prev Value: " + previousValue + " curr value: " + currValue);
-//		
-//			return true;
-//		}
-//		return false;
-//	}
-
 	public int getCurrentIteration() {
 		return currentProjectionIteration;
 	}

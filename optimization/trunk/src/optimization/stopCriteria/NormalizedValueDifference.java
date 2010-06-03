@@ -16,6 +16,11 @@ public class NormalizedValueDifference implements StopingCriteria{
 		this.valueConvergenceValue = valueConvergenceValue;
 	}
 	
+	public void reset(){
+		previousValue = Double.NaN;
+		currentValue = Double.NaN;
+	}
+
 	
 	public boolean stopOptimization(Objective obj){
 		if(Double.isNaN(currentValue)){

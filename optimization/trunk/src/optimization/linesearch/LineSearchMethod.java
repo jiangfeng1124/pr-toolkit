@@ -10,4 +10,5 @@ public interface LineSearchMethod {
 	public double getPreviousStepUsed();
 	
 	public void setInitialStep(double initial);
+	public void reset();
 }

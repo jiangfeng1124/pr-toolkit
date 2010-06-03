@@ -17,7 +17,9 @@ public class NormalizedGradientL2Norm extends GradientL2Norm{
 	 */
 	protected double originalGradientNorm = -1;
 	
-	
+	public void reset(){
+		originalGradientNorm = -1;
+	}
 	public NormalizedGradientL2Norm(double gradientConvergenceValue){
 		super(gradientConvergenceValue);
 	}

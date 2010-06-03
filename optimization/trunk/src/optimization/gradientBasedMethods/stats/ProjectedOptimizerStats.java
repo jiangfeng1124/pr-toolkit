@@ -14,6 +14,11 @@ public class ProjectedOptimizerStats extends OptimizerStats{
 	
 	
 	
+	public void reset(){
+		super.reset();
+		projectedGradientNorms.clear();
+	}
+	
 	ArrayList<Double> projectedGradientNorms = new ArrayList<Double>();
 
 	public String prettyPrint(int level){

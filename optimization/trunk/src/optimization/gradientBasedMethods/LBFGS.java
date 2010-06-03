@@ -27,6 +27,19 @@ public class LBFGS extends AbstractGradientBaseMethod{
 		this.history = history;
 		skList = new double[history][];
 		ykList = new double[history][];
+
+	}
+	
+	public void reset(){
+		super.reset();
+		initialHessianParameters = 0;
+		previousParameters = null;
+		previousGradient = null;
+		skList = new double[history][];
+		ykList = new double[history][];
+		q = null;
+		roi = null;
+		alphai = null;
 	}
 	
 	public double[] LBFGSTwoLoopRecursion(double hessianConst){
@@ -89,6 +102,7 @@ public class LBFGS extends AbstractGradientBaseMethod{
 		}
 	}
 	
+	//TODO if structures exit just reset them to zero
 	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
 		super.initializeStructures(o, stats, stop);
 		previousParameters = new double[o.getNumParameters()];

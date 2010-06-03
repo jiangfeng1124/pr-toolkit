@@ -21,6 +21,10 @@ public class NormalizedProjectedGradientL2Norm extends ProjectedGradientL2Norm{
 		super(gradientConvergenceValue);
 	}
 	
+	public void reset(){
+		originalProjectedNorm = -1;
+	}
+	
 	
 	 double[] projectGradient(ProjectedObjective obj){
 		

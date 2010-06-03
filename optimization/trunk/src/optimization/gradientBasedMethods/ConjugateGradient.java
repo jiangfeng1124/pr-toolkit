@@ -18,6 +18,12 @@ public class ConjugateGradient extends AbstractGradientBaseMethod{
 		this.lineSearch = lineSearch;
 	}
 	
+	public void reset(){
+		super.reset();
+		java.util.Arrays.fill(previousDirection, 0);
+		java.util.Arrays.fill(previousGradient, 0);
+	}
+	
 	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
 		super.initializeStructures(o, stats, stop);
 		previousGradient = new double[o.getNumParameters()];

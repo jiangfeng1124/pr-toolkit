@@ -54,6 +54,14 @@ public class ArmijoLineSearchMinimizationAlongProjectionArc implements LineSearc
 	
 	GenericPickFirstStep strategy;
 	
+	
+	public void reset(){
+		previousStepPicked = -1;;
+		previousInitGradientDot = -1;
+		currentInitGradientDot = -1;
+	}
+
+	
 	public ArmijoLineSearchMinimizationAlongProjectionArc(){
 		this.initialStep = 1;
 	}

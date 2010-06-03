@@ -42,6 +42,9 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 		
 	}
 	
+	
+
+	
 	public WolfRuleLineSearch(GenericPickFirstStep pickFirstStep,  double c1, double c2){
 		this.pickFirstStep = pickFirstStep;
 		initialStep = pickFirstStep.getFirstStep(this);
@@ -60,6 +63,18 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	
 	double initialStep;
 
+	
+	public void reset(){
+		previousStepPicked = -1;;
+		previousInitGradientDot = -1;
+		currentInitGradientDot = -1;
+		if(steps != null)
+			steps.clear();
+		if(gradientDots != null)
+			gradientDots.clear();
+		if(functionVals != null)
+			functionVals.clear();
+	}
 	
 	public void setInitialStep(double initial){
 		initialStep = pickFirstStep.getFirstStep(this);
@@ -97,10 +112,13 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 		extrapolationIteration < maxExtrapolationIteration; extrapolationIteration++){	
 			
 			objective.updateAlpha(currentStep);
+			double currentValue = objective.getCurrentValue();
 			if(debugLevel >= 1){
 				steps.add(currentStep);
+				functionVals.add(currentValue);
+				gradientDots.add(objective.getCurrentGradient());
 			}
-			double currentValue = objective.getCurrentValue();
+			
 			
 			//The current step does not satisfy the sufficient decrease condition anymore
 			// so we cannot get bigger than that calling zoom.
@@ -176,7 +194,7 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	
 	public void printSmallWolfeStats(PrintStream out){
 		for(int i = 0; i < steps.size(); i++){		
-			out.print(steps.get(i) + " ");
+			out.print(steps.get(i) + ":"+functionVals.get(i)+":"+gradientDots.get(i)+" ");
 		}
 		System.out.println();
 	}
@@ -211,6 +229,8 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 				o.updateAlpha(lowerStep);
 				if(debugLevel >= 1){
 					steps.add(lowerStep);
+					functionVals.add(o.getCurrentValue());
+					gradientDots.add(o.getCurrentGradient());
 				}
 				foudStep = true;
 				return lowerStep;
@@ -233,6 +253,8 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 			o.updateAlpha(currentStep);
 			if(debugLevel >=1){
 				steps.add(currentStep);
+				functionVals.add(o.getCurrentValue());
+				gradientDots.add(o.getCurrentGradient());
 			}
 			if(!WolfeConditions.suficientDecrease(o,c1)
 					|| o.getCurrentValue() >= o.getValue(lowerStepIter)){

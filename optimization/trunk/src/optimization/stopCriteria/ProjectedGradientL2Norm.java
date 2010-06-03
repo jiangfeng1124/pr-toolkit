@@ -17,6 +17,9 @@ public class ProjectedGradientL2Norm implements StopingCriteria{
 		this.gradientConvergenceValue = gradientConvergenceValue;
 	}
 	
+	public void reset(){
+		
+	}
 	
 	 double[] projectGradient(ProjectedObjective obj){
 		

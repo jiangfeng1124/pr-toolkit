@@ -16,6 +16,7 @@ public class GradientL2Norm implements StopingCriteria{
 		this.gradientConvergenceValue = gradientConvergenceValue;
 	}
 	
+	public void reset(){}
 	
 	public boolean stopOptimization(Objective obj){
 		double norm = MathUtils.L2Norm(obj.gradient);

@@ -11,7 +11,7 @@ public interface Optimizer {
 	public double getCurrentStep();
 	public double getCurrentValue();
 	public int getCurrentIteration();
-	
+	public void reset();
 	
 	public void setMaxIterations(int max);
 	

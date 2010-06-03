@@ -36,6 +36,12 @@ public class ArmijoLineSearchMinimization implements LineSearchMethod{
 	double currentInitGradientDot = -1;
 	
 	
+	public void reset(){
+		previousStepPicked = -1;;
+		previousInitGradientDot = -1;
+		currentInitGradientDot = -1;
+	}
+	
 	public void setInitialStep(double initial){
 		initialStep = initial;
 	}

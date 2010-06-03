@@ -24,4 +24,10 @@ public class CompositeStopingCriteria implements StopingCriteria {
 		}
 		return false;
 	}
+	
+	public void reset(){
+		for(StopingCriteria criteria: criterias){
+			criteria.reset();
+		}
+	}
 }

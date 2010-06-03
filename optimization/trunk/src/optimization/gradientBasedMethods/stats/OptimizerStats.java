@@ -21,6 +21,19 @@ public class OptimizerStats {
 	ArrayList<Integer> iterations = new ArrayList<Integer>();
 	double prevValue =0;
 	
+	public void reset(){
+		start = 0;
+		totalTime = 0;
+		
+		objectiveFinalStats="";
+		
+		gradientNorms.clear();
+		steps.clear();
+		value.clear();
+		iterations.clear();
+		prevValue =0;
+	}
+	
 	public void startTime() {
 		start = System.currentTimeMillis();
 	}
