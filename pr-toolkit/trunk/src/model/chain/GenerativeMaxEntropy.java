@@ -39,22 +39,6 @@ public class GenerativeMaxEntropy {
 		this.fxy = fxy;
 	}
 	
-	
-//	public LinearClassifier batchTrain(double[] weights) {
-//		return batchTrain(weights,new LinearClassifier(xAlphabet,yAlphabet,fxy));
-//	}
-	
-	/**
-	 * weights should have an entry for each label; it should be the empirical counts of all labels
-	 * @param weights
-	 * @return
-	 */
-//	public LinearClassifier batchTrain(double[] weights,LinearClassifier initialClassifier) {
-//		return batchTrain(weights,initialClassifier,0.01, 1000);
-//	}
-	
-	
-	
 	public LinearClassifier batchTrain(double[] weights,LinearClassifier initialClassifier,double gradientPrecision,double valuePrecision, int maxIterations) {
 		
 		MaxEntMinimizationObjective obj = new MaxEntMinimizationObjective(weights,initialClassifier);
@@ -151,7 +135,7 @@ public class GenerativeMaxEntropy {
 			//gradient by -1
 			double[] modelExpectations = new double[gradient.length];
 			for (int i = 0; i < gradient.length; i++) {
-				gradient[i] = empiricalExpectations[i];
+				gradient[i] = empiricalExpectations[i] - 1 / gaussianPriorVariance * classifier.w[i];
 				modelExpectations[i] = 0;
 			}
 			
@@ -172,7 +156,6 @@ public class GenerativeMaxEntropy {
 			}
 			for (int i = 0; i < gradient.length; i++) {
 				gradient[i] -= modelExpectations[i];
-				gradient[i] -= 1 / gaussianPriorVariance * classifier.w[i];
 			}
 
 			//Get the negative of the gradient for minimization

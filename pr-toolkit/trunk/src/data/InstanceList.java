@@ -59,7 +59,8 @@ public class InstanceList {
 	
 	
 	public static InstanceList readFromPosTagProject(String name, String fileName, Alphabet<String> words, boolean lowercase,
-			int minSentenceLength,int maxSentenceLenght,CountAlphabet<String> fullAlphabet, int minWordOccurs)
+			int minSentenceLength,int maxSentenceLenght, int maxNrSentences,
+			CountAlphabet<String> fullAlphabet, int minWordOccurs)
 	throws UnsupportedEncodingException, FileNotFoundException, IOException{		
 		InstanceList il = new InstanceList(name);
 		il.wordsAlphabet = words;
@@ -100,7 +101,8 @@ public class InstanceList {
 	}
 	
 	public static InstanceList readFromConll(String name, String fileName, Alphabet<String> words, boolean lowercase,
-			int minSentenceLength,int maxSentenceLenght, CountAlphabet<String> fullAlphabet, int minWordOccurs)
+			int minSentenceLength,int maxSentenceLenght,  int maxNrSentences,
+			CountAlphabet<String> fullAlphabet, int minWordOccurs)
 	throws UnsupportedEncodingException, FileNotFoundException, IOException{	
 		InstanceList il = new InstanceList(name);
 		il.wordsAlphabet = words;
@@ -144,13 +146,15 @@ public class InstanceList {
 	
 	
 	public static InstanceList readFromEuroparl(String name, String fileName, Alphabet<String> words, boolean lowercase,
-			int minSentenceLength,int maxSentenceLenght, CountAlphabet<String> fullAlphabet, int minWordOccurs)
+			int minSentenceLength,int maxSentenceLenght, int maxNrSentences,
+			CountAlphabet<String> fullAlphabet, int minWordOccurs)
 	throws UnsupportedEncodingException, FileNotFoundException, IOException{	
 		InstanceList il = new InstanceList(name);
 		il.wordsAlphabet = words;
 		il.name = name;
 		BufferedReader reader = InputOutput.openReader(fileName);
 		String sentence = reader.readLine().trim();
+		int nrSentences = 0;
 		while (sentence != null) {
 			String[] tokens = sentence.split(" ");
 			int len = tokens.length;
@@ -170,6 +174,10 @@ public class InstanceList {
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
+			}
+			nrSentences++;
+			if(nrSentences >= maxNrSentences){
+				break;
 			}
 			sentence = reader.readLine();
 		}

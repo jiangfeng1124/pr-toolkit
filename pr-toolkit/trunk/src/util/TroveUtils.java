@@ -30,6 +30,24 @@ public class TroveUtils {
 		return sum;
 	}
 	
+	
+	public static double max(TDoubleArrayList list){
+		return list.max();
+	}
+	
+	/**
+	 * Adds num to all elements of the list
+	 * @param list
+	 * @param num
+	 * @return
+	 */
+	public static void addValue(TDoubleArrayList list, double num){
+		for(int i = 0; i < list.size(); i++){
+			list.setQuick(i, list.getQuick(i)+num);
+		}
+	}
+	
+	
 	public static void main(String[] args) {
 		TDoubleArrayList list = new TDoubleArrayList();
 		for(int i = 0; i < 3; i++){

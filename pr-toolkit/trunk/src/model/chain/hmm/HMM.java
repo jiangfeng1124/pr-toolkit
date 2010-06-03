@@ -49,7 +49,15 @@ import data.WordInstance;
 public  class HMM extends AbstractModel{
 
 	
-	public enum Update_Parameters  {TABLE_UP, OBS_MAX_ENT, VB, MRF};
+	/**
+	 * TABLE_UP - All parameters table are updated by normalizing the counts
+	 * VM - Variational Bayes with Dirichlet Prior on the parameterts
+	 * OBS_MAX_ENT - Train a Max-Ent model for the observation parameters
+	 * TRANS_MAX_ENT - Train a Max-Ent model for the transition parameters
+	 * MAX_ENT - Train a Max-Ent for both observations and transition parameters
+	 * MRF - Train a MRF TODO - This should be a different model
+	 */
+	public enum Update_Parameters  {TABLE_UP, OBS_MAX_ENT, TRANS_MAX_ENT, MAX_ENT,VB, MRF};
 	
 	public Update_Parameters updateType = Update_Parameters.TABLE_UP;
 	public AbstractMultinomial initialProbabilities;
@@ -67,7 +75,7 @@ public  class HMM extends AbstractModel{
 	public double gradientConvergenceValue;
 	public double valueConvergenceValue;
 	public int maxIter = 1000;
-	public double gaussianPrior = 10;
+	public double gaussianPrior = 1;
 	//Feature function used for Max Ent
 	public model.chain.GenerativeFeatureFunction fxy = null; 
 	public boolean warmStart=true;
@@ -105,9 +113,6 @@ public  class HMM extends AbstractModel{
 		observationProbabilities = new Multinomial(nrStates,nrWordTypes);
 	}
 	
-//	public int getNrStates(){
-//		return nrStates;
-//	}
 
 	public int getNrRealStates(){
 		return nrStates;
@@ -119,17 +124,13 @@ public  class HMM extends AbstractModel{
 		dist.updateInitCounts((HMMCountTable) counts);
 		dist.updateTransitionCounts((HMMCountTable) counts);
 		dist.updateObservationCounts((HMMCountTable) counts);
-		//dist.clearPosteriors();
-		
+		//dist.clearPosteriors();		
 	}
 
 	@Override
 	public void computePosteriors(AbstractSentenceDist dist) {
 		HMMSentenceDist d = (HMMSentenceDist)dist;
 		d.makeInference();
-		//d.clearCaches();
-//		d.printStatePosteriors();
-	//	d.printTransitionPosteriors();
 	}
 	
 	@Override
@@ -224,7 +225,7 @@ public  class HMM extends AbstractModel{
 	public void updateParameters(AbstractCountTable counts) {
 //		((HMMCountTable) counts).print();
 		//Debug Check Counts
-		checkCountsTable(counts);
+//		checkCountsTable(counts);
 //		((HMMCountTable)counts).initialCounts.print("Initial Counts", null,null);
 //		((HMMCountTable)counts).transitionCounts.print("Transition Counts", null,null);
 //		((HMMCountTable)counts).observationCounts.print("Observation Counts", null,null);
@@ -243,13 +244,17 @@ public  class HMM extends AbstractModel{
 					gradientConvergenceValue, 
 					valueConvergenceValue,
 					maxIter);
+		}else if(updateType == Update_Parameters.MAX_ENT){
+			throw new UnsupportedOperationException("Update method not implemented");	
+		}else if(updateType == Update_Parameters.TRANS_MAX_ENT){
+			throw new UnsupportedOperationException("Update method not implemented");	
 		}else if(updateType == Update_Parameters.VB){
 			variationalBaeysParameterUpdates(counts);
 		}else if(updateType == Update_Parameters.MRF){
 			mrfRetrain(counts);
-			// FIXME remove debugging code... 
+
 		}else{
-			System.out.println("Update Counts method not implemented");
+			System.out.println("Update Counts method not implemented: " + updateType);
 			System.exit(-1);
 		}
 		//printModelParameters();
@@ -437,7 +442,7 @@ public  class HMM extends AbstractModel{
 			}
 		}
 		else if(!warmStart){
-			System.out.println("Reseting ME weights");
+			System.out.println("Restarting ME weights");
 			//Fill parameters with zero
 			for(int state = 0; state < nrStates; state++){
 				java.util.Arrays.fill(maxEntModels[state].w, 0);
@@ -481,12 +486,8 @@ public  class HMM extends AbstractModel{
 //				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
 				kl+= prob*logP;
 			}
-			System.out.println("Kl between ME and ML estimates for state "+state+": " + kl);
-			
-			
-		}
-		
-		
+			System.out.println("Kl between ME and ML estimates for state "+state+": " + kl);	
+		}	
 	}
 	
 	public int[][] decode(ChainDecoder decoder, InstanceList list){
@@ -500,7 +501,7 @@ public  class HMM extends AbstractModel{
 	
 	public void variationalBaeysParameterUpdates(AbstractCountTable countsTable){
 		//Observation counts
-		for(int state = 0; state < nrStates; state++){
+		for(int state = 0; state < getNrRealStates(); state++){
 			double sum=0;
 			for(int observation = 0; observation < corpus.getNrWordTypes(); observation++){
 				double counts = ((HMMCountTable)countsTable).observationCounts.getCounts(state, observation);
@@ -518,7 +519,8 @@ public  class HMM extends AbstractModel{
 			}
 		}
 		
-		//Transition counts
+		//Transition counts -- In this case must all the states since in case of a fake 
+		// parameter we have a position for it
 		for(int currentState = 0; currentState < nrStates; currentState++){
 			double sum=0;
 			for(int nextState = 0; nextState < nrStates; nextState++){
@@ -538,11 +540,12 @@ public  class HMM extends AbstractModel{
 		}
 		
 		double sum=0;
-		for(int state = 0; state < nrStates; state++){
+		for(int state = 0; state < getNrRealStates(); state++){
 			sum += ((HMMCountTable)countsTable).initialCounts.getCounts(0,state);
 		}
-		sum = util.DigammaFunction.expDigamma(sum+nrStates*stateToStatePrior);
-		for(int state = 0; state < nrStates; state++){
+		sum = util.DigammaFunction.expDigamma(sum+getNrRealStates()*stateToStatePrior);
+
+		for(int state = 0; state < getNrRealStates(); state++){
 			double counts = ((HMMCountTable)countsTable).initialCounts.getCounts(0,state);
 			double newCounts = util.DigammaFunction.expDigamma(counts+stateToStatePrior);
 			initialProbabilities.setCounts(0,state, newCounts/sum);
@@ -600,9 +603,6 @@ public  class HMM extends AbstractModel{
 		hmm.printModelParameters();
 		PosteriorDecoder decoding = new PosteriorDecoder();
 		decoding.decodeSet(hmm, c.trainInstances);
-		
-		
-		
 	}
 	
 }

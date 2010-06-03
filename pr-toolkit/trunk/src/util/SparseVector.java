@@ -91,6 +91,31 @@ public class SparseVector {
 		return TroveUtils.sum(values);
 	}
 	
+	
+	/**
+	 * The max value of the list
+	 * @return
+	 */
+	public  final double max(){
+		return values.max();
+	}
+	
+	/**
+	 * The min value of the list
+	 * @return
+	 */
+	public  final double min(){
+		return values.min();
+	}
+	
+	/** Adds num to all elements of the list
+	 * 
+	 * @param num
+	 */
+	public final void plusEquals(double num){
+		TroveUtils.addValue(values, num);
+	}
+	
 	/**
 	 * Return a new sparse vector with exponential of each entry
 	 * @return

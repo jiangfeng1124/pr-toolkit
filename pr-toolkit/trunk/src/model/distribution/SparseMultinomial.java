@@ -53,10 +53,11 @@ public class SparseMultinomial  implements AbstractMultinomial{
 		return states;
 	}
 	
-	/**
-	 * In this case this method does not make a lot of sense
-	 * since all values are valid for each position.
-	 */
+	public int numVariables(){
+		return states;
+	}
+	
+	
 	public  TIntArrayList[] getAvailableStates(){
 		TIntArrayList[] results = new TIntArrayList[variables];
 		for (int i = 0; i < variables; i++) {
@@ -224,6 +225,15 @@ public class SparseMultinomial  implements AbstractMultinomial{
 				
 			}
 		}
+	}
+	
+	public double sum(int variable) {
+		double sum = 0;
+		TIntArrayList availableStates = getAvailableStates(variable);
+		for (int i = 0; i < availableStates.size(); i++) {
+			sum +=getCounts(variable, availableStates.getQuick(i));
+		}
+		return sum;
 	}
 	
 	public void saveTable(String name){

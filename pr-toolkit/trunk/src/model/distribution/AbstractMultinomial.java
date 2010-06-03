@@ -23,7 +23,9 @@ import java.util.zip.GZIPOutputStream;
  */
 public interface  AbstractMultinomial {
 	
+	public abstract int numVariables();
 	public abstract int numStates();
+	
 	
 	public abstract void print(String name, String[] labels1, String[] labels2);
 	
@@ -40,6 +42,7 @@ public interface  AbstractMultinomial {
 	public abstract AbstractMultinomial clone();
 	public abstract TIntArrayList[] getAvailableStates();
 	public abstract TIntArrayList getAvailableStates(int position);
+	public abstract double sum(int position);
 	
 	public abstract String toString(String name, String[] labels1, String[] labels2);
 	

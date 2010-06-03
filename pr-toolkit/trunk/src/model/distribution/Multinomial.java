@@ -32,6 +32,10 @@ public class Multinomial implements AbstractMultinomial{
 		values = new double[variables][states];
 	}
 	
+	public int numVariables(){
+		return variables;
+	}
+	
 	public int numStates(){
 		return states;
 	}
@@ -226,8 +230,18 @@ public class Multinomial implements AbstractMultinomial{
 		return true;
 	}
 	
+	public double sum(int variable) {
+		double sum = 0;
+		for (int i = 0; i < states; i++) {
+			sum +=values[variable][i];
+		}
+		return sum;
+	}
+	
 	public static void main(String[] args) {
 		
 	}
+
+	
 	
 }
