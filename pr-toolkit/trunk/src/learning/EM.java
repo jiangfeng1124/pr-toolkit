@@ -77,9 +77,6 @@ public class EM {
 		stats.printEndSentenceEStep(model,this);
 		
 	}
-	
-	
-
 
 	public void corpusEStep(AbstractCountTable counts, AbstractSentenceDist[] sentenceDists, TrainStats stats) {	
 		// Clear model for accumulating E step counts

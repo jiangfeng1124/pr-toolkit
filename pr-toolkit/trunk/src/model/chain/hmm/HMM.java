@@ -148,6 +148,7 @@ public  class HMM extends AbstractModel{
 		return sentences;
 	}
 	
+	// FIXME: Why does this method take a model as input?
 	public HMMSentenceDist getSentenceDist(HMM model, WordInstance inst){
 		return new HMMSentenceDist(model,inst,nrStates);	
 	}

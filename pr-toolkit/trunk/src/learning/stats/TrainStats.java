@@ -11,7 +11,7 @@ import constraints.CorpusConstraints;
 
 
 
-public  abstract class TrainStats {
+public  abstract class TrainStats<K extends AbstractModel, J extends AbstractSentenceDist> {
 
         
                 
@@ -38,28 +38,28 @@ public  abstract class TrainStats {
         /**
          * Stats at the begining of EM. 
          */
-        public void emStart(AbstractModel model, EM em){
+        public void emStart(K model, EM em){
                 
         }
         
         /**
          * Stats at the end of EM. 
          */
-        public void emEnd(AbstractModel model,EM em){
+        public void emEnd(K model,EM em){
                 
         }
         
         /**
          * Stats at the begining of EM. 
          */
-        public void emIterStart(AbstractModel model,EM em){
+        public void emIterStart(K model,EM em){
                 
         }
         
         /**
          * Stats at the begining of EM. 
          */
-        public void emIterEnd(AbstractModel model,EM em){
+        public void emIterEnd(K model,EM em){
                 
         }
         
@@ -69,55 +69,55 @@ public  abstract class TrainStats {
         /**
          * 
          */
-        public void eStepStart(AbstractModel model,EM em){
+        public void eStepStart(K model,EM em){
                 
         }
         
         /**
          * 
          */
-        public void eStepEnd(AbstractModel model,EM em){
+        public void eStepEnd(K model,EM em){
                 
         }
         
         /**
          * 
          */
-        public void eStepSentenceStart(AbstractModel model, EM em,AbstractSentenceDist sd){
+        public void eStepSentenceStart(K model, EM em,J sd){
                 
         }
         
         /**
          * 
          */
-        public void eStepSentenceEnd(AbstractModel model, EM em,AbstractSentenceDist sd){
+        public void eStepSentenceEnd(K model, EM em,J sd){
                 
         }
         
         /**
          * 
          */
-        public void mStepStart(AbstractModel model,EM em){
+        public void mStepStart(K model,EM em){
                 
         }
         
         /**
          * 
          */
-        public void mStepEnd(AbstractModel model,EM em){
+        public void mStepEnd(K model,EM em){
                 
         }
         
-        public void eStepBeforeConstraints(AbstractModel model,
+        public void eStepBeforeConstraints(K model,
         		EM em,
         		CorpusConstraints constraints,
-        		AbstractSentenceDist[] sentenceDists){
+        		J[] sentenceDists){
                 
         }
         
-        public void eStepAfterConstraints(AbstractModel model,EM em,
+        public void eStepAfterConstraints(K model,EM em,
         		CorpusConstraints constraints,
-        		AbstractSentenceDist[] sentenceDists){
+        		J[] sentenceDists){
                 
         }
         
@@ -135,21 +135,21 @@ public  abstract class TrainStats {
         /**
          * Outputs relevant information at the end of training
          */
-        public String printEndEM(AbstractModel model,EM em){
+        public String printEndEM(K model,EM em){
                 return "";
         }
         
         /**
          * Outputs relevant information at the end of an EM Iteration
          */
-        public String printEndEMIter(AbstractModel model,EM em){
+        public String printEndEMIter(K model,EM em){
                 return "";
         }
         
         /**
          * Outputs relevant information at the end of an E Step
          */
-        public String printEndEStep(AbstractModel model,EM em){
+        public String printEndEStep(K model,EM em){
                 return "";
         }
         
@@ -157,7 +157,7 @@ public  abstract class TrainStats {
          * Outputs relevant information at the end of an 
          * sentence E Step
          */
-        public String printEndSentenceEStep(AbstractModel model,EM em){
+        public String printEndSentenceEStep(K model,EM em){
                 return "";
         }
         
@@ -168,12 +168,12 @@ public  abstract class TrainStats {
          * @throws IOException 
          * @throws UnsupportedEncodingException 
          */
-        public String printEndMStep(AbstractModel model,EM em) throws FileNotFoundException, UnsupportedEncodingException, IOException{
+        public String printEndMStep(K model,EM em) throws FileNotFoundException, UnsupportedEncodingException, IOException{
                 return "";
         }
         
         
-        public String printEStepEndConstraints(AbstractModel model,
+        public String printEStepEndConstraints(K model,
         		EM em,
         		CorpusConstraints constraints){
                 return "";

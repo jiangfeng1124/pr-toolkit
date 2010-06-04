@@ -2,7 +2,6 @@ package learning.stats;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -14,15 +13,12 @@ import learning.EM;
 import model.AbstractModel;
 import model.AbstractSentenceDist;
 import constraints.CorpusConstraints;
-import data.Corpus;
 
+public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSentenceDist> extends TrainStats<K,J> {
 
-
-public class CompositeTrainStats extends TrainStats{
-
-        ArrayList<TrainStats> stats = new ArrayList<TrainStats>();
+        ArrayList<TrainStats<K,J>> stats = new ArrayList<TrainStats<K,J>>();
         
-        public void addStats(TrainStats stat){
+        public void addStats(TrainStats<K,J> stat){
                 stats.add(stat);
         }
         
@@ -32,9 +28,9 @@ public class CompositeTrainStats extends TrainStats{
         }
         
         @Override
-        public String printEndEM(AbstractModel model,EM em){
+        public String printEndEM(K model,EM em){
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEndEM( model,em);
                         if(s!=""){
                         	s= s.replace("\n", "\n"+stat.getPrefix());
@@ -44,9 +40,9 @@ public class CompositeTrainStats extends TrainStats{
                 return sb.toString();
         }
         @Override
-        public String printEndEMIter(AbstractModel model,EM em){
+        public String printEndEMIter(K model,EM em){
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEndEMIter( model,em);
                         if(s!=""){
                         	s= s.replace("\n", "\n"+stat.getPrefix());
@@ -58,9 +54,9 @@ public class CompositeTrainStats extends TrainStats{
         }
         
         @Override
-        public String printEndEStep(AbstractModel model,EM em){
+        public String printEndEStep(K model,EM em){
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEndEStep(model,em);
                         if(s!=""){
                         	s=  s.replace("\n", "\n"+stat.getPrefix());
@@ -71,9 +67,9 @@ public class CompositeTrainStats extends TrainStats{
         }
         
         @Override
-        public String printEndSentenceEStep(AbstractModel model,EM em){
+        public String printEndSentenceEStep(K model,EM em){
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEndSentenceEStep(model,em);
                         if(s!=""){
                         	s= s.replace("\n", "\n"+stat.getPrefix());
@@ -84,10 +80,10 @@ public class CompositeTrainStats extends TrainStats{
         }
         
         @Override
-        public String printEStepEndConstraints(AbstractModel model,EM em,
+        public String printEStepEndConstraints(K model,EM em,
         		CorpusConstraints constraints){
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEStepEndConstraints(model,em,constraints);
                         if(s!=""){
                         	s= s.replace("\n", "\n"+stat.getPrefix());
@@ -98,9 +94,9 @@ public class CompositeTrainStats extends TrainStats{
         }
         
         @Override
-        public String printEndMStep(AbstractModel model,EM em) throws UnsupportedEncodingException, IOException{
+        public String printEndMStep(K model,EM em) throws UnsupportedEncodingException, IOException{
                 StringBuffer sb = new StringBuffer();
-                for(TrainStats stat: stats){
+                for(TrainStats<K,J> stat: stats){
                         String s = stat.printEndMStep(model,em);
                         if(s!=""){
                         	s= s.replace("\n", "\n"+stat.getPrefix());
@@ -110,92 +106,94 @@ public class CompositeTrainStats extends TrainStats{
                 return sb.toString();
         }
         @Override
-        public void emStart(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void emStart(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.emStart(model,em);
                 }
         }
         @Override
-        public void emEnd(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void emEnd(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.emEnd(model,em);
                 }
         }
         @Override
-        public void emIterStart(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void emIterStart(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.emIterStart(model,em);
                 }
         }
         
         @Override
-        public void emIterEnd(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void emIterEnd(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.emIterEnd(model,em);
                 }
         }
         
         @Override
-        public void eStepStart(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void eStepStart(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepStart(model,em);
                 }
         }
         
         @Override
-        public void eStepEnd(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void eStepEnd(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepEnd(model,em);
                 }
         }
         
         @Override
-        public void eStepSentenceStart(AbstractModel model,EM em,AbstractSentenceDist sd){
-                for(TrainStats stat: stats){
+        public void eStepSentenceStart(K model,EM em,J sd){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepSentenceStart(model,em,sd);
                 }
         }
         
         @Override
-        public void eStepSentenceEnd(AbstractModel model,EM em,AbstractSentenceDist sd){
-                for(TrainStats stat: stats){
+        public void eStepSentenceEnd(K model,EM em,J sd){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepSentenceEnd(model,em,sd);
                 }
         }
         
         @Override
-        public void mStepStart(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void mStepStart(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.mStepStart(model,em);
                 }
         }
         @Override
-        public void mStepEnd(AbstractModel model,EM em){
-                for(TrainStats stat: stats){
+        public void mStepEnd(K model,EM em){
+                for(TrainStats<K,J> stat: stats){
                         stat.mStepEnd(model,em);
                 }
         }
         
         @Override
-        public void eStepBeforeConstraints(AbstractModel model,EM em,
+        public void eStepBeforeConstraints(K model,EM em,
         		CorpusConstraints constraints,
-        		AbstractSentenceDist[] sentenceDists){
-                for(TrainStats stat: stats){
+        		J[] sentenceDists){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepBeforeConstraints(model,em,constraints,sentenceDists);
                 }
         }
         @Override
-        public void eStepAfterConstraints(AbstractModel model,EM em,
+        public void eStepAfterConstraints(K model,EM em,
         		CorpusConstraints constraints,
-        		AbstractSentenceDist[] sentenceDists){
-                for(TrainStats stat: stats){
+        		J[] sentenceDists){
+                for(TrainStats<K,J> stat: stats){
                         stat.eStepAfterConstraints(model,em,constraints,sentenceDists);
                 }
         }
         
         //Implements the simple factory design pattern to read from the file
-        public static TrainStats buildTrainStats(String fileName) throws IOException, ClassNotFoundException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException{
-                CompositeTrainStats stats = new CompositeTrainStats();
+        public static <K extends AbstractModel, J extends AbstractSentenceDist>
+        TrainStats<K,J> buildTrainStats(String fileName)
+        throws IOException, ClassNotFoundException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException{
+                CompositeTrainStats<K,J> stats = new CompositeTrainStats<K,J>();
                 if(fileName.equals("")){        
                       //  stats.addStats(new GlobalEMTimeCounter());
                        // stats.addStats(new L1LMaxStats("10"));
@@ -213,7 +211,7 @@ public class CompositeTrainStats extends TrainStats{
                                                  ctorargs.add(ix-1, tokens[ix]);
                                                @SuppressWarnings("unchecked")
                                                Constructor ctor = name.getConstructors()[0];  // hack? existe um...
-                                               stats.addStats((TrainStats)ctor.newInstance(ctorargs.toArray()));
+                                               stats.addStats((TrainStats<K,J>)ctor.newInstance(ctorargs.toArray()));
                                              }
                                              catch (ClassNotFoundException e) {  // forName
                                                System.err.println("Stats " + tokens[0]);

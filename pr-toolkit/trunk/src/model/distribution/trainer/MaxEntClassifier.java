@@ -66,11 +66,12 @@ public class MaxEntClassifier {
 	 * Clean the optimization classes
 	 */
 	public void reset(){
-		stoppingCriteria.reset();
-		stats.reset();
-		lineSearch.reset();
-		optimizer.reset();
-		
+		// TODO: uncomment this
+//		stoppingCriteria.reset();
+//		stats.reset();
+//		lineSearch.reset();
+//		optimizer.reset();
+//		
 	}
 	
 	public void batchTrain(AbstractMultinomial counts, int variable){	
