@@ -1,6 +1,5 @@
 package model.chain.mrf;
 
-import data.Corpus;
 import model.chain.ForwardBackwardInference;
 import model.chain.GenerativeFeatureFunction;
 import model.chain.hmm.HMMCountTable;
@@ -9,6 +8,7 @@ import util.ArrayMath;
 import util.LogSummer;
 import util.SparseVector;
 import util.StaticUtils;
+import data.Corpus;
 
 public class MRFObjective extends Objective {
 	

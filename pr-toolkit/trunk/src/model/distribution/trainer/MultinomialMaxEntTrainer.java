@@ -1,16 +1,16 @@
 package model.distribution.trainer;
 
+import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
 
 import model.distribution.AbstractMultinomial;
-
-
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
+import optimization.util.StaticTools;
 import util.SparseVector;
 
 /**
@@ -61,9 +61,13 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 	*/
 	public AbstractMultinomial update(AbstractMultinomial countsTable,
 			AbstractMultinomial paramsTable) {
+		ArrayList<OptimizerStats> optimizationStats = new ArrayList<OptimizerStats>();
+		TDoubleArrayList kls = new TDoubleArrayList();
+		OptimizerStats stats;
 		for (int i = 0; i < classifiers.size(); i++) {
 			MaxEntClassifier me = classifiers.get(i);
-			me.batchTrain(countsTable, i);
+			stats = me.batchTrain(countsTable, i);
+			optimizationStats.add(stats);
 			TIntArrayList possibleValues = countsTable.getAvailableStates(i);
 			SparseVector scores = me.computeScores(i, possibleValues,me.initialParameters);
 			SparseVector probs = scores.expEntries();
@@ -91,11 +95,32 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 //				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
 				kl+= prob*logP;
 			}
-			System.out.println("Kl between ME and ML estimates for state "+i+": " + kl);				
+			kls.add(kl);
 		}
+		System.out.println(printOptimizationStats(optimizationStats,kls));
 		return paramsTable;
 	}	
 
+	public String printOptimizationStats(ArrayList<OptimizerStats> stats, TDoubleArrayList kl){
+		StringBuilder res = new StringBuilder();
+		res.append("Result \t\t Time(s) \t\t Iter \t\t obj \t\t gradNorm \t\t upd \t\t kl \n");
+		for (int i = 0; i < stats.size(); i++) {
+			OptimizerStats os = stats.get(i);
+			int nrIterations = os.iterations.size();
+			res.append(os.succeed +"\t\t"+  
+					StaticTools.prettyPrint(os.totalTime/1000, "0.00", 3) 
+					+ "\t\t"+ nrIterations + "\t" + 
+					StaticTools.prettyPrint(os.value.get(nrIterations - 1), "0.00E00", 6)+ 
+					"\t\t"+					
+					StaticTools.prettyPrint(os.gradientNorms.get(nrIterations -1), "0.000E00", 8)+
+					"\t\t" + 
+					StaticTools.prettyPrint(os.paramUpdates, "0000", 4)+
+					"\t\t" + 
+					StaticTools.prettyPrint(kl.get(i), "0.0000", 6)
+					+"\n");
+		}
+		return res.toString();
+	}
 	
 	
 	

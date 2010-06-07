@@ -1,8 +1,9 @@
 package util.pipes;
 
+import gnu.trove.TIntDoubleHashMap;
+
 import java.io.IOException;
 
-import gnu.trove.TIntDoubleHashMap;
 import util.Alphabet;
 import util.SparseVector;
 import data.Corpus;

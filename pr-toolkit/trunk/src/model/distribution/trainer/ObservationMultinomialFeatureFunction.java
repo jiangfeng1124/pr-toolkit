@@ -7,13 +7,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 
-import model.chain.GenerativeFeatureFunction;
-import data.Corpus;
-
-import util.Alphabet;
 import util.SparseVector;
 import util.pipes.Pipe;
 import util.pipes.PipeCollection;
+import data.Corpus;
 
 
 /**

@@ -4,7 +4,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import util.Alphabet;
-import util.CountAlphabet;
 import util.SparseVector;
 
 public class PatternMatchPipe extends Pipe{

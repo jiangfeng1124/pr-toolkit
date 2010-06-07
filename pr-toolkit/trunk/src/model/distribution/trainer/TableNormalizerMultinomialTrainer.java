@@ -1,6 +1,5 @@
 package model.distribution.trainer;
 
-import gnu.trove.TIntArrayList;
 import model.distribution.AbstractMultinomial;
 
 /**

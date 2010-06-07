@@ -1,10 +1,10 @@
 package util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 import gnu.trove.TIntDoubleHashMap;
 import gnu.trove.TIntIntHashMap;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Extends alphabet to store counts of elements

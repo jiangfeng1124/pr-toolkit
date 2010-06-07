@@ -2,12 +2,9 @@ package learning.stats;
 
 import java.io.FileNotFoundException;
 
-import util.MemoryTracker;
-
 import learning.EM;
 import model.AbstractModel;
-import model.AbstractSentenceDist;
-import constraints.CorpusConstraints;
+import util.MemoryTracker;
 
 
 /**

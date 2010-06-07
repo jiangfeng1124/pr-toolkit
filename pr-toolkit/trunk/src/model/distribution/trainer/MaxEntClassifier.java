@@ -74,7 +74,7 @@ public class MaxEntClassifier {
 //		
 	}
 	
-	public void batchTrain(AbstractMultinomial counts, int variable){	
+	public OptimizerStats batchTrain(AbstractMultinomial counts, int variable){	
 		
 		reset();
 		if(warmStart == false){
@@ -84,8 +84,10 @@ public class MaxEntClassifier {
 		
 		MaxEntMinimizationObjective obj = 
 			new MaxEntMinimizationObjective(initialParameters, counts, variable,gaussianPriorVariance);
-		boolean succed = optimizer.optimize(obj,stats,stoppingCriteria);
-		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
+			boolean succed = optimizer.optimize(obj,stats,stoppingCriteria);
+			return stats;
+//
+//		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
 	}
 	
 	/**

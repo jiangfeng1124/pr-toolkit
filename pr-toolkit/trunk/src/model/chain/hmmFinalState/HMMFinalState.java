@@ -1,19 +1,12 @@
 package model.chain.hmmFinalState;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Random;
-
-import learning.EM;
-import learning.stats.LikelihoodStats;
 import model.AbstractCountTable;
-import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
 import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMMSentenceDist;
-import model.chain.hmm.HMM.Update_Parameters;
 import model.distribution.Multinomial;
+import model.distribution.trainer.AbstractMultinomialTrainer;
+import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import data.Corpus;
 import data.InstanceList;
 import data.WordInstance;
@@ -42,7 +35,10 @@ public  class HMMFinalState extends HMM{
 	 * @param nrWordTypes
 	 * @param nrHiddenStates
 	 */
-	public HMMFinalState(Corpus c,int nrWordTypes, int nrHiddenStates){
+	public HMMFinalState(Corpus c,int nrWordTypes, int nrHiddenStates,
+			AbstractMultinomialTrainer observationTrainer,
+			AbstractMultinomialTrainer transitionsTrainer,
+			AbstractMultinomialTrainer initTrainer){
 		corpus = c;
 		//Add the extra state
 		trueNumberOfStates = nrHiddenStates;
@@ -52,8 +48,17 @@ public  class HMMFinalState extends HMM{
 		initialProbabilities = new Multinomial(1,trueNumberOfStates);
 		transitionProbabilities = new Multinomial(nrStates,nrStates);
 		observationProbabilities = new Multinomial(trueNumberOfStates,nrWordTypes);
+		this.observationTrainer = observationTrainer;
+		this.transitionsTrainer = transitionsTrainer;
+		this.initTrainer = initTrainer;
 		
-		
+	}
+	
+	public HMMFinalState(Corpus c,int nrWordTypes, int nrHiddenStates){
+		this(c, nrWordTypes, nrHiddenStates,
+				new TableNormalizerMultinomialTrainer(), 
+				new TableNormalizerMultinomialTrainer(), 
+				new TableNormalizerMultinomialTrainer());
 	}
 	
 	
@@ -134,26 +139,26 @@ public  class HMMFinalState extends HMM{
 	
 	
 	
-	public static void main(String[] args) throws UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
-		Corpus c = new Corpus(args[0]);
-		HMMFinalState hmm =new HMMFinalState(c,c.getNrWordTypes(),5);
-		hmm.updateType  = Update_Parameters.OBS_MAX_ENT;
-		
-		hmm.gaussianPrior = 10;
-		hmm.gradientConvergenceValue = 0.00001;
-		hmm.valueConvergenceValue = 0.0001;
-		hmm.maxIter = 1000;
-		//Create and add feature function
-		hmm.fxy = new model.chain.GenerativeFeatureFunction(c,args[1]);
-		hmm.warmStart = false;
-		hmm.initializeRandom(new Random(1), 1);
-		hmm.printModelParameters();
-		System.out.println("Initialized HMM");
-		EM em = new EM(hmm);
-		LikelihoodStats stats = new LikelihoodStats();
-		em.em(2	, stats);
-		hmm.printModelParameters();
-		PosteriorDecoder decoding = new PosteriorDecoder();
-		decoding.decodeSet(hmm, c.trainInstances);
-	}
+//	public static void main(String[] args) throws UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+//		Corpus c = new Corpus(args[0]);
+//		HMMFinalState hmm =new HMMFinalState(c,c.getNrWordTypes(),5);
+//		hmm.updateType  = Update_Parameters.OBS_MAX_ENT;
+//		
+//		hmm.gaussianPrior = 10;
+//		hmm.gradientConvergenceValue = 0.00001;
+//		hmm.valueConvergenceValue = 0.0001;
+//		hmm.maxIter = 1000;
+//		//Create and add feature function
+//		hmm.fxy = new model.chain.GenerativeFeatureFunction(c,args[1]);
+//		hmm.warmStart = false;
+//		hmm.initializeRandom(new Random(1), 1);
+//		hmm.printModelParameters();
+//		System.out.println("Initialized HMM");
+//		EM em = new EM(hmm);
+//		LikelihoodStats stats = new LikelihoodStats();
+//		em.em(2	, stats);
+//		hmm.printModelParameters();
+//		PosteriorDecoder decoding = new PosteriorDecoder();
+//		decoding.decodeSet(hmm, c.trainInstances);
+//	}
 }

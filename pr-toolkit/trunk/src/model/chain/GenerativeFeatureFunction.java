@@ -5,13 +5,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import data.Corpus;
+
 import util.Alphabet;
 import util.FeatureFunction;
-import util.pipes.LongestSuffixPipe;
 import util.pipes.Pipe;
 import util.pipes.PipeCollection;
-import util.pipes.SuffixPipe;
+import data.Corpus;
 
 
 public class GenerativeFeatureFunction implements FeatureFunction, Serializable {

@@ -1,7 +1,6 @@
 package model.chain.mrf;
 
 
-import util.Array;
 import model.chain.ChainSentenceDist;
 
 

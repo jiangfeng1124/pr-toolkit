@@ -1,6 +1,5 @@
 package model.chain.hmmFinalState;
 
-import model.AbstractCountTable;
 import model.chain.hmm.HMMCountTable;
 import model.distribution.Multinomial;
 

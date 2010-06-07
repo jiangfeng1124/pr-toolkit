@@ -1,6 +1,5 @@
 package util;
 
-import util.TroveUtils;
 import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntIntHashMap;

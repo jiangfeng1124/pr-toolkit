@@ -2,7 +2,6 @@ package util.pipes;
 
 import java.io.IOException;
 
-import gnu.trove.TIntDoubleHashMap;
 import util.Alphabet;
 import util.SparseVector;
 import data.Corpus;

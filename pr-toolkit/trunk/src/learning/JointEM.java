@@ -5,7 +5,6 @@ package learning;
 
 
 import learning.stats.JointTrainStats;
-import learning.stats.TrainStats;
 import model.AbstractCountTable;
 import model.AbstractModel;
 import model.AbstractSentenceDist;

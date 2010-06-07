@@ -1,7 +1,5 @@
 package model.chain.hmm;
 
-import java.util.Random;
-
 import data.Corpus;
 import data.WordInstance;
 

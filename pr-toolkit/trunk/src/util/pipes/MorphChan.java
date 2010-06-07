@@ -4,9 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import data.Corpus;
+
 import util.Alphabet;
 import util.SparseVector;
+import data.Corpus;
 
 public class MorphChan extends Pipe {
 
