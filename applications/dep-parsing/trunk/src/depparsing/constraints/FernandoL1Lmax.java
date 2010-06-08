@@ -11,13 +11,31 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+
+import optimization.gradientBasedMethods.ProjectedGradientDescent;
+import optimization.gradientBasedMethods.stats.ProjectedOptimizerStats;
+import optimization.linesearch.GenericPickFirstStep;
+import optimization.linesearch.LineSearchMethod;
+import optimization.linesearch.WolfRuleLineSearch;
+import optimization.stopCriteria.CompositeStopingCriteria;
+import optimization.stopCriteria.NormalizedProjectedGradientL2Norm;
+import optimization.stopCriteria.NormalizedValueDifference;
+import optimization.stopCriteria.StopingCriteria;
+
+import learning.CorpusPR;
+import learning.stats.TrainStats;
+import model.AbstractCountTable;
+import model.AbstractSentenceDist;
 import util.Alphabet;
+import util.ArrayMath;
+import util.MemoryTracker;
 
 
 import data.Corpus;
 import depparsing.constraints.L1Lmax.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
+import depparsing.model.DepModel;
 import depparsing.model.DepSentenceDist;
 
 /**
@@ -173,12 +191,13 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	final int numParentIds; // number of types of parent (e.g. number of tags)
 	final ConstraintEnumerator cstraints;
 	final DepCorpus corpus;
+	final DepModel model;
 	
 	/** 
 	 * in order to avoid re-allocating lambda, we store it here. Similarly for 
 	 * paramsOfP
 	 */
-	FernandoL1LmaxParameters lambda;
+	double[] lambda;
 	double[][][][] originalChildren;
 	double[][] originalRoots;
 	
@@ -196,8 +215,9 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
 	
-	public FernandoL1Lmax(DepCorpus corpus, ArrayList<DepInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
+	public FernandoL1Lmax(DepCorpus corpus, DepModel model, ArrayList<DepInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
 		this.corpus = corpus;
+		this.model = model;
 		this.cstraints = new ConstraintEnumerator(corpus, cType, pType, useRoot, useDirection);
 		this.constraintStrength = constraintStrength;
 		this.minOccurrencesForProjection = minOccurrencesForProjection;
@@ -206,7 +226,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		this.scaleByTagType = scaleByTagType;
 		if (scaleByTagType){
 			if (cType!=PCType.TAG || pType != PCType.TAG){
-				throw new AssertionError("can't use scale when we're not constraining edge-edge");
+				throw new AssertionError("can't use scale when we're not constraining tag-tag");
 			}
 		}
 		ArrayList<Integer> indicesforcp = new ArrayList<Integer>();
@@ -336,9 +356,21 @@ public class FernandoL1Lmax implements CorpusConstraints {
 //		return myCstrength*(1.0/numC + 1.0/numP);
 	}
 	
-	public void project(DepSentenceDist[] posteriors) {
+	
+
+	
+	@SuppressWarnings("unchecked")
+	public void project(AbstractCountTable counts,
+			AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
+		MemoryTracker mem  = new MemoryTracker();
+		mem.start();
+		trainStats.eStepStart(model, pr);
+		int numParams = 0;
+		for (int i = 0; i < edge2scp.length; i++) {
+			numParams += edge2scp[i].length;
+		}
 		if (lambda == null){
-			lambda = new FernandoL1LmaxParameters(this);
+			lambda = new double[numParams];
 			originalChildren = new double[posteriors.length][][][];
 			originalRoots = new double[posteriors.length][];
 		}
@@ -348,18 +380,31 @@ public class FernandoL1Lmax implements CorpusConstraints {
 //			if (lambda.value[i].length != posteriors[i].depInst.numWords) throw new RuntimeException("sentence "+i+" length changed!");			
 //		}
 		for (int s = 0; s < posteriors.length; s++) {
-			originalChildren[s] =  deepclone(posteriors[s].child);
-			originalRoots[s] = posteriors[s].root.clone();
+			originalChildren[s] =  deepclone(((DepSentenceDist)posteriors[s]).child);
+			originalRoots[s] = ((DepSentenceDist)posteriors[s]).root.clone();
 		}
+		ProjectedOptimizerStats stats = new ProjectedOptimizerStats();
 		FernandoL1LMaxObjective objective = new FernandoL1LMaxObjective(lambda, this, posteriors);
-		LineSearchMethod linesearch = new WolfeLinesearch(c1,c2,maxExtrapolationIters, maxZoomEvals, maxStep);
-		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
-		optimizer.steepestAscentProjection(objective);
-		objective.getObjective();
+		GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1);
+		LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2);
+		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(linesearch);
+		optimizer.setMaxIterations(maxProjectionIterations);
+//		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
+        StopingCriteria stopGrad = new NormalizedProjectedGradientL2Norm(stoppingPrecision);
+        StopingCriteria stopValue = new NormalizedValueDifference(stoppingPrecision);
+        CompositeStopingCriteria stop = new CompositeStopingCriteria();
+        stop.add(stopGrad);
+        stop.add(stopValue);
+        boolean succed = optimizer.optimize(objective, stats,stop);
+		mem.finish();
+		// make sure we update the dual params
+		objective.getValue();
+		System.out.println("After  optimization:" + mem.print());
+		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 	}
 
 	public void setMaxProjectionSteps(int tmpProjectItersAtPool) {
 		maxProjectionIterations = tmpProjectItersAtPool;
 	}
-	
+
 }

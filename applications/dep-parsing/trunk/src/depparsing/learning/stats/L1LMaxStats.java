@@ -5,9 +5,14 @@ import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
 
+import learning.EM;
 import learning.stats.TrainStats;
+import model.AbstractSentenceDist;
 import util.LogSummer;
 import data.Corpus;
+import depparsing.constraints.FernandoL1Lmax.ConstraintEnumerator;
+import depparsing.constraints.L1Lmax.PCType;
+import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.model.DepModel;
 import depparsing.model.DepProbMatrix;
@@ -21,7 +26,7 @@ public class L1LMaxStats extends TrainStats<DepModel, DepSentenceDist> {
 		TIntArrayList counts;
 		TDoubleArrayList vals;
 		public MaxMatrix(Corpus c, PCType child, PCType parent, boolean useRoot, boolean useDirection){
-			cstraints = new ConstraintEnumerator(c,child, parent, useRoot, useDirection);
+			cstraints = new ConstraintEnumerator((DepCorpus) c,child, parent, useRoot, useDirection);
 			counts = new TIntArrayList();
 			vals = new TDoubleArrayList();
 		}
@@ -144,7 +149,7 @@ public class L1LMaxStats extends TrainStats<DepModel, DepSentenceDist> {
 	}
 
 	@Override
-	public void eStepStart(DepProbMatrix model,ExpectationMaximizer em){              
+	public void eStepStart(DepModel model,EM em){              
 		Corpus c = model.corpus;
 		measurements = new ArrayList<MaxMatrix>();
 //		measurements.add(new MaxMatrix(c,PCType.TAG, PCType.TAG,false,false));
@@ -167,7 +172,7 @@ public class L1LMaxStats extends TrainStats<DepModel, DepSentenceDist> {
 	}
 
 	@Override
-	public void eStepSentenceEnd(DepProbMatrix model,ExpectationMaximizer em,SentenceDistribution sd){
+	public void eStepSentenceEnd(DepModel model, EM em, DepSentenceDist sd) {
 		int numWords = sd.depInst.numWords;
 
 		for(int childPosition = 0; childPosition < numWords; childPosition++) {
@@ -201,7 +206,7 @@ public class L1LMaxStats extends TrainStats<DepModel, DepSentenceDist> {
 	}
 
 	@Override
-	public String printEndEStep(final DepProbMatrix model,ExpectationMaximizer em){
+	public String printEndEStep(final DepModel model,EM em){
 		StringBuffer s = new StringBuffer(); 
 		s.append(printMaxMatrices(model));
 		int iter = em.getCurrentIterationNumber();
@@ -227,7 +232,7 @@ public class L1LMaxStats extends TrainStats<DepModel, DepSentenceDist> {
 	/**
 	 * Print the matrix (child tag / parent tag) with the corresponding max values.
 	 */
-	public String printMaxMatrices(DepProbMatrix model){
+	public String printMaxMatrices(DepModel model){
 		StringBuffer s = new StringBuffer();
 		s.append("c/p\t");
 		int nrPosTags = model.corpus.getNrTags();
