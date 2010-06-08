@@ -2,7 +2,6 @@ package postagging.programs;
 
 
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -18,7 +17,23 @@ import learning.stats.LikelihoodStats;
 import learning.stats.TrainStats;
 import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
-import model.chain.hmm.HMM.Update_Parameters;
+import model.distribution.trainer.AbstractMultinomialTrainer;
+import model.distribution.trainer.MultinomialFeatureFunction;
+import model.distribution.trainer.MultinomialMaxEntTrainer;
+import model.distribution.trainer.MultinomialVariationalBayesTrainer;
+import model.distribution.trainer.ObservationMultinomialFeatureFunction;
+import model.distribution.trainer.TableNormalizerMultinomialTrainer;
+import model.distribution.trainer.TransitionMultinomialFeatureFunction;
+
+import optimization.gradientBasedMethods.Optimizer;
+import optimization.gradientBasedMethods.stats.OptimizerStats;
+import optimization.linesearch.InterpolationPickFirstStep;
+import optimization.linesearch.LineSearchMethod;
+import optimization.linesearch.WolfRuleLineSearch;
+import optimization.stopCriteria.CompositeStopingCriteria;
+import optimization.stopCriteria.NormalizedGradientL2Norm;
+import optimization.stopCriteria.StopingCriteria;
+import optimization.stopCriteria.ValueDifference;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -33,7 +48,6 @@ import postagging.evaluation.PosMapping;
 import postagging.learning.stats.AccuracyStats;
 import postagging.learning.stats.TransitionsTypeL1LMaxStats;
 import postagging.learning.stats.WordTypeL1LMaxStats;
-import postagging.learning.stats.MeParametersStats;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
 import postagging.model.PosReverseHMM;
@@ -62,10 +76,9 @@ public class RunModel {
 	}
 	
 	// Model Selection
-	private enum ModelType {HMM, HMMFinalState,ReverseHMM}
+	private enum ModelType {HMM, HMMFinalState}
 	@Option(name="-model-type", usage = "HMM - Regular HMM" +
-			"HMMFinalState - Regular HMM with explicit modelling of the final state" +
-			"ReverseHMM - Regular HMM reading the sentence from right to left")
+			"HMMFinalState - Regular HMM with explicit modelling of the final state")
 	private ModelType modelType = ModelType.HMMFinalState;
 	
 	@Option(name="-number-states", usage = "Number of hidden states of the HMM")
@@ -103,21 +116,27 @@ public class RunModel {
 	}
 	
 	//Model update options
-	@Option(name="-parameter_update_type", usage="Type of parameter update: TABLE_UP - Normal HMM just update" +
-			"counts" + " OBS_MAX_ENT  use generative Max-Ent model on observation" +
-					" VB Variational Bayes with Dirichelt prior"+"   MRF use an MRF to update")
-	private HMM.Update_Parameters updateParams = HMM.Update_Parameters.TABLE_UP; 
-	@Option(name="-max-ent-features-file", usage="<filename> = Description of what max-ent features to use")
-	String maxEntFeaturesFile="";
-	
+	@Option(name="-parameter_update_type", 
+			usage="Type of parameter update: TABLE_UP - Normal HMM just update counts" 
+			+ " OBS_MAX_ENT  use generative Max-Ent model on observation" 
+			+ " TRANSITION_MAX_ENT  use generative Max-Ent model on transitions" 
+			+ " MAX_ENT  use generative Max-Ent model on observation and transitions" 
+			+" VB Variational Bayes with Dirichelt prior")
+	private String updateParams = "TABLE_UP"; 
+	@Option(name="-max-ent-obs-features-file", usage="<filename> = Description of what max-ent features to use")
+	String maxEntObservationFeaturesFile="";	
 	@Option(name="-max-ent-gaussian-prior", usage="gaussian prior to use on MaxEnt")
-	double gaussianPrior = 10;
+	double gaussianPrior = 1;
 	@Option(name="-max-ent-warm-start", usage="use warm start on max-ent optimization")
 	boolean maxEntWarmStart = false;
 	@Option(name="-max-ent-gradient-convergence", usage="max-entropy-convergence value")
 	double maxEntGradientConvergenceValue = 0.001;
 	@Option(name="-max-ent-value-convergence", usage="max-entropy-convergence value")
 	double maxEntValueConvergenceValue = 0.05;
+	@Option(name="-max-ent-max-iter", usage="-max-ent-max-iter iter")
+	int maxEntMaxIterations = 1000;
+	@Option(name="-max-ent-em-warmup-iters", usage="-max-ent-em-warmup-iters iter")
+	int maxEntEMWarmupIters = 0;
 	
 	
 	@Option(name="-vb-state-state-prior", usage="Variational bayes transition prior")
@@ -127,14 +146,16 @@ public class RunModel {
 	
 	public void printModelUpdateOptions(PrintStream out){
 		out.println("-parameter_update_type " + updateParams);
-		if(updateParams == HMM.Update_Parameters.OBS_MAX_ENT){
-			out.println("-max-ent-features-file " + maxEntFeaturesFile);
+		if(updateParams.contains("MAX_ENT")){
+			out.println("-max-ent-features-file " + maxEntObservationFeaturesFile);
 			out.println("-max-ent-gaussian-prior " + gaussianPrior);
 			out.println("-max-ent-warm-start " + maxEntWarmStart);
 			out.println("-max-ent-gradient-convergence " + maxEntGradientConvergenceValue);
 			out.println("-max-ent-value-convergence " + maxEntValueConvergenceValue);
+			out.println("-max-ent-max-iter " + maxEntMaxIterations);
+			out.println("-max-ent-em-warmup-iters" + maxEntEMWarmupIters);
 			
-		} else if(updateParams == HMM.Update_Parameters.VB){
+		} else if(updateParams.contains("VB")){
 			out.println("-vb-state-state-prior " + stateToStatePrior);
 			out.println("-vb-state-observation-prior" + stateToObservationPrior);
 		}
@@ -253,7 +274,7 @@ public class RunModel {
 			// Read corpus params, the only option that's always required
 			PosCorpus corpus;
 			if(corpusParams == null) throw new CmdLineException("Must always specify a corpus params file");
-			else corpus = new PosCorpus(corpusParams,minSentenceSize,maxSentenceSize);
+			else corpus = new PosCorpus(corpusParams,minSentenceSize,maxSentenceSize, maxNumberOfSentences);
 
 			//Initialize model
 			HMM model = createModel(modelType,corpus,nrStates);
@@ -304,7 +325,7 @@ public class RunModel {
 			
 			stats.addStats(new WordTypeL1LMaxStats(corpus,model,"2",minWordOccursL1LMax,baseOutputString+"/l1LMaxClusters/",50));
 			stats.addStats(new TransitionsTypeL1LMaxStats(corpus,model,"2",baseOutputString+"/l1LMaxClusters/",5));
-			stats.addStats(new MeParametersStats(50,baseOutputString+"/me-parameters/"));
+//			stats.addStats(new MeParametersStats(50,baseOutputString+"/me-parameters/"));
 			trainModel(corpus,model,stats);
 			
 			if(saveModel){
@@ -364,10 +385,34 @@ public class RunModel {
 	private void trainModel(PosCorpus c, HMM model, TrainStats stats) throws CmdLineException, UnsupportedEncodingException, IOException {
 		if(TrainingType.EM== trainingType) {
 			EM em = new EM(model);
+			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
+				AbstractMultinomialTrainer tempObs = model.observationTrainer;
+				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
+				AbstractMultinomialTrainer tempInit = model.initTrainer;
+				model.observationTrainer = new TableNormalizerMultinomialTrainer();
+				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
+				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
+				em.em(maxEntEMWarmupIters, stats);
+				model.observationTrainer = tempObs;
+				model.transitionsTrainer = tempTran;
+				model.initTrainer = tempInit;	
+			}
 			em.em(numEMIters, stats);
 		} else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
+			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
+				AbstractMultinomialTrainer tempObs = model.observationTrainer;
+				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
+				AbstractMultinomialTrainer tempInit = model.initTrainer;
+				model.observationTrainer = new TableNormalizerMultinomialTrainer();
+				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
+				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
+				em.em(maxEntEMWarmupIters, stats);
+				model.observationTrainer = tempObs;
+				model.transitionsTrainer = tempTran;
+				model.initTrainer = tempInit;	
+			}
 			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
 			CorpusPR learning = new CorpusPR(model,l1lmax);
 			learning.em(numEMIters, stats);
@@ -401,34 +446,121 @@ public class RunModel {
 			model = new PosHMM(c,nrTags);
 		}else if(ModelType.HMMFinalState == modelType){
 			model = new PosHMMFinalState(c,nrTags);
-		}else if(ModelType.ReverseHMM == modelType){
-			model = new PosReverseHMM(c,nrTags);
 		}else{
 			System.out.println("Model is non existing");
 			System.exit(-1);
 		}
-		model.updateType = updateParams;
-		if(model.updateType == Update_Parameters.OBS_MAX_ENT || model.updateType == Update_Parameters.MRF){
-			if(maxEntFeaturesFile.equals("")){
+		if(updateParams.contains("OBS_MAX_ENT")){
+			if(maxEntObservationFeaturesFile.equals("")){
 				System.out.println("Must specify -max-ent-features-file to use max ent or MRF");
 				System.exit(-1);
 			}
-			model.gradientConvergenceValue = maxEntGradientConvergenceValue;
-			model.valueConvergenceValue = maxEntValueConvergenceValue;
-			model.warmStart = maxEntWarmStart;
-			model.gaussianPrior = gaussianPrior;
-			//Create and add feature function
-			model.fxy = new model.chain.GenerativeFeatureFunction(c,maxEntFeaturesFile);
-			System.out.println("Using max Ent training");
-			System.out.println("Gaussian Prior:" +model.gaussianPrior );
-			System.out.println("Gradient Precision:" +model.gradientConvergenceValue);
-			System.out.println("Value Precision:" +model.valueConvergenceValue);
-			System.out.println("Max Iterations:" +model.maxIter);
-		}else if(model.updateType == Update_Parameters.VB){
-			model.stateToObservationPrior = stateToObservationPrior;
-			model.stateToStatePrior = stateToStatePrior;
+			model.observationTrainer = buildObservationMuiltinomialTrainer(c,model.getNrRealStates());
+		}else if(updateParams.contains("TRANSITION_MAX_ENT")){
+			model.initTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
+			model.transitionsTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
+		}else if(updateParams.contains("MAX_ENT")){
+			if(maxEntObservationFeaturesFile.equals("")){
+				System.out.println("Must specify -max-ent-features-file to use max ent or MRF");
+				System.exit(-1);
+			}
+			model.observationTrainer = buildObservationMuiltinomialTrainer(c,model.getNrRealStates());
+			model.initTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
+			model.transitionsTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
+		}else if(updateParams.contains("VB")){
+			model.initTrainer = new MultinomialVariationalBayesTrainer(stateToStatePrior);
+			model.transitionsTrainer = new MultinomialVariationalBayesTrainer(stateToStatePrior);
+			model.observationTrainer = new MultinomialVariationalBayesTrainer(stateToObservationPrior);
 		}
 		return model;
+	}
+
+	
+	public MultinomialMaxEntTrainer buildObservationMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
+		ObservationMultinomialFeatureFunction fxy = new ObservationMultinomialFeatureFunction(c, maxEntObservationFeaturesFile);
+		ArrayList<MultinomialFeatureFunction> fxys = new ArrayList<MultinomialFeatureFunction>();
+		ArrayList<LineSearchMethod> lss = new ArrayList<LineSearchMethod>();
+		ArrayList<StopingCriteria> scs = new ArrayList<StopingCriteria>();
+		ArrayList<OptimizerStats> oss = new ArrayList<OptimizerStats>();
+		ArrayList<Optimizer> opt = new ArrayList<Optimizer>();
+		
+		for (int i = 0; i < nrTags; i++) {
+			fxys.add(fxy);
+			
+			// perform gradient descent
+			WolfRuleLineSearch wolfe = 
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+			wolfe.setDebugLevel(0);
+			lss.add(wolfe);
+		
+	
+
+			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
+			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
+			CompositeStopingCriteria stop = new CompositeStopingCriteria();
+			stop.add(stopGrad);
+			stop.add(stopValue);
+			scs.add(stop);
+			optimization.gradientBasedMethods.LBFGS optimizer = 
+				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+			optimizer.setMaxIterations(maxEntMaxIterations);
+			opt.add(optimizer);
+			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
+			oss.add(optStats);
+		}
+
+		System.out.println("Using observation max Ent training");
+		System.out.println("Gaussian Prior:" +gaussianPrior );
+		System.out.println("Gradient Precision:" +maxEntGradientConvergenceValue);
+		System.out.println("Value Precision:" +maxEntValueConvergenceValue);
+		System.out.println("Max Iterations:" +maxEntMaxIterations);
+		System.out.println("Max Ent warm start:" +maxEntWarmStart);
+		return new MultinomialMaxEntTrainer(nrTags,
+				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart);
+	}
+	
+	public MultinomialMaxEntTrainer buildTransitionMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
+		TransitionMultinomialFeatureFunction fxy = new TransitionMultinomialFeatureFunction(c, nrTags);
+		ArrayList<MultinomialFeatureFunction> fxys = new ArrayList<MultinomialFeatureFunction>();
+
+		ArrayList<LineSearchMethod> lss = new ArrayList<LineSearchMethod>();
+		ArrayList<StopingCriteria> scs = new ArrayList<StopingCriteria>();
+		ArrayList<OptimizerStats> oss = new ArrayList<OptimizerStats>();
+		ArrayList<Optimizer> opt = new ArrayList<Optimizer>();
+		
+		for (int i = 0; i < nrTags; i++) {
+			fxys.add(fxy);
+			
+			// perform gradient descent
+			WolfRuleLineSearch wolfe = 
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+			wolfe.setDebugLevel(0);
+			lss.add(wolfe);
+		
+	
+
+			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
+			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
+			CompositeStopingCriteria stop = new CompositeStopingCriteria();
+			stop.add(stopGrad);
+			stop.add(stopValue);
+			scs.add(stop);
+			optimization.gradientBasedMethods.LBFGS optimizer = 
+				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+			optimizer.setMaxIterations(maxEntMaxIterations);
+			opt.add(optimizer);
+			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
+			oss.add(optStats);
+		}
+
+		System.out.println("Using transition max Ent training");
+		System.out.println("Gaussian Prior:" +gaussianPrior );
+		System.out.println("Gradient Precision:" +maxEntGradientConvergenceValue);
+		System.out.println("Value Precision:" +maxEntValueConvergenceValue);
+		System.out.println("Max Iterations:" +maxEntMaxIterations);
+		System.out.println("Max Ent warm start:" +maxEntWarmStart);
+		return new MultinomialMaxEntTrainer(nrTags,
+				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart);
 	}
 	
 	/**

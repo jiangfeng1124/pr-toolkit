@@ -67,7 +67,7 @@ public class SupervisedPOS {
 	public static void main(String[] args) throws IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		String corpusFile = args[0];
 		String maxEntFeaturesFile = args[1];
-		PosCorpus c = new PosCorpus(corpusFile,0,Integer.MAX_VALUE);
+		PosCorpus c = new PosCorpus(corpusFile,0,Integer.MAX_VALUE,Integer.MAX_VALUE);
 		SupervisedPOS me = new SupervisedPOS();
 		GenerativeFeatureFunction fxy = new GenerativeFeatureFunction(c,maxEntFeaturesFile);
 		me.parseOption(subArray(args,2));

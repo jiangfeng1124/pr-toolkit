@@ -24,7 +24,6 @@ public interface SequenceFeatureFunction extends Serializable {
 	 *            ignores ytm1. ignores the second label.
 	 */
 	public SparseVector apply(SparseVector[] x, int ymt1, int yt, int t);
-
 	public int wSize();
 
 }

@@ -526,10 +526,9 @@ public class TestFeatures {
 	}
 	
 	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-		PosCorpus c = new PosCorpus(args[0],0,Integer.MAX_VALUE);
+		PosCorpus c = new PosCorpus(args[0],0,Integer.MAX_VALUE, Integer.MAX_VALUE);
 	//	testContextFeatures(c, args[1], args[2]);
-		
-	
+			
 		
 //		for(int tag = 0; tag < c.getNrTags(); tag++){
 //			System.out.println(c.tagAlphabet.index2feat.get(tag));

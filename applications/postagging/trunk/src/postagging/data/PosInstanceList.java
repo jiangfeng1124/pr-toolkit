@@ -31,7 +31,7 @@ public class PosInstanceList extends InstanceList{
 	public static PosInstanceList readFromPosTagProject(String name, String fileName, Alphabet<String> words, 
 			Alphabet<String> tags,
 			boolean lowercase,	
-			int minSentenceLength,int maxSentenceLenght
+			int minSentenceLength,int maxSentenceLenght, int maxNrSentences
 			, CountAlphabet fullAlphabet, int minWordOccurs)
 	throws UnsupportedEncodingException, FileNotFoundException, IOException{
 		PosInstanceList il = new PosInstanceList(name);
@@ -82,8 +82,8 @@ public class PosInstanceList extends InstanceList{
 	public static PosInstanceList readFromConll(String name, String fileName, Alphabet<String> words, 
 			Alphabet<String> tags,
 			boolean lowercase,
-			int minSentenceLength,int maxSentenceLenght
-			, CountAlphabet fullAlphabet, int minWordOccurs)
+			int minSentenceLength,int maxSentenceLenght,
+			int maxNrSentences, CountAlphabet fullAlphabet, int minWordOccurs)
 	throws UnsupportedEncodingException, FileNotFoundException, IOException{	
 		
 		PosInstanceList il = new PosInstanceList(name);

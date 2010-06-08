@@ -26,12 +26,12 @@ public class PosCorpus extends Corpus{
 	
 	
 	public PosCorpus(String corpusParams) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-		this(corpusParams,0,Integer.MAX_VALUE);
+		this(corpusParams,0,Integer.MAX_VALUE, Integer.MAX_VALUE);
 	}
 	
 	public PosCorpus(String corpusParams, int minSentenceSize,
-			int maxSentenceSize) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-		super(corpusParams,minSentenceSize,maxSentenceSize);	
+			int maxSentenceSize, int maxNrSentences) throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		super(corpusParams,minSentenceSize,maxSentenceSize, maxNrSentences);	
 	}
 
 	@Override
@@ -70,25 +70,25 @@ public class PosCorpus extends Corpus{
 	@Override 
 	public InstanceList readInstanceList(String name, String fileName,
 			String readerType, boolean lowercase, 
-			int minSentenceLenght, int maxSentenceLenght
+			int minSentenceLenght, int maxSentenceLenght, int maxNumberOfSentences
 			,CountAlphabet fullVocab, int minWordOccurs) throws UnsupportedEncodingException, FileNotFoundException, IOException{
 		System.out.println("Calling readInstanceList " + name + " " + fileName);
 		if(readerType.equalsIgnoreCase("posTag-project")){
 			return PosInstanceList.readFromPosTagProject(name, fileName, 
 					this.wordAlphabet,this.tagAlphabet, 
-					lowercase,minSentenceLenght,maxSentenceLenght
+					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
 					,fullVocab,minWordOccurs);
 		}else if(readerType.equalsIgnoreCase("conll-data")){
 			return PosInstanceList.readFromConll(name, fileName, 
 					this.wordAlphabet,this.tagAlphabet, 
-					lowercase,minSentenceLenght,maxSentenceLenght
+					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
 					,fullVocab,minWordOccurs);
 		}else if(readerType.equalsIgnoreCase("europarl")){
 			return PosInstanceList.readFromEuroparl
 			(name, fileName, 
 					this.wordAlphabet, 
-					lowercase,minSentenceLenght,maxSentenceLenght
-					,fullVocab,minWordOccurs);
+					lowercase,minSentenceLenght,maxSentenceLenght,
+					maxNumberOfSentences,fullVocab,minWordOccurs);
 		}else{
 			System.out.println("Unknow reader type");
 			System.exit(-1);
