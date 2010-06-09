@@ -61,6 +61,7 @@ public class DepInstanceList extends InstanceList{
 				}
 				wordsList.clear();
 				posList.clear();
+				parentsList.clear();
 			}
 			line = reader.readLine();
 		}

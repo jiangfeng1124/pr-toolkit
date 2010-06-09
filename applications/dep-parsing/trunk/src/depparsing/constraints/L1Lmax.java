@@ -9,14 +9,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import learning.CorpusPR;
+import learning.stats.TrainStats;
+import model.AbstractCountTable;
+import model.AbstractSentenceDist;
+
 import constraints.CorpusConstraints;
 import util.Alphabet;
 import util.CountAlphabet;
 
 
 import data.Corpus;
-import data.DependencyInstance;
-import data.SentenceDistribution;
+import depparsing.data.DepCorpus;
+import depparsing.data.DepInstance;
+import depparsing.model.DepSentenceDist;
 
 /**
  * 
@@ -44,7 +50,7 @@ public class L1Lmax implements CorpusConstraints {
 
 	public static enum PCType {
 		WORD, TAG;
-		String id2string(Corpus c, int id){
+		String id2string(DepCorpus c, int id){
 			switch (this) {
 			case TAG:
 				return (String) c.tagAlphabet.index2feat.get(id);
@@ -60,13 +66,13 @@ public class L1Lmax implements CorpusConstraints {
 		private final PCType childType, parentType;
 		public final boolean useRoot;
 		public final boolean useDirection;
-		private final Corpus c;
+		private final DepCorpus c;
 		private final Alphabet<String> types2indices;
 		TIntArrayList[] parentIdsPerChild;
 		TIntArrayList edge2childType;
 		TIntArrayList edge2parentType;
 		
-		public ConstraintEnumerator(Corpus c, PCType childType, PCType parentType, boolean useRoot, boolean useDirection){
+		public ConstraintEnumerator(DepCorpus c, PCType childType, PCType parentType, boolean useRoot, boolean useDirection){
 			this.c = c;
 			this.childType = childType;
 			this.parentType = parentType;
@@ -81,7 +87,7 @@ public class L1Lmax implements CorpusConstraints {
 			}
 		}
 		
-		public int root2cid(DependencyInstance di, int rootIndex){
+		public int root2cid(DepInstance di, int rootIndex){
 			if(!useRoot) return -1; 
 			int childId = index2id(di, rootIndex, getChildType());
 			String childName = getChildType().id2string(c, childId);
@@ -96,7 +102,7 @@ public class L1Lmax implements CorpusConstraints {
 			return res;
 		}
 		
-		public int edge2cid(DependencyInstance di, int child, int parent){
+		public int edge2cid(DepInstance di, int child, int parent){
 			String dir = "";
 			if (useDirection) dir = child>parent? "right":"left";
 			int childId = index2id(di,child,getChildType());
@@ -156,7 +162,7 @@ public class L1Lmax implements CorpusConstraints {
 			return useRoot? numIds(getParentType()) : numIds(getParentType())+1;
 		}
 
-		private int index2id(DependencyInstance di, int ind, PCType t){
+		private int index2id(DepInstance di, int ind, PCType t){
 			switch (t) {
 			case WORD: return di.words[ind];
 			case TAG: return di.postags[ind];
@@ -190,7 +196,7 @@ public class L1Lmax implements CorpusConstraints {
 	 * in order to avoid re-allocating lambda, we store it here. Similarly for 
 	 * paramsOfP
 	 */
-	L1LmaxParameters lambda;
+	double[] lambda;
 	double[][][][] originalChildren;
 	double[][] originalRoots;
 	
@@ -212,7 +218,7 @@ public class L1Lmax implements CorpusConstraints {
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
 	
-	public L1Lmax(Corpus corpus, ArrayList<DependencyInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
+	public L1Lmax(DepCorpus corpus, ArrayList<DepInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
 		this.corpus = corpus;
 		this.cstraints = new ConstraintEnumerator(corpus, cType, pType, useRoot, useDirection);
 		this.constraintStrength = constraintStrength;
@@ -229,7 +235,7 @@ public class L1Lmax implements CorpusConstraints {
 
 		// compute how many of each childType-parentType pair there are. 
 		for (int s = 0; s < toProject.size(); s++) {
-			DependencyInstance di = toProject.get(s);
+			DepInstance di = toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0){ 
@@ -264,7 +270,7 @@ public class L1Lmax implements CorpusConstraints {
 		
 		// fill in the matrices
 		for (int s = 0; s < toProject.size(); s++) {
-			DependencyInstance di = toProject.get(s);
+			DepInstance di = toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0) {
@@ -313,34 +319,12 @@ public class L1Lmax implements CorpusConstraints {
 		if (minOccurrencesForProjection > edge2scp[edgeType].length){
 			myCstrength = 0;
 		}
-		if (!scaleByTagType) return myCstrength;
-		double sum = 0;
-		int count = 0;
-		if (avgNumberContexts<0){
-			for(int t=0; t<corpus.getNrTags(); t++){
-				int numContexts = corpus.getUniqueContextLeft(t, minOccurrences);
-				if (numContexts>0) {
-					sum+=numContexts;
-					count++;
-				}
-			}
-			avgNumberContexts = sum/count;
-			System.out.println("Average number of contexts over all tags is "+avgNumberContexts);
-		}
-		int childTag = cstraints.getChildType(edgeType);
-		int parentTag = cstraints.getParentType(edgeType);
-		double numC = corpus.getUniqueContextLeft(childTag, 10) + corpus.getUniqueContextRight(childTag, 10);
-		double numP = -1;
-		if (parentTag >= 0)
-			numP = corpus.getUniqueContextLeft(parentTag, 10) + corpus.getUniqueContextRight(parentTag, 10);
-		if (numP < 1) numP = avgNumberContexts;
-		if (numC < 1) numC = avgNumberContexts;
-		return myCstrength*(1.0/numC + 1.0/numP);
+		return myCstrength;
 	}
 	
-	public void project(SentenceDistribution[] posteriors) {
+	public void project(DepSentenceDist[] posteriors) {
 		if (lambda == null){
-			lambda = new L1LmaxParameters(this);
+			lambda = new double[0]; // FIXME -- size?
 			originalChildren = new double[posteriors.length][][][];
 			originalRoots = new double[posteriors.length][];
 		}
@@ -353,15 +337,22 @@ public class L1Lmax implements CorpusConstraints {
 			originalChildren[s] =  deepclone(posteriors[s].child);
 			originalRoots[s] = posteriors[s].root.clone();
 		}
-		L1LMaxObjective objective = new L1LMaxObjective(lambda, this, posteriors);
-		LineSearchMethod linesearch = new WolfeLinesearch(c1,c2,maxExtrapolationIters, maxZoomEvals, maxStep);
-		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
-		optimizer.steepestAscentProjection(objective);
-		objective.getObjective();
+		// FIXME -- the part below probably needs to come back
+//		L1LMaxObjective objective = new L1LMaxObjective(lambda, this, posteriors);
+//		LineSearchMethod linesearch = new WolfeLinesearch(c1,c2,maxExtrapolationIters, maxZoomEvals, maxStep);
+//		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
+//		optimizer.steepestAscentProjection(objective);
+//		objective.getObjective();
 	}
 
 	public void setMaxProjectionSteps(int tmpProjectItersAtPool) {
 		maxProjectionIterations = tmpProjectItersAtPool;
+	}
+
+	public void project(AbstractCountTable counts,
+			AbstractSentenceDist[] posteriors, TrainStats stats, CorpusPR pr) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

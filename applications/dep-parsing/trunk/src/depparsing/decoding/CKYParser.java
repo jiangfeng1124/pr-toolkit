@@ -363,6 +363,7 @@ public class CKYParser {
 			
 			parseSentence(sd, parse);
 			if (parses!=null) parses[k] = parse;
+			if (parse.length != sd.depInst.parents.length) throw new AssertionError("mis-matched length of input and output");
 			int[] counts = countCorrect(model.corpus, sd.depInst, parse);
 			numDirCorrect += counts[0];
 			numUnDirCorrect += counts[1];

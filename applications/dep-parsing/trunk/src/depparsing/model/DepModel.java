@@ -89,8 +89,10 @@ public class DepModel extends AbstractModel {
 	}
 
 	@Override
-	public void computePosteriors(AbstractSentenceDist dist) {
-		((DepSentenceDist)dist).cachePosteriors();
+	public void computePosteriors(AbstractSentenceDist adist) {
+		DepSentenceDist dist = (DepSentenceDist) adist;
+		dist.cacheModelAndComputeIO(params);
+//		((DepSentenceDist)dist).cachePosteriors();
 	}
 
 	@Override

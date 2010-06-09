@@ -56,6 +56,6 @@ public class CONLLWriter {
 	}
 
     private static void replaceDependencies(DepInstance depInst, int[] newdeps) {
-    	System.arraycopy(newdeps, 0, depInst.parents, 0, depInst.parents.length);
+    		System.arraycopy(newdeps, 0, depInst.parents, 0, depInst.parents.length);
     }
 }

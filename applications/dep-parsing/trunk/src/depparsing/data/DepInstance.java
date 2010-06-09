@@ -11,6 +11,8 @@ public class DepInstance extends WordInstance {
 	
 	public DepInstance(int[] words, int[] tags, int[] parents, int instanceNumber) {
 		super(words, instanceNumber);
+		assert words.length == tags.length;
+		assert words.length == parents.length;
 		this.postags = tags;
 		this.parents = parents;
 		this.numWords = postags.length;

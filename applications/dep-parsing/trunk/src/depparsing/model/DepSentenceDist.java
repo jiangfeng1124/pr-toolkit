@@ -48,6 +48,8 @@ public class DepSentenceDist extends AbstractSentenceDist {
 	 * when computing the posteriors and running inside outside.
 	 */
 	public void cacheModel(DepProbMatrix model) {
+		// FIXME -- is this necessary
+		initSentenceDist();
 		int[] i2tag = depInst.postags;
 		for (int c = 0; c < i2tag.length; c++) {
 			int ctag = i2tag[c];
@@ -226,9 +228,10 @@ public class DepSentenceDist extends AbstractSentenceDist {
 
 	@Override
 	public void clearCaches() {
-		this.root = null;
-		this.child = null;
-		this.decision = null;
+		// We can't get rid of the root cache because it's necessary for the root posterior
+		// this.root = null;
+//		this.child = null;
+//		this.decision = null;
 	}
 
 	@Override
@@ -238,6 +241,9 @@ public class DepSentenceDist extends AbstractSentenceDist {
 		this.decisionPosteriors = null;
 		this.inside = null;
 		this.outside = null;
+		this.root = null;
+		this.child = null;
+		this.decision = null;
 	}
 
 	@Override
