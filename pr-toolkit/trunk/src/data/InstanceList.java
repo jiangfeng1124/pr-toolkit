@@ -85,7 +85,7 @@ public class InstanceList {
 			}
 			else { // Case of end of sentence
 				int sentenceSize = wordsList.size();
-				if(sentenceSize > minSentenceLength && sentenceSize <= maxSentenceLenght){
+				if(sentenceSize >= minSentenceLength && sentenceSize <= maxSentenceLenght){
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
@@ -129,7 +129,7 @@ public class InstanceList {
 			}
 			else { // Case of end of sentence
 				int sentenceSize = wordsList.size();
-				if(sentenceSize > minSentenceLength && sentenceSize <= maxSentenceLenght){
+				if(sentenceSize >= minSentenceLength && sentenceSize <= maxSentenceLenght){
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
@@ -170,7 +170,7 @@ public class InstanceList {
 					}
 					wordsList.add(words.lookupObject(word));
 				}
-				if(len > minSentenceLength && len <= maxSentenceLenght){
+				if(len >= minSentenceLength && len <= maxSentenceLenght){
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
