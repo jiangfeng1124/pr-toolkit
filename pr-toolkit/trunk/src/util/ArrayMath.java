@@ -165,7 +165,7 @@ public class ArrayMath {
 	 * @return
 	 */
 	public static double sumPart(double[] array, int start, int end) {
-		int res = 0;
+		double res = 0;
 		for (int i = start; i < end; i++) res += array[i];
 		return res;
 	}
