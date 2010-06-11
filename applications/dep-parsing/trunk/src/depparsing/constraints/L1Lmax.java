@@ -20,6 +20,7 @@ import util.CountAlphabet;
 
 
 import data.Corpus;
+import data.WordInstance;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.model.DepSentenceDist;
@@ -218,7 +219,7 @@ public class L1Lmax implements CorpusConstraints {
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
 	
-	public L1Lmax(DepCorpus corpus, ArrayList<DepInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
+	public L1Lmax(DepCorpus corpus, ArrayList<WordInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
 		this.corpus = corpus;
 		this.cstraints = new ConstraintEnumerator(corpus, cType, pType, useRoot, useDirection);
 		this.constraintStrength = constraintStrength;
@@ -235,7 +236,7 @@ public class L1Lmax implements CorpusConstraints {
 
 		// compute how many of each childType-parentType pair there are. 
 		for (int s = 0; s < toProject.size(); s++) {
-			DepInstance di = toProject.get(s);
+			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0){ 
@@ -270,7 +271,7 @@ public class L1Lmax implements CorpusConstraints {
 		
 		// fill in the matrices
 		for (int s = 0; s < toProject.size(); s++) {
-			DepInstance di = toProject.get(s);
+			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0) {

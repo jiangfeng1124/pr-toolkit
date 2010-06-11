@@ -32,6 +32,7 @@ import util.MemoryTracker;
 
 
 import data.Corpus;
+import data.WordInstance;
 import depparsing.constraints.L1Lmax.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
@@ -207,7 +208,6 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	class SentenceChildParent {public int s,c; public int[] parents; public SentenceChildParent(int s2, int c2, int[] p2){s=s2;c=c2;parents=p2; if(parents == null) throw new AssertionError("parents is null");}}
 	final SentenceChildParent[][] edge2scp;  // indexed by type, index
 	private final double constraintStrength;
-	public final boolean scaleByTagType;
 	private TIntArrayList edgesToNotProject;
 	
 	final double c1= 0.0001, c2=0.9, stoppingPrecision = 1e-5, maxStep = 10;
@@ -215,7 +215,8 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
 	
-	public FernandoL1Lmax(DepCorpus corpus, DepModel model, ArrayList<DepInstance> toProject, PCType cType, PCType pType, boolean useRoot, boolean useDirection, double constraintStrength, boolean scaleByTagType, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
+	public FernandoL1Lmax(DepCorpus corpus, DepModel model, ArrayList<WordInstance> toProject, PCType cType, PCType pType, 
+			boolean useRoot, boolean useDirection, double constraintStrength, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
 		this.corpus = corpus;
 		this.model = model;
 		this.cstraints = new ConstraintEnumerator(corpus, cType, pType, useRoot, useDirection);
@@ -223,17 +224,11 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		this.minOccurrencesForProjection = minOccurrencesForProjection;
 		numChildIds = cstraints.numIdsChild();
 		numParentIds = cstraints.numIdsParent();
-		this.scaleByTagType = scaleByTagType;
-		if (scaleByTagType){
-			if (cType!=PCType.TAG || pType != PCType.TAG){
-				throw new AssertionError("can't use scale when we're not constraining tag-tag");
-			}
-		}
 		ArrayList<Integer> indicesforcp = new ArrayList<Integer>();
 
 		// compute how many of each childType-parentType pair there are. 
 		for (int s = 0; s < toProject.size(); s++) {
-			DepInstance di = toProject.get(s);
+			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0){ 
@@ -272,7 +267,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		
 		// fill in the matrices
 		for (int s = 0; s < toProject.size(); s++) {
-			DepInstance di = toProject.get(s);
+			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0) {
@@ -296,8 +291,12 @@ public class FernandoL1Lmax implements CorpusConstraints {
 				}
 			}
 		}
-		edgesToNotProject = makeEdgesToNotProject(fileOfAllowedTypes);
-		
+		// FIXME: edgesToNotProject has not been used for a while; do we want to keep it?
+		if (fileOfAllowedTypes != null)
+			edgesToNotProject = makeEdgesToNotProject(fileOfAllowedTypes);
+		else {
+			edgesToNotProject = new TIntArrayList();
+		}
 	}
 	
 	private TIntArrayList makeEdgesToNotProject(String fname) throws IOException{
@@ -379,6 +378,10 @@ public class FernandoL1Lmax implements CorpusConstraints {
 //		for (int i = 0; i < posteriors.length; i++) {
 //			if (lambda.value[i].length != posteriors[i].depInst.numWords) throw new RuntimeException("sentence "+i+" length changed!");			
 //		}
+		for (int s = 0; s < posteriors.length; s++) {
+			DepSentenceDist sd = (DepSentenceDist) posteriors[s];
+			sd.cacheModelAndComputeIO(model.params);
+		}
 		for (int s = 0; s < posteriors.length; s++) {
 			originalChildren[s] =  deepclone(((DepSentenceDist)posteriors[s]).child);
 			originalRoots[s] = ((DepSentenceDist)posteriors[s]).root.clone();

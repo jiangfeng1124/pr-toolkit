@@ -405,65 +405,64 @@ public final class RunModel {
 			TrainStats<DepModel, DepSentenceDist> warmupStats) 
 	throws ClassNotFoundException, InvocationTargetException, IllegalAccessException, InstantiationException, IOException {
 		System.out.println("EM with posterior regularization");
-		if(true) throw new RuntimeException("TODO: Fix constraints");
-//		// Get posterior regularized EM parameters
-//		L1Lmax.PCType childType = (useChildWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
-//		System.out.println("Using child " + (useChildWords? "words" : "tags") + " in L1LMax constraints");
-//		L1Lmax.PCType parentType = (useParentWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
-//		System.out.println("Using parent " + (useParentWords? "words" : "tags") + " in L1LMax constraints");
-//		System.out.println("Constraining root posteriors? " + constrainRoot);
-//		System.out.println("Differentiating L1LMax based on edge direction? " + constrainDir);
-//		if(cstrength == null) cstrength = 10.0;
-//		System.out.println("Constraint strength: " + cstrength);
-//		System.out.println();
-//		CorpusConstraints constraints = null;
-//		if(useFernandoConstraints)
-//			constraints = new FernandoL1Lmax(model.corpus, model.corpus.trainInstances.instanceList,childType, parentType, constrainRoot, constrainDir, cstrength, scaleCstrength, minOccurrencesForProjection,doNotProjectFile);
-//		else 
-//			constraints = new L1Lmax(model.corpus, model.corpus.trainInstances.instanceList,childType, parentType, constrainRoot, constrainDir, cstrength, scaleCstrength, minOccurrencesForProjection, doNotProjectFile);
-//		if(tmpDoingRandomPoolInit){
-//			if(projectItersAtPool != null){
-//			    if(useFernandoConstraints){
-//				((FernandoL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
-//			    }else{
-//				((L1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
-//			    }
-//				
-//			} else {
-//			    if(useFernandoConstraints){
-//				((FernandoL1Lmax)constraints).setMaxProjectionSteps(0);
-//			    }else{
-//				((L1Lmax)constraints).setMaxProjectionSteps(0);
-//			    }
-//			    
-//
-//			}
-//		}
-//		
-//		CorpusPR EMer;
-//		if (supervised_sample_weight > 0){
-//			if (supervisedSample == null) throw new RuntimeException("null supervised sample, but non-zero weight!");
-//			if (supervisedSample.instanceList.size() == 0) throw new RuntimeException("empyt supervised sample, but non-zero weight!");
-//			DepProbMatrix initialCounts = new DepProbMatrix(model.corpus, model.params.nontermMap.decisionValency, model.params.nontermMap.childValency); 
-//			MaxLikelihoodEstimator.computeMLCounts(initialCounts, supervisedSample);
-//			double numUnsup = model.corpus.trainInstances.instanceList.size();
-//			double weight = (numUnsup * supervised_sample_weight);
-//			weight /= supervisedSample.instanceList.size()*(1-supervised_sample_weight);
-//			initialCounts.scaleBy(weight);
-//			model.updateParameters(initialCounts);
-//		}
-//		EMer = new CorpusPR(model, constraints);
-//		
-//		// Warmup with standard EM
-//		if(warmupIters != null && warmupIters > 0) {
-//			System.out.println("Beginning " + warmupIters + " warmup EM iterations");
-//			runStandardEM(model, warmupIters,warmupStats);
-//			System.out.println();
-//		}
-//
-//		// Then run PR EM
-//		System.out.println("Beginning PR EM iterations");
-//		EMer.em(numIters, stats);
+		// Get posterior regularized EM parameters
+		L1Lmax.PCType childType = (useChildWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+		System.out.println("Using child " + (useChildWords? "words" : "tags") + " in L1LMax constraints");
+		L1Lmax.PCType parentType = (useParentWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+		System.out.println("Using parent " + (useParentWords? "words" : "tags") + " in L1LMax constraints");
+		System.out.println("Constraining root posteriors? " + constrainRoot);
+		System.out.println("Differentiating L1LMax based on edge direction? " + constrainDir);
+		if(cstrength == null) cstrength = 10.0;
+		System.out.println("Constraint strength: " + cstrength);
+		System.out.println();
+		CorpusConstraints constraints = null;
+		if(useFernandoConstraints)
+			constraints = new FernandoL1Lmax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
+		else 
+			constraints = new L1Lmax(model.corpus, model.corpus.trainInstances.instanceList,childType, parentType, constrainRoot, constrainDir, cstrength, scaleCstrength, minOccurrencesForProjection, doNotProjectFile);
+		if(tmpDoingRandomPoolInit){
+			if(projectItersAtPool != null){
+				if(useFernandoConstraints){
+					((FernandoL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
+				}else{
+					((L1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
+				}
+
+			} else {
+				if(useFernandoConstraints){
+					((FernandoL1Lmax)constraints).setMaxProjectionSteps(0);
+				}else{
+					((L1Lmax)constraints).setMaxProjectionSteps(0);
+				}
+
+
+			}
+		}
+		
+		CorpusPR EMer;
+		if (supervised_sample_weight > 0){
+			if (supervisedSample == null) throw new RuntimeException("null supervised sample, but non-zero weight!");
+			if (supervisedSample.instanceList.size() == 0) throw new RuntimeException("empyt supervised sample, but non-zero weight!");
+			DepProbMatrix initialCounts = new DepProbMatrix(model.corpus, model.params.nontermMap.decisionValency, model.params.nontermMap.childValency); 
+			MaxLikelihoodEstimator.computeMLCounts(initialCounts, supervisedSample);
+			double numUnsup = model.corpus.trainInstances.instanceList.size();
+			double weight = (numUnsup * supervised_sample_weight);
+			weight /= supervisedSample.instanceList.size()*(1-supervised_sample_weight);
+			initialCounts.scaleBy(weight);
+			model.updateParameters(initialCounts);
+		}
+		EMer = new CorpusPR(model, constraints);
+		
+		// Warmup with standard EM
+		if(warmupIters != null && warmupIters > 0) {
+			System.out.println("Beginning " + warmupIters + " warmup EM iterations");
+			runStandardEM(model, warmupIters,warmupStats);
+			System.out.println();
+		}
+
+		// Then run PR EM
+		System.out.println("Beginning PR EM iterations");
+		EMer.em(numIters, stats);
 	}
 	
 	private void runStandardEM(DepModel model, int numIters, TrainStats<DepModel,DepSentenceDist> stats)

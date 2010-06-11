@@ -3,6 +3,8 @@ package depparsing.constraints;
 import java.util.Arrays;
 import java.util.Random;
 
+import javax.management.RuntimeErrorException;
+
 import model.AbstractSentenceDist;
 
 import optimization.gradientBasedMethods.Objective;
@@ -56,6 +58,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 					index ++;
 				}
 			}
+			assert (index == parameters.length);
 			for (int sent = 0; sent < posteriors.length; sent++) {
 				logLikelihood += ((DepSentenceDist)posteriors[sent]).insideRoot;
 			}
@@ -89,8 +92,8 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 						for(int v = 0; v < sd.nontermMap.childValency; v++)
 							sd.child[scp.c][pid][v] -= parameters[index];
 					}
+					index++;
 				}
-				index++;
 			}
 			if (index != parameters.length) throw new AssertionError("Looks like we didn't use all the parameters!");
 
@@ -99,6 +102,12 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 			}
 
 			refreshExpectationsAndLikelihood();
+			gradient = cache.expectations.clone();
+			projectGradient(gradient);
+			// FIXME: do we need -ve gradient or gradient?
+			for (int i = 0; i < gradient.length; i++) {
+				gradient[i] = -gradient[i];
+			}
 			stale = false;
 		}
 		
@@ -116,13 +125,14 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 		if (cache.stale) {
 			cache.update();
 		}
-		double[] res = cache.expectations.clone();
-		projectGradient(res);
-		// FIXME: do we need -ve gradient or gradient?
-		for (int i = 0; i < res.length; i++) {
-			res[i] = -res[i];
-		}
-		return res;
+		return this.gradient;
+//		double[] res = cache.expectations.clone();
+//		projectGradient(res);
+//		// FIXME: do we need -ve gradient or gradient?
+//		for (int i = 0; i < res.length; i++) {
+//			res[i] = -res[i];
+//		}
+//		return res;
 	}
 
 	@Override
@@ -277,6 +287,8 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 		for (int edgeType = 0; edgeType < parent.edge2scp.length; edgeType++) {
 			double[] ds = new double[parent.edge2scp[edgeType].length];
 			System.arraycopy(lambda, index, ds, 0, ds.length);
+			ArrayMath.sumPart(lambda, index, index+ds.length);
+			assert(ArrayMath.sumPart(lambda, index, index+ds.length) == ArrayMath.sum(ds));
 			double theta = doSimplexProjection(ds, parent.getConstraintStrength(edgeType));
 			for (int i = 0; i < ds.length; i++) {
 				double v = lambda[index+i];
@@ -294,6 +306,8 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 			if (theta > 0 && !almost(ArrayMath.sumPart(lambda, index, index+ds.length),parent.getConstraintStrength(edgeType), 1e-2 ) ){
 				System.out.println("  ***** simplex projection failure! theta="+theta);
 				System.out.println(" length = "+ds.length+" sum="+ArrayMath.sumPart(lambda, index, index+ds.length)+" cstrength"+parent.getConstraintStrength(edgeType));
+				// FIXME: temp just for testing..
+				throw new RuntimeException();
 			}
 			index += ds.length;
 		}
@@ -324,7 +338,8 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 			// number used so far is i+1.
 			double theta = (sum-scale)/(i+1);
 //			System.out.println("theta["+i+"] = "+theta);
-			if (ds[i]<theta) return (oldSum-scale)/(i);
+			if (ds[i]<theta) 
+				return (oldSum-scale)/(i);
 			oldSum = sum;
 		}
 		// they're all too big!
