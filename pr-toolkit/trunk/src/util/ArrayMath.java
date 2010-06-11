@@ -135,6 +135,20 @@ public class ArrayMath {
 		}
 	}
 
+	public static void plusEquals(double[] to, double[] from, double scale){
+		assert(to.length==from.length);
+		for (int i = 0; i < from.length; i++) {
+			to[i] += from[i]*scale;
+		}
+	}
+
+	
+	public static void timesEquals(double[] array, double val){
+		for (int i = 0; i < array.length; i++) {
+			array[i] *= val;
+		}
+	}
+	
 	
 	public static double sum(double[] array) {
 		double res = 0;
@@ -142,7 +156,19 @@ public class ArrayMath {
 		return res;
 	}
 
-
+	/**
+	 * sums part of the array -- the sum(array) method is equivalent to 
+	 * sumPart(array, 0, array.length)
+	 * @param array
+	 * @param start included in sum
+	 * @param end excluded from sum
+	 * @return
+	 */
+	public static double sumPart(double[] array, int start, int end) {
+		int res = 0;
+		for (int i = start; i < end; i++) res += array[i];
+		return res;
+	}
 	
 	public static  double[][] deepclone(double[][] in){
 		double[][] res = new double[in.length][];
@@ -183,4 +209,6 @@ public class ArrayMath {
 		for (int i = 0; i < array.length; i++) res += array[i];
 		return res;
 	}
+	
+
 }
