@@ -79,7 +79,7 @@ public class EM {
 
 	public void corpusEStep(AbstractCountTable counts, AbstractSentenceDist[] sentenceDists, TrainStats stats) {	
 		// Clear model for accumulating E step counts
-		counts.fill(0);
+		counts.clear();
 		// Corpus E step
 		stats.eStepStart(this.model, this);
 		System.out.println("Using senteces on training:" + sentenceDists.length);

@@ -56,7 +56,7 @@ public class JointEM {
 		
 			// Clear model for accumulating E step counts
 			for (int i = 0; i < models.length; i++) {
-				counts[i].fill(0);
+				counts[i].clear();
 			}
 			// Corpus E step
 			stats.eStepStart(this.models, this);

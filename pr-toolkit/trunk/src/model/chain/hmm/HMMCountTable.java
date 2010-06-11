@@ -28,6 +28,11 @@ public class HMMCountTable extends AbstractCountTable{
 		observationCounts.fill(value);
 		
 	}
+	
+	@Override
+	public void clear(){
+		fill(0);
+	}
 
 	@Override
 	public void fill(AbstractCountTable value) {
