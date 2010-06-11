@@ -212,12 +212,10 @@ public final class RunModel {
 			if(childBackoff < 0 || childBackoff > 1) throw new CmdLineException("Child backoff strength must be in the [0,1] range");
 			DepProbMatrix params = new DepProbMatrix(corpus, dvalency, cvalency);
 			initializeModel(params);
-			@SuppressWarnings("unchecked")
 			TrainStats<DepModel,DepSentenceDist> stats = CompositeTrainStats.buildTrainStats(statsFile);
 			DepModel model = null;
-			if(numEMIters > 0) {
-				model = trainModel(params, numEMIters, stats);
-			} else if(warmupIters != null) throw new CmdLineException("Cannot have warmup iterations without other iterations");
+			model = trainModel(params, numEMIters, stats);
+			if (numEMIters == 0 && warmupIters != null) throw new CmdLineException("Cannot have warmup iterations without other iterations");
 
 			// Save model to file
 			if(savefile != null) {
@@ -290,19 +288,26 @@ public final class RunModel {
 		DepModel model = null;
 		if(trainingType == 1) {
 			model = new DepModel(params, params.corpus, dvalency, cvalency, childBackoff, UpdateType.TABLE_UP);
-			runPostRegEM(model, numIters, stats, stats);
+			if (numIters > 0) {
+				runPostRegEM(model, numIters, stats, stats);
+			}
 		} else if(trainingType == 0) {
 			// Check that no command line options for PR were passed for a run of standard EM
 			model = new DepModel(params, params.corpus, dvalency, cvalency, childBackoff, UpdateType.TABLE_UP);
 			if(warmupIters == null && !useChildWords && !useParentWords &&
-					!constrainRoot && !constrainDir && cstrength == null)
-				runStandardEM(model, numIters, stats);
+					!constrainRoot && !constrainDir && cstrength == null){
+				if (numIters > 0){
+					runStandardEM(model, numIters, stats);
+				}
+			}
 			else throw new CmdLineException("Cannot use options constraint-strength, num-warmup-iters, use-child-words, " + 
 			"use-parent-words, constrain-direction, or constrain-root when running standard EM");
 		} else if(trainingType == 2) {
 			if(prior < 0 ) throw new CmdLineException("Cannot use variational EM without a prior or with a negative prior");
 			model = new DepModel(params, params.corpus, dvalency, cvalency, childBackoff, UpdateType.VB, prior);
-			runStandardEM(model, numIters, stats);	
+			if (numIters > 0) {
+				runStandardEM(model, numIters, stats);	
+			}
 		} else {
 			throw new CmdLineException("Not a valid training type");
 		}

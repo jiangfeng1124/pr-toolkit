@@ -56,7 +56,7 @@ public class DepInstanceList extends InstanceList{
 			}
 			else { // Case of end of sentence
 				int sentenceSize = wordsList.size();
-				if(sentenceSize > minSentenceLength && sentenceSize <= maxSentenceLenght){
+				if(sentenceSize >= minSentenceLength && sentenceSize <= maxSentenceLenght){
 					addDepInst(il, wordsList, posList, parentsList);
 				}
 				wordsList.clear();

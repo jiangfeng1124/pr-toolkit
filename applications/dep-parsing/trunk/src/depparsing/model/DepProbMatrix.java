@@ -6,6 +6,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -299,6 +301,11 @@ public class DepProbMatrix extends AbstractCountTable implements Serializable {
 		}
 	}
 	
+	@Override
+	public void clear(){
+		fill(Double.NEGATIVE_INFINITY);
+	}
+	
 	/**
 	 * Sets all model parameters to the given value.
 	 */
@@ -526,12 +533,28 @@ public class DepProbMatrix extends AbstractCountTable implements Serializable {
 		return out;
 	}
 	
+	public String toString(){
+		StringWriter outWriter = new StringWriter();
+		try {
+			printLogProbs(outWriter);
+		} catch (IOException e) {
+			// kind of lame, but I can't think of a better way
+			throw new RuntimeException(e);
+		}
+		return outWriter.toString();
+	}
+	
 	/**
 	 * Prints the model parameters in a legible format.
 	 */
 	public void printLogProbs(String outFile) throws IOException {
 		// Create output writer
 		BufferedWriter outWriter = new BufferedWriter(new FileWriter(outFile));
+		printLogProbs(outWriter);
+		outWriter.close();
+	}
+	
+	private void printLogProbs(Writer outWriter) throws IOException {
 
 		// Sort tags in alphabetical order
         String[] sortedTags = corpus.getAllTagsStrings();
@@ -564,7 +587,6 @@ public class DepProbMatrix extends AbstractCountTable implements Serializable {
 			outWriter.write("\n");
 		}
 		
-		outWriter.close();
 	}
 
 
