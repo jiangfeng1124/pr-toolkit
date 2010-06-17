@@ -3,18 +3,12 @@ package depparsing.constraints;
 import java.util.Arrays;
 import java.util.Random;
 
-import javax.management.RuntimeErrorException;
-
 import model.AbstractSentenceDist;
-
-import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.ProjectedObjective;
-
-import depparsing.constraints.FernandoL1Lmax.SentenceChildParent;
-import depparsing.model.DepSentenceDist;
-
 import util.ArrayMath;
 import util.LogSummer;
+import depparsing.constraints.FernandoL1Lmax.SentenceChildParent;
+import depparsing.model.DepSentenceDist;
 
 public class FernandoL1LMaxObjective extends ProjectedObjective {
 
@@ -42,6 +36,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 				for (int i = 0; i < parent.edge2scp[constr].length; i++) {
 					expectations[index] = 0;
 					SentenceChildParent scp = parent.edge2scp[constr][i];
+					assert parent.param2scp[index]==scp;
 					// now we need to sum all the parents for each 
 					// sentence-childid corresponding to constraint feature i
 					for(int pid:scp.parents){
@@ -84,6 +79,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 			for (int constr = 0; constr < parent.edge2scp.length; constr++){
 				for (int i = 0; i < parent.edge2scp[constr].length; i++) {
 					SentenceChildParent scp = parent.edge2scp[constr][i];
+					assert parent.param2scp[index] == scp;
 					DepSentenceDist sd = (DepSentenceDist) posteriors[scp.s];
 					for(int pid:scp.parents)
 					if (pid < 0){
@@ -118,6 +114,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 		this.parameters = lambda;
 		this.parent = parent;
 		cache = new Cache(posteriors);
+		cache.update();
 	}
 	
 	@Override
@@ -126,13 +123,6 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 			cache.update();
 		}
 		return this.gradient;
-//		double[] res = cache.expectations.clone();
-//		projectGradient(res);
-//		// FIXME: do we need -ve gradient or gradient?
-//		for (int i = 0; i < res.length; i++) {
-//			res[i] = -res[i];
-//		}
-//		return res;
 	}
 
 	@Override
@@ -146,6 +136,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 		parameters[index]=value;
 		cache.setStale();
 		doLambdaProjection(parameters);
+		cache.update();
 	}
 
 	@Override
@@ -187,82 +178,84 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 	 * FIXME: not yet implemented. 
 	 */
 	public void testGradient() {
-//		// choose some dimensions
-//		L1LmaxParameters grad = (L1LmaxParameters) getGradient();
-//		double origObjective = getObjective();
-//		L1LmaxParameters origLambda = (L1LmaxParameters) lambda.deepCopy();
-//		L1LmaxParameters newLambda = (L1LmaxParameters) lambda.deepCopy();
-//		Random r = new Random(0);
+		// choose some dimensions
+		double[] grad = getGradient().clone();
+		projectGradient(grad);
+		double origObjective = getValue();
+		double[] origLambda = parameters.clone();
+		double[] newLambda = parameters.clone();
+		Random r = new Random(0);
 //		int[] dims = new int[numdimstocheck];
-//		int[] indices = new int[numdimstocheck];
-//		double[] algebraicGradient = new double[numdimstocheck];
-//		double[] numericalGradientP = new double[numdimstocheck];
-//		double[] numericalGradientN = new double[numdimstocheck];
-// 		for (int i = 0; i < dims.length; i++) {
-//			dims[i] = r.nextInt(grad.value.length);
-//			indices[i] = r.nextInt(grad.value[dims[i]].length);
-//			algebraicGradient[i] = grad.value[dims[i]][indices[i]];
-//			double myStepSize = this.testGradientStep*grad.value[indices[i]].length;
-//			{
-//				newLambda.value[dims[i]][indices[i]] += myStepSize;
-//				setLambda(newLambda);
-//				double currObjective = getObjective();
-//				numericalGradientP[i] = (currObjective - origObjective)/myStepSize;
-//				newLambda.value[dims[i]][indices[i]] -= myStepSize;
-//			} {
-//				newLambda.value[dims[i]][indices[i]] -= myStepSize;
-//				setLambda(newLambda);
-//				double currObjective = getObjective();
-//				numericalGradientN[i] = (origObjective - currObjective)/myStepSize;
-//				newLambda.value[dims[i]][indices[i]] += myStepSize;
-//			}
-//			
-//		}
-// 		
-// 		double [] numerical = new double[numdimstocheck];
-// 		for (int i = 0; i < numerical.length; i++) {
-//			double min = Math.min(numericalGradientN[i], numericalGradientP[i]);
-//			double max = Math.max(numericalGradientN[i], numericalGradientP[i]);
-//			if (min <= algebraicGradient[i] && algebraicGradient[i] <= max) numerical[i] = algebraicGradient[i];
-//			if (min > algebraicGradient[i]) numerical[i] = min;
-//			if (max < algebraicGradient[i]) numerical[i] = max;
-//			// if alg > 0, then we will add. In this case we want numP > 0
-//			// if alg < 0, tehn we will subtract, and we want numM < 0
-//			if (algebraicGradient[i] > 0 && numericalGradientP[i] <= 0){
-//				System.out.println(" *** ASSERT FAILED ***"+
-//						String.format(" - %11s  %.4f  %.4f  %.4f  l%.4f (%.4f)    p%.4f (%.4f)", 
-//						parent.cstraints.constraint2string(dims[i]),
-//						numericalGradientP[i], numericalGradientN[i], 
-//						algebraicGradient[i],
-//						origLambda.value[dims[i]][indices[i]],
-//						ArrayMath.sum(origLambda.value[dims[i]]),
-//						cache.expectations.value[dims[i]][indices[i]],
-//						ArrayMath.max(cache.expectations.value[dims[i]])
-//						));
-//			}
-//		}
-// 		double cosine = ArrayMath.cosine(numerical, algebraicGradient);
-// 		System.out.println("Test gradient (num ,algebraic) cos = "+cosine+" (angle "+Math.acos(cosine));
-// 		double cosineP = ArrayMath.cosine(numericalGradientP, algebraicGradient);
-// 		System.out.println("Test gradient (num+,algebraic) cos = "+cosineP+" (angle "+Math.acos(cosineP));
-// 		double cosineN = ArrayMath.cosine(numericalGradientN, algebraicGradient);
-// 		System.out.println("Test gradient (num-,algebraic) cos = "+cosineN+" (angle "+Math.acos(cosineN));
-// 		if(cosine < 2){
-// 			System.out.println("     type      num+  num-  algebraic lambda (sum) posteriors (max)");
-// 			for (int i = 0; i < numericalGradientP.length; i++) {
-//				System.out.println(String.format(" - %11s  %.4f  %.4f  %.4f  l%.4f (%.4f)    p%.4f (%.4f)", 
-//						parent.cstraints.constraint2string(dims[i]),
-//						numericalGradientP[i], numericalGradientN[i], 
-//						algebraicGradient[i],
-//						origLambda.value[dims[i]][indices[i]],
-//						ArrayMath.sum(origLambda.value[dims[i]]),
-//						cache.expectations.value[dims[i]][indices[i]],
-//						ArrayMath.max(cache.expectations.value[dims[i]])
-//						));
-//			}
-// 		}
-// 		setLambda(origLambda);
-// 		getObjective();
+		int[] indices = new int[numdimstocheck];
+		double[] algebraicGradient = new double[numdimstocheck];
+		double[] numericalGradientP = new double[numdimstocheck];
+		double[] numericalGradientN = new double[numdimstocheck];
+ 		for (int i = 0; i < numdimstocheck; i++) {
+//			dims[i] = r.nextInt(grad.length);
+			indices[i] = r.nextInt(grad.length);
+			algebraicGradient[i] = grad[indices[i]];
+			double myStepSize = this.testGradientStep*grad.length/((double)parent.edge2scp.length);
+			{
+				newLambda[indices[i]] += myStepSize;
+				setParameters(newLambda);
+				double currObjective = getValue();
+				numericalGradientP[i] = (currObjective - origObjective)/myStepSize;
+				newLambda[indices[i]] = origLambda[indices[i]];
+			} {
+				newLambda[indices[i]] -= myStepSize;
+				setParameters(newLambda);
+				double currObjective = getValue();
+				numericalGradientN[i] = (origObjective - currObjective)/myStepSize;
+				newLambda[indices[i]] = origLambda[indices[i]];
+			}
+			
+		}
+ 		System.out.println(String.format("2norm^2= %.2f",ArrayMath.twoNormSquared(parameters))+
+ 				String.format("   value=%.2f",origObjective));
+ 		double [] numerical = new double[numdimstocheck];
+ 		for (int i = 0; i < numerical.length; i++) {
+			double min = Math.min(numericalGradientN[i], numericalGradientP[i]);
+			double max = Math.max(numericalGradientN[i], numericalGradientP[i]);
+			if (min <= algebraicGradient[i] && algebraicGradient[i] <= max) numerical[i] = algebraicGradient[i];
+			if (min > algebraicGradient[i]) numerical[i] = min;
+			if (max < algebraicGradient[i]) numerical[i] = max;
+			// if alg > 0, then we will add. In this case we want numP > 0
+			// if alg < 0, tehn we will subtract, and we want numM < 0
+			if (algebraicGradient[i] > 0 && numericalGradientP[i] <= 0){
+				System.out.println(" *** ASSERT FAILED ***"+
+						String.format(" - %%11s  nP=%.4f  nN=%.4f  a=%.4f  l%.4f (%.4f)    p%.4f (%.4f)", 
+						//parent.cstraints.constraint2string(dims[i]), // FIXME
+						numericalGradientP[i], numericalGradientN[i], 
+						algebraicGradient[i],
+						origLambda[indices[i]],
+						ArrayMath.sum(origLambda), // FIXME .value[dims[i]]
+						cache.expectations[indices[i]],
+						ArrayMath.max(cache.expectations) // FIXME .value[dims[i]]
+						));
+			}
+		}
+ 		double cosine = ArrayMath.cosine(numerical, algebraicGradient);
+ 		System.out.println("Test gradient (num ,algebraic) cos = "+cosine+" (angle "+Math.acos(cosine)+")");
+ 		if(cosine < 0.9999){
+ 	 		double cosineP = ArrayMath.cosine(numericalGradientP, algebraicGradient);
+ 	 		System.out.println("Test gradient (num+,algebraic) cos = "+cosineP+" (angle "+Math.acos(cosineP)+")");
+ 	 		double cosineN = ArrayMath.cosine(numericalGradientN, algebraicGradient);
+ 	 		System.out.println("Test gradient (num-,algebraic) cos = "+cosineN+" (angle "+Math.acos(cosineN)+")");
+ 			System.out.println("     type      num+  num-  algebraic lambda (sum) posteriors (max)");
+ 			for (int i = 0; i < numericalGradientP.length; i++) {
+				System.out.println(String.format(" - %%11s  %.4f  %.4f  %.4f  l%.4f (%.4f)    p%.4f (%.4f)", 
+						//parent.cstraints.constraint2string(dims[i]),
+						numericalGradientP[i], numericalGradientN[i], 
+						algebraicGradient[i],
+						origLambda[indices[i]],
+						ArrayMath.sum(origLambda), //FIXME .value[dims[i]]
+						cache.expectations[indices[i]], 
+						ArrayMath.max(cache.expectations) // FIXME .value[dims[i]]
+						));
+			}
+ 		}
+ 		setParameters(origLambda);
+ 		getValue();
 	}
 
 	
@@ -285,7 +278,9 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 	private void doLambdaProjection(double[] lambda) {
 		int index = 0;
 		for (int edgeType = 0; edgeType < parent.edge2scp.length; edgeType++) {
+			assert parent.param2scp[index] == parent.edge2scp[edgeType][0];
 			double[] ds = new double[parent.edge2scp[edgeType].length];
+			assert parent.param2scp[index+ds.length-1] == parent.edge2scp[edgeType][ds.length-1];
 			System.arraycopy(lambda, index, ds, 0, ds.length);
 			ArrayMath.sumPart(lambda, index, index+ds.length);
 			assert(ArrayMath.sumPart(lambda, index, index+ds.length) == ArrayMath.sum(ds));

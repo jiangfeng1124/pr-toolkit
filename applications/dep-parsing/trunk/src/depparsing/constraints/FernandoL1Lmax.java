@@ -27,15 +27,14 @@ import learning.stats.TrainStats;
 import model.AbstractCountTable;
 import model.AbstractSentenceDist;
 import util.Alphabet;
-import util.ArrayMath;
 import util.MemoryTracker;
 
 
-import data.Corpus;
 import data.WordInstance;
 import depparsing.constraints.L1Lmax.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
+import depparsing.learning.stats.L1LMaxStats;
 import depparsing.model.DepModel;
 import depparsing.model.DepSentenceDist;
 
@@ -137,7 +136,8 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		}
 		
 		/** 
-		 * @return a list of indices corresponding to different edge types for each child type. 
+		 * @return a list of indices corresponding to different edge types for each child type.
+		 * used by the stats class {@code L1LMaxStats}. 
 		 */
 		public TIntArrayList[] cidAsMatrix(){
 			return parentIdsPerChild;
@@ -209,6 +209,8 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	final SentenceChildParent[][] edge2scp;  // indexed by type, index
 	private final double constraintStrength;
 	private TIntArrayList edgesToNotProject;
+	// Debugging code -- to make sure we're doing everything correctly in terms of counting. 
+	SentenceChildParent[] param2scp;
 	
 	final double c1= 0.0001, c2=0.9, stoppingPrecision = 1e-5, maxStep = 10;
 	final int maxZoomEvals = 10, maxExtrapolationIters = 200;
@@ -250,12 +252,15 @@ public class FernandoL1Lmax implements CorpusConstraints {
 			}
 		}
 		
+		int numParams = 0;
+
 		// count how many edge types will not be projected for reporting
 		int notToProject = 0;
 		// create arrays..
 		edge2scp = new SentenceChildParent[indicesforcp.size()][];
 		for (int i = 0; i < edge2scp.length; i++) {
 			edge2scp[i] = new SentenceChildParent[indicesforcp.get(i)];
+			numParams += indicesforcp.get(i);
 			if (minOccurrencesForProjection > edge2scp[i].length){
 				notToProject +=1;
 			}
@@ -263,7 +268,6 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		}
 		int totalEdgeTypes = indicesforcp.size();
 		System.out.println("Will project "+(totalEdgeTypes-notToProject)+" / "+totalEdgeTypes+" the rest fall below min occurrences to project");
-		
 		
 		// fill in the matrices
 		for (int s = 0; s < toProject.size(); s++) {
@@ -289,6 +293,15 @@ public class FernandoL1Lmax implements CorpusConstraints {
 					edge2scp[edgetype][index] = new SentenceChildParent(s,childIndex,parents.toNativeArray());
 					indicesforcp.set(edgetype, 1+index);
 				}
+			}
+		}
+		
+		// create the param2scp 
+		param2scp = new SentenceChildParent[numParams];
+		int paramIndex = 0;
+		for (int edgeType = 0; edgeType < edge2scp.length; edgeType++) {
+			for (int index = 0; index < edge2scp[edgeType].length; index++) {
+				param2scp[paramIndex++] = edge2scp[edgeType][index];
 			}
 		}
 		// FIXME: edgesToNotProject has not been used for a while; do we want to keep it?
@@ -319,8 +332,6 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		return res;
 	}
 	
-//	private double avgNumberContexts = -1;
-//	private static final int minOccurrences = 5;
 	public double getConstraintStrength(int edgeType){
 		double myCstrength = this.constraintStrength;
 		if (edgesToNotProject.contains(edgeType)) return 0;
@@ -329,34 +340,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 			myCstrength = 0;
 		}
 		return myCstrength;
-		
-//		if (!scaleByTagType) return myCstrength;
-//		double sum = 0;
-//		int count = 0;
-//		if (avgNumberContexts<0){
-//			for(int t=0; t<corpus.getNrTags(); t++){
-//				int numContexts = corpus.getUniqueContextLeft(t, minOccurrences);
-//				if (numContexts>0) {
-//					sum+=numContexts;
-//					count++;
-//				}
-//			}
-//			avgNumberContexts = sum/count;
-//			System.out.println("Average number of contexts over all tags is "+avgNumberContexts);
-//		}
-//		int childTag = cstraints.getChildType(edgeType);
-//		int parentTag = cstraints.getParentType(edgeType);
-//		double numC = corpus.getUniqueContextLeft(childTag, 10) + corpus.getUniqueContextRight(childTag, 10);
-//		double numP = -1;
-//		if (parentTag >= 0)
-//			numP = corpus.getUniqueContextLeft(parentTag, 10) + corpus.getUniqueContextRight(parentTag, 10);
-//		if (numP < 1) numP = avgNumberContexts;
-//		if (numC < 1) numC = avgNumberContexts;
-//		return myCstrength*(1.0/numC + 1.0/numP);
 	}
-	
-	
-
 	
 	@SuppressWarnings("unchecked")
 	public void project(AbstractCountTable counts,
@@ -368,6 +352,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		for (int i = 0; i < edge2scp.length; i++) {
 			numParams += edge2scp[i].length;
 		}
+		if (numParams!= param2scp.length) throw new AssertionError();
 		if (lambda == null){
 			lambda = new double[numParams];
 			originalChildren = new double[posteriors.length][][][];
@@ -388,6 +373,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		}
 		ProjectedOptimizerStats stats = new ProjectedOptimizerStats();
 		FernandoL1LMaxObjective objective = new FernandoL1LMaxObjective(lambda, this, posteriors);
+		// objective.doTestGradient = true;
 		GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1);
 		LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2);
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(linesearch);
@@ -399,9 +385,13 @@ public class FernandoL1Lmax implements CorpusConstraints {
         stop.add(stopGrad);
         stop.add(stopValue);
         boolean succed = optimizer.optimize(objective, stats,stop);
-		mem.finish();
 		// make sure we update the dual params
 		objective.getValue();
+		counts.clear();
+		for (int i = 0; i < posteriors.length; i++) {
+			model.addToCounts(posteriors[i], counts);
+		}
+		mem.finish();
 		System.out.println("After  optimization:" + mem.print());
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 	}
