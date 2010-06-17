@@ -34,7 +34,6 @@ import data.WordInstance;
 import depparsing.constraints.L1Lmax.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
-import depparsing.learning.stats.L1LMaxStats;
 import depparsing.model.DepModel;
 import depparsing.model.DepSentenceDist;
 
@@ -216,7 +215,7 @@ public class FernandoL1Lmax implements CorpusConstraints {
 	final int maxZoomEvals = 10, maxExtrapolationIters = 200;
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
-	
+
 	public FernandoL1Lmax(DepCorpus corpus, DepModel model, ArrayList<WordInstance> toProject, PCType cType, PCType pType, 
 			boolean useRoot, boolean useDirection, double constraintStrength, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
 		this.corpus = corpus;
@@ -226,21 +225,70 @@ public class FernandoL1Lmax implements CorpusConstraints {
 		this.minOccurrencesForProjection = minOccurrencesForProjection;
 		numChildIds = cstraints.numIdsChild();
 		numParentIds = cstraints.numIdsParent();
+		ArrayList<Integer> indicesforcp = countIndicesForChildParentType(toProject);
+		edge2scp = new SentenceChildParent[indicesforcp.size()][];
+		// count how many edge types will not be projected for reporting
+		int notToProject = 0;
+		// create arrays..
+		for (int i = 0; i < edge2scp.length; i++) {
+			edge2scp[i] = new SentenceChildParent[indicesforcp.get(i)];
+			if (minOccurrencesForProjection > edge2scp[i].length){
+				notToProject +=1;
+			}
+			indicesforcp.set(i,0);
+		}
+		int totalEdgeTypes = indicesforcp.size();
+		System.out.println("Will project "+(totalEdgeTypes-notToProject)+" / "+totalEdgeTypes+" the rest fall below min occurrences to project");
+
+		makeEdge2SentenceChildParent(toProject, indicesforcp);
+		// initialize the param2scp 
+		int numParams = 0;
+		for (int edgeType = 0; edgeType < edge2scp.length; edgeType++) {
+			numParams+= edge2scp[edgeType].length;
+		}
+		param2scp = new SentenceChildParent[numParams];
+		int paramIndex = 0;
+		for (int edgeType = 0; edgeType < edge2scp.length; edgeType++) {
+			for (int index = 0; index < edge2scp[edgeType].length; index++) {
+				param2scp[paramIndex++] = edge2scp[edgeType][index];
+			}
+		}
+
+		// FIXME: edgesToNotProject has not been used for a while; do we want to keep it?
+		if (fileOfAllowedTypes != null)
+			edgesToNotProject = makeEdgesToNotProject(fileOfAllowedTypes);
+		else {
+			edgesToNotProject = new TIntArrayList();
+		}
+	}
+	
+	/**
+	 * count the number of indices necessary for each child-parent type in the ragged array.  For Fernando 
+	 * style constraints, this will be the number of 
+	 * @param toProject
+	 * @return
+	 */
+	public ArrayList<Integer> countIndicesForChildParentType(ArrayList<WordInstance> toProject){
 		ArrayList<Integer> indicesforcp = new ArrayList<Integer>();
 
 		// compute how many of each childType-parentType pair there are. 
 		for (int s = 0; s < toProject.size(); s++) {
 			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
+				// reserve a space for each child being the root
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0){ 
 					while (roottype >=indicesforcp.size()) indicesforcp.add(0);
 					indicesforcp.set(roottype, 1+indicesforcp.get(roottype));
 				}
+				// group parents by their type; parsByEdgeType contains a map from 
+				// a parent type (for the current parent) to a list of indices in the 
+				// sentence that correspond to parents of that type. 
 				TIntObjectHashMap<TIntArrayList> parsByEdgeType = new TIntObjectHashMap<TIntArrayList>();
 				for (int parentIndex = 0; parentIndex < di.numWords; parentIndex++) {
 					int edgetype = cstraints.edge2cid(di,childIndex, parentIndex);
 					if (!parsByEdgeType.contains(edgetype)) parsByEdgeType.put(edgetype, new TIntArrayList());
+					// we never actually get the edge types; 
 					parsByEdgeType.get(edgetype).add(parentIndex);
 				}
 				for (TIntObjectIterator<TIntArrayList> itr = parsByEdgeType.iterator(); itr.hasNext();) {
@@ -251,34 +299,24 @@ public class FernandoL1Lmax implements CorpusConstraints {
 				}
 			}
 		}
-		
-		int numParams = 0;
+		return indicesforcp;
+	}
 
-		// count how many edge types will not be projected for reporting
-		int notToProject = 0;
-		// create arrays..
-		edge2scp = new SentenceChildParent[indicesforcp.size()][];
-		for (int i = 0; i < edge2scp.length; i++) {
-			edge2scp[i] = new SentenceChildParent[indicesforcp.get(i)];
-			numParams += indicesforcp.get(i);
-			if (minOccurrencesForProjection > edge2scp[i].length){
-				notToProject +=1;
-			}
-			indicesforcp.set(i,0);
-		}
-		int totalEdgeTypes = indicesforcp.size();
-		System.out.println("Will project "+(totalEdgeTypes-notToProject)+" / "+totalEdgeTypes+" the rest fall below min occurrences to project");
-		
+	public void makeEdge2SentenceChildParent(ArrayList<WordInstance> toProject, ArrayList<Integer> indicesforcp){
 		// fill in the matrices
 		for (int s = 0; s < toProject.size(); s++) {
 			DepInstance di = (DepInstance) toProject.get(s);
 			for (int childIndex = 0; childIndex < di.numWords; childIndex++) {
+				// make an SentenceChildParent object for each child being the root
 				int roottype = cstraints.root2cid(di, childIndex);
 				if (roottype >= 0) {
 					int index = indicesforcp.get(roottype);
 					edge2scp[roottype][index] = new SentenceChildParent(s,childIndex,new int[] {-1});
 					indicesforcp.set(roottype, 1+index);
 				}
+				// group parents by their type; parsByEdgeType contains a map from 
+				// a parent type (for the current parent) to a list of indices in the 
+				// sentence that correspond to parents of that type. 
 				TIntObjectHashMap<TIntArrayList> parsByEdgeType = new TIntObjectHashMap<TIntArrayList>();
 				for (int parentIndex = 0; parentIndex < di.numWords; parentIndex++) {
 					int edgetype = cstraints.edge2cid(di,childIndex, parentIndex);
@@ -294,21 +332,6 @@ public class FernandoL1Lmax implements CorpusConstraints {
 					indicesforcp.set(edgetype, 1+index);
 				}
 			}
-		}
-		
-		// create the param2scp 
-		param2scp = new SentenceChildParent[numParams];
-		int paramIndex = 0;
-		for (int edgeType = 0; edgeType < edge2scp.length; edgeType++) {
-			for (int index = 0; index < edge2scp[edgeType].length; index++) {
-				param2scp[paramIndex++] = edge2scp[edgeType][index];
-			}
-		}
-		// FIXME: edgesToNotProject has not been used for a while; do we want to keep it?
-		if (fileOfAllowedTypes != null)
-			edgesToNotProject = makeEdgesToNotProject(fileOfAllowedTypes);
-		else {
-			edgesToNotProject = new TIntArrayList();
 		}
 	}
 	

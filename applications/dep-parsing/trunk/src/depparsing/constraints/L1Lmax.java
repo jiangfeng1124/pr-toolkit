@@ -132,7 +132,7 @@ public class L1Lmax implements CorpusConstraints {
 		public int getEdgeId(String child, String parent, String dir){
 			if (!useDirection) dir = "";
 			String edgeName = "edge="+child+","+parent+":"+dir;
-			if (types2indices.feat2index.contains(edgeName)) return -1;
+			if (!types2indices.feat2index.contains(edgeName)) return -1;
 			return types2indices.lookupObject(edgeName);
 		}
 		
