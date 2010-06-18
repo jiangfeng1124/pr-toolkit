@@ -6,8 +6,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import javax.management.RuntimeErrorException;
-
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -19,11 +17,11 @@ import learning.stats.CompositeTrainStats;
 import learning.stats.LikelihoodStats;
 import learning.stats.TrainStats;
 import constraints.CorpusConstraints;
-import data.Corpus;
 import data.InstanceList;
 import data.WordInstance;
 import depparsing.constraints.FernandoL1Lmax;
-import depparsing.constraints.L1Lmax;
+import depparsing.constraints.NewL1Lmax;
+import depparsing.constraints.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.decoding.CKYParser;
@@ -406,9 +404,9 @@ public final class RunModel {
 	throws ClassNotFoundException, InvocationTargetException, IllegalAccessException, InstantiationException, IOException {
 		System.out.println("EM with posterior regularization");
 		// Get posterior regularized EM parameters
-		L1Lmax.PCType childType = (useChildWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+		PCType childType = (useChildWords? PCType.WORD : PCType.TAG);
 		System.out.println("Using child " + (useChildWords? "words" : "tags") + " in L1LMax constraints");
-		L1Lmax.PCType parentType = (useParentWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+		PCType parentType = (useParentWords? PCType.WORD : PCType.TAG);
 		System.out.println("Using parent " + (useParentWords? "words" : "tags") + " in L1LMax constraints");
 		System.out.println("Constraining root posteriors? " + constrainRoot);
 		System.out.println("Differentiating L1LMax based on edge direction? " + constrainDir);
@@ -419,20 +417,20 @@ public final class RunModel {
 		if(useFernandoConstraints)
 			constraints = new FernandoL1Lmax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
 		else 
-			constraints = new L1Lmax(model.corpus, model.corpus.trainInstances.instanceList,childType, parentType, constrainRoot, constrainDir, cstrength, scaleCstrength, minOccurrencesForProjection, doNotProjectFile);
+			constraints = new NewL1Lmax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
 		if(tmpDoingRandomPoolInit){
 			if(projectItersAtPool != null){
 				if(useFernandoConstraints){
 					((FernandoL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
 				}else{
-					((L1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
+					((NewL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
 				}
 
 			} else {
 				if(useFernandoConstraints){
 					((FernandoL1Lmax)constraints).setMaxProjectionSteps(0);
 				}else{
-					((L1Lmax)constraints).setMaxProjectionSteps(0);
+					((NewL1Lmax)constraints).setMaxProjectionSteps(0);
 				}
 
 
@@ -511,9 +509,9 @@ public final class RunModel {
 //				}
 //			
 //				// actually do the projection... 
-//				L1Lmax.PCType childType = (useChildWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+//				PCType childType = (useChildWords? PCType.WORD : PCType.TAG);
 //				System.out.println("Using child " + (useChildWords? "words" : "tags") + " in L1LMax constraints");
-//				L1Lmax.PCType parentType = (useParentWords? L1Lmax.PCType.WORD : L1Lmax.PCType.TAG);
+//				PCType parentType = (useParentWords? PCType.WORD : PCType.TAG);
 //				System.out.println("Using parent " + (useParentWords? "words" : "tags") + " in L1LMax constraints");
 //				CorpusConstraints constraints = new L1Lmax(model.corpus, il.instanceList, childType, parentType, constrainRoot, constrainDir, projectAtTestStrength, scaleCstrength, minOccurrencesForProjection,doNotProjectFile);
 //				constraints.project(sentenceDists);

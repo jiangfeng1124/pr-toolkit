@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import data.WordInstance;
-import depparsing.constraints.L1Lmax.PCType;
+import depparsing.constraints.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.model.DepModel;
