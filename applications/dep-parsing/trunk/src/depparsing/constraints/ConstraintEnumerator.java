@@ -1,6 +1,3 @@
-/**
- * 
- */
 package depparsing.constraints;
 
 import gnu.trove.TIntArrayList;
@@ -8,6 +5,12 @@ import util.Alphabet;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 
+/**
+ * An object for mapping between constraint types expressed as Parent-type, child-type and
+ * edge IDs used by L1LMax.  Essentially a dictionary of constraints. 
+ * @author kuzman
+ *
+ */
 public class ConstraintEnumerator{
 	private final PCType childType, parentType;
 	public final boolean useRoot;

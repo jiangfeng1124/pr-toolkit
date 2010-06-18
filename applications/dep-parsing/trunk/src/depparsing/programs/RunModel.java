@@ -19,8 +19,9 @@ import learning.stats.TrainStats;
 import constraints.CorpusConstraints;
 import data.InstanceList;
 import data.WordInstance;
-import depparsing.constraints.FernandoL1Lmax;
-import depparsing.constraints.NewL1Lmax;
+import depparsing.constraints.GroupedL1LMax;
+import depparsing.constraints.L1LMax;
+import depparsing.constraints.UngroupedL1LMax;
 import depparsing.constraints.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
@@ -116,10 +117,7 @@ public final class RunModel {
 	
 	@Option(name="-project-at-test", usage="Perform projection before running CKY (default = false)")
 	private boolean projectAtTest = false;
-	
-	@Option(name="-test-cstrength", usage="constraint strength for projection (default = 100)")
-	private double projectAtTestStrength = 100.0;
-	
+		
 	@Option(name="-project-iters-at-pool", usage="how many max projection iterations to run for the random pool")
 	private Integer projectItersAtPool;
 	
@@ -415,22 +413,22 @@ public final class RunModel {
 		System.out.println();
 		CorpusConstraints constraints = null;
 		if(useFernandoConstraints)
-			constraints = new FernandoL1Lmax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
+			constraints = new GroupedL1LMax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
 		else 
-			constraints = new NewL1Lmax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
+			constraints = new UngroupedL1LMax(model.corpus, model, model.corpus.trainInstances.instanceList, childType, parentType, constrainRoot, constrainDir, cstrength, minOccurrencesForProjection, doNotProjectFile);
 		if(tmpDoingRandomPoolInit){
 			if(projectItersAtPool != null){
 				if(useFernandoConstraints){
-					((FernandoL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
+					((L1LMax)constraints).setMaxProjectionSteps(projectItersAtPool);
 				}else{
-					((NewL1Lmax)constraints).setMaxProjectionSteps(projectItersAtPool);
+					((UngroupedL1LMax)constraints).setMaxProjectionSteps(projectItersAtPool);
 				}
 
 			} else {
 				if(useFernandoConstraints){
-					((FernandoL1Lmax)constraints).setMaxProjectionSteps(0);
+					((L1LMax)constraints).setMaxProjectionSteps(0);
 				}else{
-					((NewL1Lmax)constraints).setMaxProjectionSteps(0);
+					((UngroupedL1LMax)constraints).setMaxProjectionSteps(0);
 				}
 
 

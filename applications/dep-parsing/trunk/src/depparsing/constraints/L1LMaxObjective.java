@@ -7,12 +7,12 @@ import model.AbstractSentenceDist;
 import optimization.gradientBasedMethods.ProjectedObjective;
 import util.ArrayMath;
 import util.LogSummer;
-import depparsing.constraints.FernandoL1Lmax.SentenceChildParent;
+import depparsing.constraints.L1LMax.SentenceChildParent;
 import depparsing.model.DepSentenceDist;
 
-public class FernandoL1LMaxObjective extends ProjectedObjective {
+public class L1LMaxObjective extends ProjectedObjective {
 
-	private final FernandoL1Lmax parent;
+	private final L1LMax parent;
 	private Cache cache;
 	static final double epsilon = 0.0001;
 
@@ -110,7 +110,7 @@ public class FernandoL1LMaxObjective extends ProjectedObjective {
 		void setStale(){ stale = true;}
 	}
 	
-	public FernandoL1LMaxObjective(double[] lambda, FernandoL1Lmax parent, AbstractSentenceDist[] posteriors) {
+	public L1LMaxObjective(double[] lambda, L1LMax parent, AbstractSentenceDist[] posteriors) {
 		this.parameters = lambda;
 		this.parent = parent;
 		cache = new Cache(posteriors);

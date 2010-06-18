@@ -9,9 +9,20 @@ import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.model.DepModel;
 
-public class NewL1Lmax extends FernandoL1Lmax{
+/**
+ * 
+ * @author kuzman
+ * 
+ * This version of {@link L1LMax} constraint does not group the parents by their type. 
+ * So, for example, the probability of "the second Determiner in the sentence" 
+ * is dominated by different Nouns would be separate masses: "the second Determiner in the 
+ * sentence is dominated by the first Noun",  "the second Determiner in the 
+ * sentence is dominated by the second Noun" and so on. 
+ * 
+ */
+public class UngroupedL1LMax extends L1LMax{
 
-	public NewL1Lmax(DepCorpus corpus, DepModel model,
+	public UngroupedL1LMax(DepCorpus corpus, DepModel model,
 			ArrayList<WordInstance> toProject, PCType cType, PCType pType,
 			boolean useRoot, boolean useDirection, double constraintStrength,
 			int minOccurrencesForProjection, String fileOfAllowedTypes)
