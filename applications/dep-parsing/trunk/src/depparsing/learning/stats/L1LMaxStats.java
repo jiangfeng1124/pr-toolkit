@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import learning.EM;
 import learning.stats.TrainStats;
-import model.AbstractSentenceDist;
 import util.LogSummer;
 import data.Corpus;
 import depparsing.constraints.ConstraintEnumerator;
@@ -15,7 +14,6 @@ import depparsing.constraints.PCType;
 import depparsing.data.DepCorpus;
 import depparsing.data.DepInstance;
 import depparsing.model.DepModel;
-import depparsing.model.DepProbMatrix;
 import depparsing.model.DepSentenceDist;
 import depparsing.util.SparseArray;
 
