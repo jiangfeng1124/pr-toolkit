@@ -306,7 +306,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 				prob=0;
 				model.printModelParameters();
 				printStatePosteriors();
-				System.exit(-1);
+				throw new AssertionError("Update init counts not a number");
 			}
 			counts.initialCounts.addCounts(0, state, prob);
 		}
