@@ -41,6 +41,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import postagging.constraints.L1LMax;
+import postagging.constraints.L1SoftMaxEG;
 
 import postagging.data.PosCorpus;
 import postagging.data.PosInstance;
@@ -169,7 +170,7 @@ public class RunModel {
 	private int numEMIters = 0;
 	@Option(name="-stats-file", usage="Training statistics file")
 	private String statsFile = "";
-	private enum TrainingType {EM,L1LMax};
+	private enum TrainingType {EM,L1LMax, L1SoftMaxEG};
 	@Option(name="-trainingType", usage="Training Type: EM EM Training; " +	"L1LMax PR with L1LMax;")
 	private TrainingType trainingType = TrainingType.EM;
 	
@@ -181,6 +182,9 @@ public class RunModel {
 	
 	@Option(name="-c-str", usage="Corpus constraints strengh")
 	private double cstr = 32;
+	
+	@Option(name="-soft-max-sharpness", usage="How sharp the softmax should be 0=l_1, and large approaches max")
+	private double softMaxSharpness = 15;
 	
 	public void printModelTrainingOptions(PrintStream out){
 		out.println("-num-em-iters " + numEMIters);
@@ -414,6 +418,24 @@ public class RunModel {
 				model.initTrainer = tempInit;	
 			}
 			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
+			CorpusPR learning = new CorpusPR(model,l1lmax);
+			learning.em(numEMIters, stats);
+		} else if (trainingType == TrainingType.L1SoftMaxEG){
+			EM em = new EM(model);
+			em.em(warmupIter, stats);
+			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
+				AbstractMultinomialTrainer tempObs = model.observationTrainer;
+				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
+				AbstractMultinomialTrainer tempInit = model.initTrainer;
+				model.observationTrainer = new TableNormalizerMultinomialTrainer();
+				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
+				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
+				em.em(maxEntEMWarmupIters, stats);
+				model.observationTrainer = tempObs;
+				model.transitionsTrainer = tempTran;
+				model.initTrainer = tempInit;	
+			}
+			L1SoftMaxEG l1lmax = new L1SoftMaxEG(c, model, minWordOccursL1LMax, cstr, softMaxSharpness);
 			CorpusPR learning = new CorpusPR(model,l1lmax);
 			learning.em(numEMIters, stats);
 		}
