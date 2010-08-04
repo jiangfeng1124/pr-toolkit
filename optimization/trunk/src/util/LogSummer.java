@@ -1,6 +1,5 @@
 package util;
 
-import java.lang.Math;
 
 /*
  * Math tool for computing logs of sums, when the terms of the sum are already in log form.

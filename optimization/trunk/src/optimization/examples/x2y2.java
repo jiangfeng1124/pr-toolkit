@@ -2,7 +2,6 @@ package optimization.examples;
 
 
 import optimization.gradientBasedMethods.ConjugateGradient;
-
 import optimization.gradientBasedMethods.GradientDescent;
 import optimization.gradientBasedMethods.LBFGS;
 import optimization.gradientBasedMethods.Objective;
@@ -104,7 +103,7 @@ public class x2y2 extends Objective{
 		x2y2 o = new x2y2(1,10);
 		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
 		o.setDebugLevel(4);
-		LineSearchMethod wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(1),0.001,0.9);;
+		LineSearchMethod wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(1),0.001,0.9,100);;
 //		LineSearchMethod ls = new ArmijoLineSearchMinimization();
 		OptimizerStats stats = new OptimizerStats();
 		o.optimizeWithGradientDescent(wolfe, stats, o);

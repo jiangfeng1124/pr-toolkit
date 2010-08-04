@@ -2,7 +2,7 @@ package optimization.gradientBasedMethods;
 
 import java.util.ArrayList;
 
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 
 
@@ -15,17 +15,17 @@ public class DebugHelpers {
 		ArrayList<Double> norm = new ArrayList<Double>();
 		double[] gradient = new double[o.getNumParameters()];
 		double[] newParameters = parameters.clone();
-		MathUtils.plusEquals(newParameters,direction,0);
+		ArrayMath.plusEquals(newParameters,direction,0);
 		o.setParameters(newParameters);
 		double minValue = o.getValue();
 		int valuesBiggerThanMax = 0;
 		for(double step = 0; step < 2; step +=0.01 ){
 			newParameters = parameters.clone();
-			MathUtils.plusEquals(newParameters,direction,step);
+			ArrayMath.plusEquals(newParameters,direction,step);
 			o.setParameters(newParameters);
 			double newValue = o.getValue();
 			gradient = o.getGradient();
-			double newgradDirectionDot = MathUtils.dotProduct(gradient,direction);
+			double newgradDirectionDot = ArrayMath.dotProduct(gradient,direction);
 			stepS.add(step);
 			obj.add(newValue);
 			norm.add(newgradDirectionDot);

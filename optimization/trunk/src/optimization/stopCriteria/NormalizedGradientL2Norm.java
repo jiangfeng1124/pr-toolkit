@@ -1,8 +1,7 @@
 package optimization.stopCriteria;
 
 import optimization.gradientBasedMethods.Objective;
-import optimization.gradientBasedMethods.ProjectedObjective;
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 /**
  * Divides the norm by the norm at the begining of the iteration
@@ -28,7 +27,7 @@ public class NormalizedGradientL2Norm extends GradientL2Norm{
 	 
 	
 	public boolean stopOptimization(Objective obj){
-			double norm = MathUtils.L2Norm(obj.gradient);
+			double norm = ArrayMath.L2Norm(obj.gradient);
 			if(originalGradientNorm == -1){
 				originalGradientNorm = norm;
 			}

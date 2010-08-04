@@ -1,6 +1,5 @@
 package optimization.gradientBasedMethods;
 
-import optimization.util.MathUtils;
 
 
 /**

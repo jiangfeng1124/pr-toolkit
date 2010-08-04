@@ -2,8 +2,8 @@ package optimization.linesearch;
 
 import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.ProjectedObjective;
-import optimization.util.MathUtils;
-import optimization.util.MatrixOutput;
+import util.ArrayMath;
+import util.ArrayPrinting;
 
 
 /**
@@ -48,7 +48,7 @@ public class ProjectedDifferentiableLineSearchObjective extends DifferentiableLi
 		//Take a step into the search direction
 //		MatrixOutput.printDoubleArray(obj.getGradient(), "gradient");
 		//x_t+1 = x_t - alpha*gradient = x_t + alpha*direction
-		MathUtils.plusEquals(obj.auxParameters, searchDirection, alpha);
+		ArrayMath.plusEquals(obj.auxParameters, searchDirection, alpha);
 //		MatrixOutput.printDoubleArray(obj.auxParameters, "before projection");
 		obj.auxParameters = projectPoint(obj.auxParameters);
 //		MatrixOutput.printDoubleArray(obj.auxParameters, "after projection");
@@ -57,16 +57,16 @@ public class ProjectedDifferentiableLineSearchObjective extends DifferentiableLi
 //		o.printParameters();
 		values.add(o.getValue());
 		//Computes the new gradient x_k-[x_k-alpha*Gradient(x_k)]+ 
-		MathUtils.minusEqualsInverse(originalParameters,obj.auxParameters,1);
+		ArrayMath.minusEqualsInverse(originalParameters,obj.auxParameters,1);
 //		MatrixOutput.printDoubleArray(obj.auxParameters, "new gradient");
 		//Dot product between the new direction and the new gradient
-		double gradient = MathUtils.dotProduct(obj.auxParameters,searchDirection);
+		double gradient = ArrayMath.dotProduct(obj.auxParameters,searchDirection);
 		gradients.add(gradient);	
 		if(gradient > 0){
 			System.out.println("Gradient on line search has to be smaller than zero");
 			System.out.println("Iter: " + nrIterations);
-			MatrixOutput.printDoubleArray(obj.auxParameters, "new direction");
-			MatrixOutput.printDoubleArray(searchDirection, "search direction");
+			ArrayPrinting.printDoubleArray(obj.auxParameters, "new direction");
+			ArrayPrinting.printDoubleArray(searchDirection, "search direction");
 			throw new RuntimeException();
 			
 		}

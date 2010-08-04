@@ -4,8 +4,9 @@ package optimization.projections;
 
 import java.util.Random;
 
-import optimization.util.MathUtils;
-import optimization.util.MatrixOutput;
+import util.ArrayMath;
+import util.ArrayPrinting;
+import util.MathUtil;
 
 public class SimplexProjection extends Projection{
 
@@ -26,7 +27,7 @@ public class SimplexProjection extends Projection{
 		System.arraycopy(original, 0, ds, 0, ds.length);
 		//If sum is smaller then zero then its ok
 		for (int i = 0; i < ds.length; i++) ds[i] = ds[i]>0? ds[i]:0;
-		double sum = MathUtils.sum(ds);
+		double sum = ArrayMath.sum(ds);
 		if (scale - sum >=  -1.E-10 ){
 			System.arraycopy(ds, 0, original, 0, ds.length);
 			//System.out.println("Not projecting");
@@ -90,18 +91,18 @@ public class SimplexProjection extends Projection{
 		
 		
 		double[] point = sp.samplePoint(3);
-		MatrixOutput.printDoubleArray(point , "random 1 sum:" + MathUtils.sum(point));
+		ArrayPrinting.printDoubleArray(point , "random 1 sum:" + ArrayMath.sum(point));
 		point = sp.samplePoint(3);
-		MatrixOutput.printDoubleArray(point , "random 2 sum:" + MathUtils.sum(point));
+		ArrayPrinting.printDoubleArray(point , "random 2 sum:" + ArrayMath.sum(point));
 		point = sp.samplePoint(3);
-		MatrixOutput.printDoubleArray(point , "random 3 sum:" + MathUtils.sum(point));
+		ArrayPrinting.printDoubleArray(point , "random 3 sum:" + ArrayMath.sum(point));
 		
 		double[] d = {0,1.1,-10};
 		double[] original = d.clone();
-		MatrixOutput.printDoubleArray(d, "before");
+		ArrayPrinting.printDoubleArray(d, "before");
 		
 		sp.project(d);
-		MatrixOutput.printDoubleArray(d, "after");
+		ArrayPrinting.printDoubleArray(d, "after");
 		System.out.println("Test projection: " + sp.testProjection(original, d));
 		
 	}
@@ -110,12 +111,12 @@ public class SimplexProjection extends Projection{
 	double epsilon = 1.E-10;
 	public double[] perturbePoint(double[] point, int parameter){
 		double[] newPoint = point.clone();
-		if(MathUtils.almost(MathUtils.sum(point), scale)){
+		if(MathUtil.almost(ArrayMath.sum(point), scale)){
 			newPoint[parameter]-=epsilon;
 		}
 		else if(point[parameter]==0){
 			newPoint[parameter]+=epsilon;
-		}else if(MathUtils.almost(point[parameter], scale)){
+		}else if(MathUtil.almost(point[parameter], scale)){
 			newPoint[parameter]-=epsilon;
 		}
 		else{

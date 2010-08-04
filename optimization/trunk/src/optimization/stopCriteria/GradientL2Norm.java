@@ -1,7 +1,7 @@
 package optimization.stopCriteria;
 
 import optimization.gradientBasedMethods.Objective;
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 public class GradientL2Norm implements StopingCriteria{
 	
@@ -19,7 +19,7 @@ public class GradientL2Norm implements StopingCriteria{
 	public void reset(){}
 	
 	public boolean stopOptimization(Objective obj){
-		double norm = MathUtils.L2Norm(obj.gradient);
+		double norm = ArrayMath.L2Norm(obj.gradient);
 		if(norm < gradientConvergenceValue){
 			System.out.println("Gradient norm below treshold");
 			return true;

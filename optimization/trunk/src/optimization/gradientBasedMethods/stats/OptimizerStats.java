@@ -4,27 +4,32 @@ import java.util.ArrayList;
 
 import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
-import optimization.util.MathUtils;
-import optimization.util.StaticTools;
+import util.ArrayMath;
+import util.Printing;
 
 
 public class OptimizerStats {
 	
-	double start = 0;
-	double totalTime = 0;
+	public double start = 0;
+	public double totalTime = 0;
 	
-	String objectiveFinalStats;
+	public String objectiveFinalStats;
 	
-	ArrayList<Double> gradientNorms = new ArrayList<Double>();
-	ArrayList<Double> steps = new ArrayList<Double>();
-	ArrayList<Double> value = new ArrayList<Double>();
-	ArrayList<Integer> iterations = new ArrayList<Integer>();
-	double prevValue =0;
+	public ArrayList<Double> gradientNorms = new ArrayList<Double>();
+	public ArrayList<Double> steps = new ArrayList<Double>();
+	public ArrayList<Double> value = new ArrayList<Double>();
+	public ArrayList<Integer> iterations = new ArrayList<Integer>();
+	public double prevValue =0;
+	
+	public boolean succeed = false;
+	public int paramUpdates;
+	
+	public double weightsNorm;
 	
 	public void reset(){
 		start = 0;
 		totalTime = 0;
-		
+		weightsNorm = 0;
 		objectiveFinalStats="";
 		
 		gradientNorms.clear();
@@ -44,17 +49,18 @@ public class OptimizerStats {
 	public String prettyPrint(int level){
 		StringBuffer res = new StringBuffer();
 		res.append("Total time " + totalTime/1000 + " seconds \n" + "Iterations " + iterations.size() + "\n");
+		res.append("weights"+weightsNorm+"\n");
 		res.append(objectiveFinalStats+"\n");
 		if(level > 0){
 			if(iterations.size() > 0){
-			res.append("\tIteration"+iterations.get(0)+"\tstep: "+StaticTools.prettyPrint(steps.get(0), "0.00E00", 6)+ "\tgradientNorm "+ 
-					StaticTools.prettyPrint(gradientNorms.get(0), "0.00000E00", 10)+ "\tvalue "+ StaticTools.prettyPrint(value.get(0), "0.000000E00",11)+"\n");
+			res.append("\tIteration"+iterations.get(0)+"\tstep: "+Printing.prettyPrint(steps.get(0), "0.00E00", 6)+ "\tgradientNorm "+ 
+					Printing.prettyPrint(gradientNorms.get(0), "0.00000E00", 10)+ "\tvalue "+ Printing.prettyPrint(value.get(0), "0.000000E00",11)+"\n");
 			}
 			for(int i = 1; i < iterations.size(); i++){
-			res.append("\tIteration:\t"+iterations.get(i)+"\tstep:"+StaticTools.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
-					StaticTools.prettyPrint(gradientNorms.get(i), "0.00000E00", 10)+ 
-					"\tvalue:\t"+ StaticTools.prettyPrint(value.get(i), "0.000000E00",11)+
-					"\tvalueDiff:\t"+ StaticTools.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
+			res.append("\tIteration:\t"+iterations.get(i)+"\tstep:"+Printing.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
+					Printing.prettyPrint(gradientNorms.get(i), "0.00000E00", 10)+ 
+					"\tvalue:\t"+ Printing.prettyPrint(value.get(i), "0.000000E00",11)+
+					"\tvalueDiff:\t"+ Printing.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
 					"\n");
 			}
 		}
@@ -65,22 +71,25 @@ public class OptimizerStats {
 	public void collectInitStats(Optimizer optimizer, Objective objective){
 		startTime();
 		iterations.add(-1);
-		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
+		gradientNorms.add(ArrayMath.L2Norm(objective.getGradient()));
 		steps.add(0.0);
 		value.add(objective.getValue());
 	}
 	
 	public void collectIterationStats(Optimizer optimizer, Objective objective){
 		iterations.add(optimizer.getCurrentIteration());
-		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
+		gradientNorms.add(ArrayMath.L2Norm(objective.getGradient()));
 		steps.add(optimizer.getCurrentStep());
 		value.add(optimizer.getCurrentValue());
 	}
 	
 	
-	public void collectFinalStats(Optimizer optimizer, Objective objective){
+	public void collectFinalStats(Optimizer optimizer, Objective objective, boolean success){
 		stopTime();
+		this.succeed = success;
+		paramUpdates = objective.getNumberUpdateCalls();
 		objectiveFinalStats = objective.finalInfoString();
+		weightsNorm = util.ArrayMath.L2Norm(objective.getParameters());
 	}
 	
 }

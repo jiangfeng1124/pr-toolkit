@@ -1,13 +1,9 @@
 package optimization.gradientBasedMethods;
 
-import java.io.IOException;
-
 import optimization.gradientBasedMethods.stats.OptimizerStats;
-import optimization.linesearch.DifferentiableLineSearchObjective;
 import optimization.linesearch.LineSearchMethod;
 import optimization.linesearch.ProjectedDifferentiableLineSearchObjective;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.util.MathUtils;
 
 
 /**

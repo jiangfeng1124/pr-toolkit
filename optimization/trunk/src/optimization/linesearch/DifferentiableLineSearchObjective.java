@@ -1,20 +1,8 @@
 package optimization.linesearch;
 
 import gnu.trove.TDoubleArrayList;
-import gnu.trove.TIntArrayList;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-
 import optimization.gradientBasedMethods.Objective;
-import optimization.util.MathUtils;
-import optimization.util.StaticTools;
-
-
-
-import util.MathUtil;
+import util.ArrayMath;
 import util.Printing;
 
 
@@ -87,7 +75,7 @@ public class DifferentiableLineSearchObjective {
 		gradients.clear();
 	
 		values.add(o.getValue());
-		gradients.add(MathUtils.dotProduct(o.getGradient(),direction));	
+		gradients.add(ArrayMath.dotProduct(o.getGradient(),direction));	
 		steps.add(0);
 	}
 	
@@ -106,11 +94,11 @@ public class DifferentiableLineSearchObjective {
 		steps.add(alpha);
 		//x_t+1 = x_t + alpha*direction
 		System.arraycopy(originalParameters,0, o.getParameters(), 0, originalParameters.length);
-		MathUtils.plusEquals(o.getParameters(), searchDirection, alpha);
+		ArrayMath.plusEquals(o.getParameters(), searchDirection, alpha);
 		o.setParameters(o.getParameters());
 //		System.out.println("Took a step of " + alpha + " new value " + o.getValue());
 		values.add(o.getValue());
-		gradients.add(MathUtils.dotProduct(o.getGradient(),searchDirection));		
+		gradients.add(ArrayMath.dotProduct(o.getGradient(),searchDirection));		
 	}
 
 	
@@ -173,7 +161,7 @@ public class DifferentiableLineSearchObjective {
 	
 	public void printSmallLineSearchSteps(){
 		for(int i =0; i < steps.size();i++){
-			System.out.print(StaticTools.prettyPrint(steps.get(i), "0.0000E00",8) + " ");
+			System.out.print(Printing.prettyPrint(steps.get(i), "0.0000E00",8) + " ");
 		}
 		System.out.println();
 	}

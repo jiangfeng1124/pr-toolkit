@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 public class ArrayMath {
 
+
+	
 	public static double dotProduct(double[] v1, double[] v2) {
 		assert(v1.length == v2.length);
 		double result = 0;
@@ -77,6 +79,69 @@ public class ArrayMath {
 		}
 	}
 	
+	
+	public static double[] arrayMinus(double[]w, double[]v){
+		double result[] = w.clone();
+		for(int i=0; i<w.length;i++){
+			result[i] -= v[i];
+		}
+		return result;
+	}
+	
+	public static double[] arrayMinus(double[] result , double[]w, double[]v){
+		for(int i=0; i<w.length;i++){
+			result[i] = w[i]-v[i];
+		}
+		return result;
+	}
+	
+	public static double[] negation(double[]w){
+		double result[]  = new double[w.length];
+		for(int i=0; i<w.length;i++){
+			result[i] = -w[i];
+		}
+		return result;
+	}
+	
+	public static double square(double value){
+		return value*value;
+	}
+	public static double[][] outerProduct(double[] w, double[] v){
+		double[][] result = new double[w.length][v.length];
+		for(int i = 0; i < w.length; i++){
+			for(int j = 0; j < v.length; j++){
+				result[i][j] = w[i]*v[j];
+			}
+		}
+		return result;
+	}
+	
+	public static boolean allPositive(double[] array){
+		for (int i = 0; i < array.length; i++) {
+			if(array[i] < 0) return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * results = a*W*V
+	 * @param w
+	 * @param v
+	 * @param a
+	 * @return
+	 */
+	public static double[][] weightedouterProduct(double[] w, double[] v, double a){
+		double[][] result = new double[w.length][v.length];
+		for(int i = 0; i < w.length; i++){
+			for(int j = 0; j < v.length; j++){
+				result[i][j] = a*w[i]*v[j];
+			}
+		}
+		return result;
+	}
+	
+
+	
 	public static void set(double[][] array, double value) {
 		for(int i = 0; i < array.length; i++) {
 			set(array[i], value);
@@ -123,6 +188,18 @@ public class ArrayMath {
 		}
 	}	
 	
+	/**
+	 * w = w + a*v
+	 * @param w
+	 * @param v
+	 * @param a
+	 */
+	public static void plusEquals(double[] w, double[] v, double a) {
+		for(int i=0; i<w.length;i++){
+			w[i] += a*v[i];
+		}		
+	}
+	
 	public static void plusEquals(double[][] array, double val){
 		for (int i = 0; i < array.length; i++) {
 			plusEquals(array[i], val);
@@ -135,6 +212,28 @@ public class ArrayMath {
 		}
 	}
 
+	/**
+	 * w = w - a*v
+	 * @param w
+	 * @param v
+	 * @param a
+	 */
+	public static void minusEquals(double[] w, double[] v, double a) {
+		for(int i=0; i<w.length;i++){
+			w[i] -= a*v[i];
+		}		
+	}
+	/**
+	 * v = w - a*v
+	 * @param w
+	 * @param v
+	 * @param a
+	 */
+	public static void minusEqualsInverse(double[] w, double[] v, double a) {
+		for(int i=0; i<w.length;i++){
+			v[i] = w[i] - a*v[i];
+		}		
+	}
 	
 	public static double sum(double[] array) {
 		double res = 0;
@@ -142,24 +241,6 @@ public class ArrayMath {
 		return res;
 	}
 
-
-	
-	public static  double[][] deepclone(double[][] in){
-		double[][] res = new double[in.length][];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = in[i].clone();
-		}
-		return res;
-	}
-
-	
-	public static  double[][][] deepclone(double[][][] in){
-		double[][][] res = new double[in.length][][];
-		for (int i = 0; i < res.length; i++) {
-			res[i] = deepclone(in[i]);
-		}
-		return res;
-	}
 
 	public static double cosine(double[] a,
 			double[] b) {
@@ -183,4 +264,48 @@ public class ArrayMath {
 		for (int i = 0; i < array.length; i++) res += array[i];
 		return res;
 	}
+	
+	/**
+	 * 
+	 * @param vector
+	 * @return
+	 */
+	public static double L2Norm(double[] vector){
+		double value = 0;
+		for(int i = 0; i < vector.length; i++){
+			double v = vector[i];
+			value+=v*v;
+		}
+		return Math.sqrt(value);
+	}
+	
+	 public static  void scalarMultiplication(double[] w,double v){
+         int w1 = w.length;
+         for(int w_i1 = 0; w_i1 < w1; w_i1++){
+                 w[w_i1 ] *= v;
+         }
+	 }
+	 
+		public static void timesEquals(double[] array, double val){
+			for (int i = 0; i < array.length; i++) {
+				array[i] *= val;
+			}
+		}
+		
+		
+
+		/**
+		 * sums part of the array -- the sum(array) method is equivalent to 
+		 * sumPart(array, 0, array.length)
+		 * @param array
+		 * @param start included in sum
+		 * @param end excluded from sum
+		 * @return
+		 */
+		public static double sumPart(double[] array, int start, int end) {
+			int res = 0;
+			for (int i = start; i < end; i++) res += array[i];
+			return res;
+		}
+			 
 }

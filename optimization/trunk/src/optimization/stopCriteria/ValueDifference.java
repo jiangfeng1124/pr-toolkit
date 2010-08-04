@@ -1,7 +1,6 @@
 package optimization.stopCriteria;
 
 import optimization.gradientBasedMethods.Objective;
-import optimization.util.MathUtils;
 
 public class ValueDifference implements StopingCriteria{
 	

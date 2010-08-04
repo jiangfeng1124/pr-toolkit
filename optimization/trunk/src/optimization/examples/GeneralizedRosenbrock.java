@@ -11,7 +11,7 @@ import optimization.linesearch.ArmijoLineSearchMinimization;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.GradientL2Norm;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 /**
  * 
@@ -39,7 +39,7 @@ public class GeneralizedRosenbrock extends Objective{
 		functionCalls++;
 		double value = 0;
 		for(int i = 0; i < parameters.length-1; i++){
-			value += MathUtils.square(1-parameters[i]) + 100*MathUtils.square(parameters[i+1] - MathUtils.square(parameters[i]));
+			value += ArrayMath.square(1-parameters[i]) + 100*ArrayMath.square(parameters[i+1] - ArrayMath.square(parameters[i]));
 		}
 		
 		return value;
@@ -53,8 +53,8 @@ public class GeneralizedRosenbrock extends Objective{
 		gradientCalls++;
 		java.util.Arrays.fill(gradient,0);
 		for(int i = 0; i < parameters.length-1; i++){
-			gradient[i]+=-2*(1-parameters[i]) - 400*parameters[i]*(parameters[i+1] - MathUtils.square(parameters[i]));
-			gradient[i+1]+=200*(parameters[i+1] - MathUtils.square(parameters[i]));
+			gradient[i]+=-2*(1-parameters[i]) - 400*parameters[i]*(parameters[i+1] - ArrayMath.square(parameters[i]));
+			gradient[i+1]+=200*(parameters[i+1] - ArrayMath.square(parameters[i]));
 		}	
 		return gradient;
 	}

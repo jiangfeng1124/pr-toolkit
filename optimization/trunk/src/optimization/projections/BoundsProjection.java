@@ -3,8 +3,8 @@ package optimization.projections;
 
 import java.util.Random;
 
-import optimization.util.MathUtils;
-import optimization.util.MatrixOutput;
+import util.ArrayPrinting;
+import util.MathUtil;
 
 /**
  * Implements a projection into a box set defined by a and b.
@@ -74,25 +74,25 @@ public class BoundsProjection extends Projection{
 		BoundsProjection sp = new BoundsProjection(0,Double.POSITIVE_INFINITY);
 		
 		
-		MatrixOutput.printDoubleArray(sp.samplePoint(3), "random 1");
-		MatrixOutput.printDoubleArray(sp.samplePoint(3), "random 2");
-		MatrixOutput.printDoubleArray(sp.samplePoint(3), "random 3");
+		ArrayPrinting.printDoubleArray(sp.samplePoint(3), "random 1");
+		ArrayPrinting.printDoubleArray(sp.samplePoint(3), "random 2");
+		ArrayPrinting.printDoubleArray(sp.samplePoint(3), "random 3");
 		
 		double[] d = {-1.1,1.2,1.4};
 		double[] original = d.clone();
-		MatrixOutput.printDoubleArray(d, "before");
+		ArrayPrinting.printDoubleArray(d, "before");
 		
 		sp.project(d);
-		MatrixOutput.printDoubleArray(d, "after");
+		ArrayPrinting.printDoubleArray(d, "after");
 		System.out.println("Test projection: " + sp.testProjection(original, d));
 	}
 	
 	double epsilon = 1.E-10;
 	public double[] perturbePoint(double[] point, int parameter){
 		double[] newPoint = point.clone();
-		if(!ignoreA && MathUtils.almost(point[parameter], a)){
+		if(!ignoreA && MathUtil.almost(point[parameter], a)){
 			newPoint[parameter]+=epsilon;
-		}else if(!ignoreB && MathUtils.almost(point[parameter], b)){
+		}else if(!ignoreB && MathUtil.almost(point[parameter], b)){
 			newPoint[parameter]-=epsilon;
 		}else{
 			newPoint[parameter]-=epsilon;

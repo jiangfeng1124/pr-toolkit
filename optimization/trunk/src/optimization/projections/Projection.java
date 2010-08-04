@@ -1,9 +1,6 @@
 package optimization.projections;
 
-import optimization.util.MathUtils;
-import optimization.util.MatrixOutput;
 import util.ArrayMath;
-import util.Printing;
 
 
 
@@ -30,15 +27,15 @@ public abstract class Projection {
 		double[] original1 = original.clone();
 		//System.out.println(Printing.doubleArrayToString(original1, null, "original"));
 		//System.out.println(Printing.doubleArrayToString(projected, null, "projected"));
-		MathUtils.minusEquals(original1, projected, 1);
+		ArrayMath.minusEquals(original1, projected, 1);
 		//System.out.println(Printing.doubleArrayToString(original1, null, "minus1"));
 		for(int i = 0; i < 10; i++){
 			double[] x = samplePoint(original.length);
 		//	System.out.println(Printing.doubleArrayToString(x, null, "sample"));
 			//If the same this returns zero so we are there.	
-			MathUtils.minusEquals(x, projected, 1);
+			ArrayMath.minusEquals(x, projected, 1);
 		//	System.out.println(Printing.doubleArrayToString(x, null, "minus2"));
-			double dotProd = MathUtils.dotProduct(original1, x);
+			double dotProd = ArrayMath.dotProduct(original1, x);
 			
 		//	System.out.println("dot " + dotProd);
 			if(dotProd > 0) return false;
@@ -49,9 +46,9 @@ public abstract class Projection {
 			double[] x = perturbePoint(projected,i);
 		//	System.out.println(Printing.doubleArrayToString(x, null, "perturbed"));
 			//If the same this returns zero so we are there.	
-			MathUtils.minusEquals(x, projected, 1);
+			ArrayMath.minusEquals(x, projected, 1);
 		//	System.out.println(Printing.doubleArrayToString(x, null, "minus2"));
-			double dotProd = MathUtils.dotProduct(original1, x);
+			double dotProd = ArrayMath.dotProduct(original1, x);
 			
 		//	System.out.println("dot " + dotProd);
 			if(dotProd > 0) return false;

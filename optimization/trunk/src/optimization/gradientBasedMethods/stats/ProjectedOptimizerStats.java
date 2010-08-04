@@ -4,10 +4,8 @@ import java.util.ArrayList;
 
 import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
-import optimization.gradientBasedMethods.ProjectedObjective;
-import optimization.gradientBasedMethods.ProjectedOptimizer;
-import optimization.util.MathUtils;
-import optimization.util.StaticTools;
+import util.ArrayMath;
+import util.Printing;
 
 
 public class ProjectedOptimizerStats extends OptimizerStats{
@@ -28,19 +26,20 @@ public class ProjectedOptimizerStats extends OptimizerStats{
 		if(level > 0){
 			if(iterations.size() > 0){
 			res.append("\tIteration"+iterations.get(0)+"\tstep: "+
-					StaticTools.prettyPrint(steps.get(0), "0.00E00", 6)+ "\tgradientNorm "+ 
-					StaticTools.prettyPrint(gradientNorms.get(0), "0.00000E00", 10)
+					Printing.prettyPrint(steps.get(0), "0.00E00", 6)+ "\tgradientNorm "+ 
+					Printing.prettyPrint(gradientNorms.get(0), "0.00000E00", 10)
 					+ "\tdirection"+
-					StaticTools.prettyPrint(projectedGradientNorms.get(0), "0.00000E00", 10)+
-					"\tvalue "+ StaticTools.prettyPrint(value.get(0), "0.000000E00",11)+"\n");
+					Printing.prettyPrint(projectedGradientNorms.get(0), "0.00000E00", 10)+
+					"\tvalue "+ Printing.prettyPrint(value.get(0), "0.000000E00",11)+"\n");
 			}
 			for(int i = 1; i < iterations.size(); i++){
-			res.append("\tIteration"+iterations.get(i)+"\tstep: "+StaticTools.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
-					StaticTools.prettyPrint(gradientNorms.get(i), "0.00000E00", 10)+ 
+			res.append("\tIteration"+iterations.get(i)+"\tstep: "
+					+Printing.prettyPrint(steps.get(i), "0.00E00", 6)+ "\tgradientNorm "+ 
+					Printing.prettyPrint(gradientNorms.get(i), "0.00000E00", 10)+ 
 					"\t direction "+
-					StaticTools.prettyPrint(projectedGradientNorms.get(i), "0.00000E00", 10)+
-					"\tvalue "+ StaticTools.prettyPrint(value.get(i), "0.000000E00",11)+
-					"\tvalueDiff "+ StaticTools.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
+					Printing.prettyPrint(projectedGradientNorms.get(i), "0.00000E00", 10)+
+					"\tvalue "+ Printing.prettyPrint(value.get(i), "0.000000E00",11)+
+					"\tvalueDiff "+ Printing.prettyPrint((value.get(i-1)-value.get(i)), "0.000000E00",11)+
 					"\n");
 			}
 		}
@@ -54,8 +53,8 @@ public class ProjectedOptimizerStats extends OptimizerStats{
 	
 	public void collectIterationStats(Optimizer optimizer, Objective objective){		
 		iterations.add(optimizer.getCurrentIteration());
-		gradientNorms.add(MathUtils.L2Norm(objective.getGradient()));
-		projectedGradientNorms.add(MathUtils.L2Norm(optimizer.getDirection()));
+		gradientNorms.add(ArrayMath.L2Norm(objective.getGradient()));
+		projectedGradientNorms.add(ArrayMath.L2Norm(optimizer.getDirection()));
 		steps.add(optimizer.getCurrentStep());
 		value.add(optimizer.getCurrentValue());
 	}

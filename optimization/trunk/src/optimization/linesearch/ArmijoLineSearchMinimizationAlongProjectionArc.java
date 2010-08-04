@@ -1,8 +1,6 @@
 package optimization.linesearch;
 
-import optimization.gradientBasedMethods.ProjectedObjective;
 import optimization.util.Interpolation;
-import optimization.util.MathUtils;
 
 
 

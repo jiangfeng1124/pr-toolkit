@@ -11,6 +11,19 @@ public class MathUtil {
 		return Math.abs(number) < 1.E-5;
 	}
 	
+	public static boolean almost(double a, double b, double prec){
+	return Math.abs(a-b)/Math.abs(a+b) <= prec || (almostZero(a) && almostZero(b));
+}
+
+public static boolean almost(double a, double b){
+	return Math.abs(a-b)/Math.abs(a+b) <= 1e-10 || (almostZero(a) && almostZero(b));
+}
+
+public static boolean almostZero(double a) {
+	return Math.abs(a) <= 1e-30;
+}
+
+	
 	/**
 	 * Return a ramdom multinominal distribution.
 	 * 

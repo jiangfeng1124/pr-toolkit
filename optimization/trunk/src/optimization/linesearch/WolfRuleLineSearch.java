@@ -21,7 +21,7 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	double c2 = 0.9;
 	
 	//Application dependent
-	double maxStep=100;
+	double maxStep;
 	
 	int extrapolationIteration;
 	int maxExtrapolationIteration = 1000;
@@ -45,7 +45,8 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	
 
 	
-	public WolfRuleLineSearch(GenericPickFirstStep pickFirstStep,  double c1, double c2){
+	public WolfRuleLineSearch(GenericPickFirstStep pickFirstStep,  double c1, double c2, double maxStepSize){
+		this.maxStep = maxStepSize; 
 		this.pickFirstStep = pickFirstStep;
 		initialStep = pickFirstStep.getFirstStep(this);
 		this.c1 = c1;
@@ -159,8 +160,9 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 			previousValue = currentValue;
 			//Could be done better
 			if(currentStep >= maxStep){
-				System.out.println("Excedded max step...calling zoom with maxStepSize");
-				currentStep = zoom(objective,previousStep,currentStep,objective.nrIterations-1,objective.nrIterations);
+				System.out.println("Excedded max step...calling zoom with maxStepSize " + maxStep);
+				currentStep = zoom(objective,previousStep,maxStep,objective.nrIterations-1,objective.nrIterations);
+				break;
 			}
 		}
 		if(!foudStep){
@@ -217,9 +219,17 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	public double zoom(DifferentiableLineSearchObjective o, double lowerStep, double higherStep,
 			int lowerStepIter, int higherStepIter){
 		
+		
 		if(debugLevel >=2){
 			System.out.println("Entering zoom with " + lowerStep+"-"+higherStep);
 		}
+		
+		//Case the limits are the same
+		if(Math.abs(lowerStep - higherStep) < 1E-10){
+			foudStep = true;
+			return lowerStep; 
+		}
+		
 		
 		double currentStep=-1;
 		

@@ -1,10 +1,9 @@
 package optimization.gradientBasedMethods;
 
 import optimization.gradientBasedMethods.stats.OptimizerStats;
-import optimization.linesearch.DifferentiableLineSearchObjective;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 
 
@@ -65,20 +64,20 @@ public class ConjugateGradient extends AbstractGradientBaseMethod{
 //	}
 	
 	public double[] getDirection(){
-		direction = MathUtils.negation(gradient);
+		direction = ArrayMath.negation(gradient);
 		if(currentProjectionIteration != 1){
 			//Using Polak-Ribiere method (book equation 5.45)
-			double b = MathUtils.dotProduct(gradient, MathUtils.arrayMinus(gradient, previousGradient))
-			/MathUtils.dotProduct(previousGradient, previousGradient);
+			double b = ArrayMath.dotProduct(gradient, ArrayMath.arrayMinus(gradient, previousGradient))
+			/ArrayMath.dotProduct(previousGradient, previousGradient);
 			if(b<0){
 				System.out.println("Defaulting to gradient descent");
 				b = Math.max(b, 0);
 			}
-			MathUtils.plusEquals(direction, previousDirection, b);
+			ArrayMath.plusEquals(direction, previousDirection, b);
 			//Debug code
-			if(MathUtils.dotProduct(direction, gradient) > 0){
+			if(ArrayMath.dotProduct(direction, gradient) > 0){
 				System.out.println("Not an descent direction reseting to gradien");
-				direction = MathUtils.negation(gradient);
+				direction = ArrayMath.negation(gradient);
 			}
 		}
 		return direction;

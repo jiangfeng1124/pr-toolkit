@@ -4,7 +4,7 @@ import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.DifferentiableLineSearchObjective;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.util.MathUtils;
+import util.ArrayMath;
 
 /**
  * 
@@ -56,19 +56,19 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 		stats.collectInitStats(this, o);
 		direction = new double[o.getNumParameters()];
 		initializeStructures(o, stats, stop);
-		for (currentProjectionIteration = 1; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){		
+		for (currentProjectionIteration = 0; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){		
 //			System.out.println("starting iterations: parameters:" );
 //			o.printParameters();
 			previousValue = currValue;
 			currValue = o.getValue();
 			gradient = o.getGradient();
 			if(stop.stopOptimization(o)){
-				stats.collectFinalStats(this, o);
+				stats.collectFinalStats(this, o,true);
 				return true;
 			}	
 			
 			getDirection();
-			if(MathUtils.dotProduct(gradient, direction) > 0){
+			if(ArrayMath.dotProduct(gradient, direction) > 0){
 				System.out.println("Not a descent direction");
 				System.out.println(" current stats " + stats.prettyPrint(1));
 				System.exit(-1);
@@ -79,7 +79,7 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 //			System.out.println("Leave with step: " + step);
 			if(step==-1){
 				System.out.println("Failed to find step");
-				stats.collectFinalStats(this, o);
+				stats.collectFinalStats(this, o,false);
 				return false;		
 			}
 			updateStructuresAfterStep( o, stats,  stop);
@@ -88,7 +88,7 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 //			gradient = o.getGradient();
 			stats.collectIterationStats(this, o);
 		}
-		stats.collectFinalStats(this, o);
+		stats.collectFinalStats(this, o,false);
 		return false;
 	}
 	
