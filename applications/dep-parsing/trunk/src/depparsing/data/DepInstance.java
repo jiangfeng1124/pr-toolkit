@@ -21,14 +21,14 @@ public class DepInstance extends WordInstance {
 	@Override
 	public String toString() {
 		return super.toString() 
-		+ util.Printing.intArrayToString(postags, null,"sentence tags")
-		+ util.Printing.intArrayToString(parents, null, "sentence parents")+ "\n";
+		+ util.ArrayPrinting.intArrayToString(postags, null,"sentence tags")
+		+ util.ArrayPrinting.intArrayToString(parents, null, "sentence parents")+ "\n";
 	}
 
 	@Override
 	public String toString(Corpus c) {
 		return super.toString(c) 
-		+ util.Printing.intArrayToString(postags, ((DepCorpus)c).getTagStrings(postags),"sentence tags") + "\n";
+		+ util.ArrayPrinting.intArrayToString(postags, ((DepCorpus)c).getTagStrings(postags),"sentence tags") + "\n";
 	}
 
 	public String getTagsStrings(DepCorpus c){
