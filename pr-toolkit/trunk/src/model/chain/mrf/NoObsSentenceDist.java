@@ -148,10 +148,10 @@ public class NoObsSentenceDist extends ChainSentenceDist{
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("NoObsSentenceDist:\n");
-		sb.append(util.Printing.doubleArrayToString(initProbs, null, "init-Probs"));
-		sb.append(util.Printing.doubleArrayToString(finalProbs, null, "final-Probs"));
-		sb.append(util.Printing.doubleArrayToString(emissionProbs, null, "emission-Probs"));
-		sb.append(util.Printing.doubleArrayToString(transitionProbs, null ,null, "transition-Probs"));		
+		sb.append(util.ArrayPrinting.doubleArrayToString(initProbs, null, "init-Probs"));
+		sb.append(util.ArrayPrinting.doubleArrayToString(finalProbs, null, "final-Probs"));
+		sb.append(util.ArrayPrinting.doubleArrayToString(emissionProbs, null, "emission-Probs"));
+		sb.append(util.ArrayPrinting.doubleArrayToString(transitionProbs, null ,null, "transition-Probs"));		
 		return sb.toString();
 	}
 

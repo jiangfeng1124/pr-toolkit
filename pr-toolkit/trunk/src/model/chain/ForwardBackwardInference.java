@@ -163,8 +163,8 @@ public class ForwardBackwardInference {
 	}
 
 	public void printForwardBackwardTables(){
-		util.Printing.printDoubleArray(forward, null,null,"Forward table");
-		util.Printing.printDoubleArray(backward,null,null, "Backward table");
+		util.ArrayPrinting.printDoubleArray(forward, null,null,"Forward table");
+		util.ArrayPrinting.printDoubleArray(backward,null,null, "Backward table");
 	}
 	
 	public void sanityCheckMakeBacwardTables(){
@@ -191,8 +191,8 @@ public class ForwardBackwardInference {
 						+ " " + (pos-1) + " " 
 						+ _likelihoodPerPosition[pos-1] + " diff " + diff);
 				printForwardBackwardTables();
-				util.Printing.printDoubleArray(_inverseLikelihoodScalors,null,"Likelihood scallors");
-				util.Printing.printDoubleArray(_likelihoodPerPosition,null,"Likelihood per position");
+				util.ArrayPrinting.printDoubleArray(_inverseLikelihoodScalors,null,"Likelihood scallors");
+				util.ArrayPrinting.printDoubleArray(_likelihoodPerPosition,null,"Likelihood per position");
 				System.out.println("Sclaed likelihood" + _scaledLikelihood);
 				System.out.println("SD" + sd.toString());
 				System.exit(-1);
@@ -240,8 +240,8 @@ public class ForwardBackwardInference {
 	@Override
 	public String toString(){
 		StringBuilder sb = new StringBuilder();
-		sb.append(Printing.doubleArrayToString(forward, null, null, "forward"));
-		sb.append(Printing.doubleArrayToString(backward, null, null, "backward"));
+		sb.append(util.ArrayPrinting.doubleArrayToString(forward, null, null, "forward"));
+		sb.append(util.ArrayPrinting.doubleArrayToString(backward, null, null, "backward"));
 		return sb.toString();
 	}
 	

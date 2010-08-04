@@ -2,6 +2,8 @@ package model.distribution.trainer;
 
 
 
+import gnu.trove.TIntArrayList;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
@@ -71,6 +73,16 @@ public class TransitionMultinomialFeatureFunction implements MultinomialFeatureF
 	
 	public int nrFeatures(){
 		return al.size();
+	}
+	
+	public int[] getFeaturesByPrefix(String prefix) {
+		TIntArrayList featureIndexes = new TIntArrayList();
+		for(int i  =0; i < nrFeatures(); i++){
+				if(((String) al.index2feat.get(i)).startsWith(prefix)){
+					featureIndexes.add(i);
+				}
+			}	
+		return featureIndexes.toNativeArray();
 	}
 	
 }

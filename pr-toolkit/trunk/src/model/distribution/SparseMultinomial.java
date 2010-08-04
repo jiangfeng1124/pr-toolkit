@@ -215,6 +215,27 @@ public class SparseMultinomial  implements AbstractMultinomial{
 		}
 	}
 	
+	
+	public void normalize(){
+		for(int i = 0; i < variables; i++){
+			double sum = 0;
+			TIntDoubleIterator iter = values[i].iterator();
+			TIntDoubleIterator otherIter = values[i].iterator();
+			while(iter.hasNext()){
+				iter.advance();
+				otherIter.advance();
+				double value =otherIter.value(); 
+				sum+=value;	
+			}
+			iter = values[i].iterator();
+			while(iter.hasNext()){
+				iter.advance();
+				iter.setValue(iter.value()/sum);
+				
+			}
+		}
+	}
+	
 	public double sum(int variable) {
 		double sum = 0;
 		TIntArrayList availableStates = getAvailableStates(variable);

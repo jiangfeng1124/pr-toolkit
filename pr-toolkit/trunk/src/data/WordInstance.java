@@ -37,13 +37,13 @@ public class WordInstance {
 	}
 	
 	public String toString() {
-		return "\n Word Instance " + instanceNumber+ "\n size " + words.length + "\n"  + util.Printing.intArrayToString(words, null,"sentence words") + "\n";
+		return "\n Word Instance " + instanceNumber+ "\n size " + words.length + "\n"  + util.ArrayPrinting.intArrayToString(words, null,"sentence words") + "\n";
 		
 	}
 		
 	public String toString(Corpus c) {
 		return "\n Word Instance " + instanceNumber+ "\n size " + words.length + "\n"  
-		+ util.Printing.intArrayToString(words, c.getWordStrings(words),"sentence words") + "\n";
+		+ util.ArrayPrinting.intArrayToString(words, c.getWordStrings(words),"sentence words") + "\n";
 	}
 	
 	public String getSentence(Corpus c){

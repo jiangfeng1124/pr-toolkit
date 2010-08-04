@@ -10,7 +10,6 @@ import util.SparseVector;
 import data.Corpus;
 
 /**
- * Number of occurrences: Adds a feature if the word is in the top X occurring words in the corpus. 
  * @author javg
  *
  */
@@ -54,7 +53,7 @@ public class CapitalizationPipe extends Pipe{
 			numberOfTimesFirst = 1.0*firstLetterCounts.getCounts(wordId)
 			/(c.wordAlphabet.getCounts(wordId)+c.wordAlphabet.getCounts(c.wordAlphabet.feat2index.get(word.toLowerCase())));
 		}
-		if( Character.isUpperCase(word.charAt(0)) && numberOfTimesFirst < threshold && word.length() > 1 && wordAccum.get(wordId) < 0.05){
+		if(Character.isUpperCase(word.charAt(0)) && numberOfTimesFirst < threshold && word.length() > 1 && wordAccum.get(wordId) < 0.05){
 			sv.add(alphabet.lookupObject("capitalized"), 1);
 		}
 	

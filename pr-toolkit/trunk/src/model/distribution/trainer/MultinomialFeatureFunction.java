@@ -25,6 +25,7 @@ public interface MultinomialFeatureFunction {
 	public SparseVector apply(int x, int y);
 	public int nrFeatures();
 	public String featureTableToString();
+	public int[] getFeaturesByPrefix(String prefix);
 	
 	
 }

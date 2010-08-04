@@ -66,12 +66,11 @@ public class MaxEntClassifier {
 	 * Clean the optimization classes
 	 */
 	public void reset(){
-		// TODO: uncomment this
-//		stoppingCriteria.reset();
-//		stats.reset();
-//		lineSearch.reset();
-//		optimizer.reset();
-//		
+		stoppingCriteria.reset();
+		stats.reset();
+		lineSearch.reset();
+		optimizer.reset();
+		
 	}
 	
 	public OptimizerStats batchTrain(AbstractMultinomial counts, int variable){	
@@ -101,7 +100,7 @@ public class MaxEntClassifier {
 	public SparseVector computeScores(int x, TIntArrayList yList, double[] parameters){
 		SparseVector res = new SparseVector();
 		for (int y=0; y<yList.size(); y++){
-			int yValue =(Integer) yList.get(y);
+			int yValue =(Integer) yList.getQuick(y);
 			res.add(yValue, StaticUtils.dotProduct(fxy.apply(x,yValue), parameters));
 		}
 		return res;
@@ -173,7 +172,7 @@ public class MaxEntClassifier {
 		 * This method should be called whenever the parameters are changed.
 		 * Value = 1/var*||w||^2 + sum_targetW sum_sourceW  (log(Z_targetW)-w*f(targetW,sourceW))
 		 * Gradient[targetWord,sourceWord] =  
-		 * Pr(targetWord|sourceWourd)*f(targetWord,sourceWord) +1/gaussianPriorVariance * w - empiricalExpectations(targetWord, sourceWord)
+		 * Pr(targetWord|sourceWourd)*f(targetWord,sourceWord) +2/gaussianPriorVariance * w - empiricalExpectations(targetWord, sourceWord)
 		 */
 		public void updateObjectiveAndGradient(){
 			
@@ -182,10 +181,8 @@ public class MaxEntClassifier {
 			
 			objective = 0;
 			//Fill gradient with constant 2/gaussianPriorVariance * w - empiricalExpectations(targetWord, sourceWord)
-			for (int i = 0; i < gradient.length; i++) {
-				
-				
-				gradient[i]=1/gaussianPriorVariance * parameters[i] - empiricalExpectations[i];
+			for (int i = 0; i < gradient.length; i++) {	
+				gradient[i]=2/gaussianPriorVariance * parameters[i] - empiricalExpectations[i];
 				expectations[i]=0;
 			}
 			
@@ -209,7 +206,7 @@ public class MaxEntClassifier {
 			}
 						
 			double squareWeightNorm = StaticUtils.twoNormSquared(parameters);
-			objective += 1/(2*gaussianPriorVariance)*squareWeightNorm;
+			objective += 1/gaussianPriorVariance*squareWeightNorm;
 			
 		}
 		

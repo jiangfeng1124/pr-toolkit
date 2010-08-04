@@ -30,7 +30,7 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 //		System.out.println("Calline init caches");
 		makeInitCache();
 		makeTransitionCache();
-		makeObservationCahce();
+		makeObservationCache();
 		//Create Posterior Objects
 		//observationPosterior = new double[sentenceSize][nrHiddenStates];
 		//No transitions into the final state
@@ -96,7 +96,7 @@ public class HMMFinalStateSentenceDist extends HMMSentenceDist{
 		}
 	}
 	
-	public void makeObservationCahce(){
+	public void makeObservationCache(){
 		observationCache=new double[sentenceSize][nrHiddenStates];
 		for(int wordPos = 0;  wordPos < sentenceSize-1; wordPos++){
 			for(int tagID = 0;  tagID < model.getNrRealStates(); tagID++){

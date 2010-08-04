@@ -17,7 +17,7 @@ import data.WordInstance;
 public class HMMSentenceDist extends ChainSentenceDist{	
 	
 	
-	ForwardBackwardInference inference;
+	protected ForwardBackwardInference inference;
 	
 	//Caches
 	//Index per position/state
@@ -48,7 +48,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 		res.append("Sentence size" + sentenceSize);
 		res.append("nrHiddenStates " + nrHiddenStates);
 		res.append(instance.toString());
-		res.append(util.Printing.doubleArrayToString(initialCache,null, "init cache"));
+		res.append(util.ArrayPrinting.doubleArrayToString(initialCache,null, "init cache"));
 		double[][] observ = new double[observationCache.length][observationCache[0].length];
 		for (int i = 0; i < observ.length; i++) {
 			for (int j = 0; j < observ[i].length; j++) {
@@ -56,15 +56,15 @@ public class HMMSentenceDist extends ChainSentenceDist{
 			}
 		}
 //		res.append(util.Printing.doubleArrayToString(observationCache, null,null,"observation cache"));
-		res.append(util.Printing.doubleArrayToString(observ, null,null,"observation cache"));
+		res.append(util.ArrayPrinting.doubleArrayToString(observ, null,null,"observation cache"));
 		double[][] trans = new double[transitionCache.length][transitionCache[0].length];
 		for (int i = 0; i < trans.length; i++) {
 			for (int j = 0; j < trans[0].length; j++) {
 				trans[i][j] = getTransitionProbability(getNumberOfPositions()-1, i, j);
 			}
 		}
-		res.append(util.Printing.doubleArrayToString(trans, null,null,"end transition Probs"));
-		res.append(util.Printing.doubleArrayToString(transitionCache, null,null,"transition cache"));
+		res.append(util.ArrayPrinting.doubleArrayToString(trans, null,null,"end transition Probs"));
+		res.append(util.ArrayPrinting.doubleArrayToString(transitionCache, null,null,"transition cache"));
 		return res.toString();
 	}
 
@@ -89,7 +89,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 //		System.out.println("Calling init caches");
 		makeInitCache();
 		makeTransitionCache();
-		makeObservationCahce();
+		makeObservationCache();
 		//Create Posterior Objects
 		//observationPosterior = new double[sentenceSize][nrHiddenStates];
 		//transitionPosterior=new double[sentenceSize-1][nrHiddenStates][nrHiddenStates];
@@ -108,7 +108,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 		//transitionPosterior = null;
 	}
 	
-	public void makeObservationCahce(){
+	public void makeObservationCache(){
 		observationCache=new double[sentenceSize][nrHiddenStates];
 		for(int wordPos = 0;  wordPos < sentenceSize; wordPos++){
 			for(int tagID = 0;  tagID < nrHiddenStates; tagID++){
@@ -319,7 +319,7 @@ public class HMMSentenceDist extends ChainSentenceDist{
 	}
 	
 	public String statePosteriorToString(){
-		return util.Printing.doubleArrayToString(observationPosterior, null,null,"observation posteriors");
+		return util.ArrayPrinting.doubleArrayToString(observationPosterior, null,null,"observation posteriors");
 		
 	}
 	

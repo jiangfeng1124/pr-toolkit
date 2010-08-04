@@ -70,6 +70,7 @@ public class InstanceList {
 		Pattern whitespace = Pattern.compile("\\s+");
 		TIntArrayList wordsList  =new TIntArrayList();	
 		String line = reader.readLine();
+		int nrSentences = 0;
 		while(line != null) {
 			if(!line.matches("\\s*")){
 				String[] info = whitespace.split(line);
@@ -89,6 +90,10 @@ public class InstanceList {
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
+				nrSentences++;
+				if(nrSentences >= maxNrSentences){
+					break;
+				}
 			}
 			line = reader.readLine();
 		}	
@@ -112,6 +117,7 @@ public class InstanceList {
 		Pattern whitespace = Pattern.compile("\\s+");
 		TIntArrayList wordsList  =new TIntArrayList();	
 		String line = reader.readLine();
+		int nrSentences =0;
 		while(line != null) {
 			if(!line.matches("\\s*")){
 				String[] info = whitespace.split(line);
@@ -133,6 +139,10 @@ public class InstanceList {
 					addDepInst(il, wordsList);
 				}
 				wordsList.clear();
+				nrSentences++;
+				if(nrSentences >= maxNrSentences){
+					break;
+				}
 			}
 			line = reader.readLine();
 		}	

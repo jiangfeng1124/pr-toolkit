@@ -25,17 +25,7 @@ public class StaticUtils {
 		return res;
 	}
 
-	public static double dotProduct(double[] v, double[] w) {
-		if (v.length != w.length) {
-			throw new AssertionError("unequal lengths");
-		}
-		double res = 0;
-		for (int i = 0; i < v.length; i++) {
-			res += w[i] * v[i];
-		}
-		return res;
-
-	}
+	
 
 	/**
 	 * shuffle a list (intended as a list of instances) in place using seed as

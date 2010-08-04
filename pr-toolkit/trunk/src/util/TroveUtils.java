@@ -13,11 +13,16 @@ public class TroveUtils {
 		}
 	}
 	
-	//Creates a new TDoubleArrayList with all exp of all entries 
+	/**
+	 * If number becomes infinity replace it by a smallest value possible
+	 * @param list
+	 * @return
+	 */
 	public static TDoubleArrayList exp(TDoubleArrayList list){
 		TDoubleArrayList exp = new TDoubleArrayList(list.size());
 		for(int i = 0; i < list.size(); i++){
-			exp.add(Math.exp(list.getQuick(i)));
+			double value = Math.exp(list.getQuick(i));
+			exp.add(value);
 		}
 		return exp;
 	}
@@ -25,7 +30,10 @@ public class TroveUtils {
 	public static double sum(TDoubleArrayList list){
 		double sum = 0;
 		for(int i = 0; i < list.size(); i++){
-			sum+= list.getQuick(i);
+			double value = list.getQuick(i);
+			if(!(Double.isInfinite(value) || Double.isNaN(value))){
+				sum+=  value;
+			}
 		}
 		return sum;
 	}

@@ -30,6 +30,7 @@ public interface  AbstractMultinomial {
 	public abstract  double getCounts(int variable, int state);
 	public abstract  void initializeRandom(Random r, double jitter);
 	public abstract void copyAndNormalize(AbstractMultinomial other);
+	public abstract void normalize();
 	public abstract void saveTable(String name);
 	public abstract AbstractMultinomial clone();
 	public abstract TIntArrayList[] getAvailableStates();

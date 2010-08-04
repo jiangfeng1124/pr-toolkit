@@ -2,6 +2,8 @@ package model.distribution.trainer;
 
 
 
+import gnu.trove.TIntArrayList;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -69,10 +71,21 @@ public class ObservationMultinomialFeatureFunction implements MultinomialFeature
 		return al.size();
 	}
 	
+	public int[] getFeaturesByPrefix(String prefix) {
+		TIntArrayList featureIndexes = new TIntArrayList();
+		for(int i  =0; i < nrFeatures(); i++){
+				if(((String) al.index2feat.get(i)).startsWith(prefix)){
+					featureIndexes.add(i);
+				}
+			}	
+		return featureIndexes.toNativeArray();
+	}
+	
 	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		Corpus c = new Corpus(args[0],0,Integer.MAX_VALUE,Integer.MAX_VALUE);
 		ObservationMultinomialFeatureFunction gf = new ObservationMultinomialFeatureFunction(c,args[1]);
 		System.out.println(gf.featureTableToString());
 		
 	}
+	
 }

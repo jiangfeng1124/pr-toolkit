@@ -41,11 +41,11 @@ public class Multinomial implements AbstractMultinomial{
 	}
 	
 	public void print(String name, String[] labels1, String[] labels2){
-		util.Printing.printDoubleArray(values,labels1,labels2, name);
+		util.ArrayPrinting.printDoubleArray(values,labels1,labels2, name);
 	}
 	
 	public String toString(String name, String[] labels1, String[] labels2){
-		return util.Printing.doubleArrayToString(values,labels1,labels2, name);
+		return util.ArrayPrinting.doubleArrayToString(values,labels1,labels2, name);
 	}
 	
 	public void fill(double value){
@@ -143,6 +143,25 @@ public class Multinomial implements AbstractMultinomial{
 			for(int j = 0; j < states; j++){
 				double value = other.getCounts(i, j);
 				setCounts(i, j, value);
+				sum+=value;
+			}
+			if(sum == 0) continue;
+			if(Double.isInfinite(sum) || Double.isNaN(sum)){
+				System.out.println("Sum is zero or infinity or NAN for multinomial");
+				System.exit(-1);
+			}
+			for(int j = 0; j < states; j++){
+				setCounts(i, j, getCounts(i, j)/sum);
+			}
+		}	
+	}
+	
+	
+	public void normalize(){
+		for(int i = 0; i < variables; i++){
+			double sum = 0;
+			for(int j = 0; j < states; j++){
+				double value = getCounts(i, j);
 				sum+=value;
 			}
 			if(sum == 0) continue;
