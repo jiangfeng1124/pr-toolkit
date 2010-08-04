@@ -177,7 +177,10 @@ public class RunModel {
 	@Option(name="-stats-file", usage="Training statistics file")
 	private String statsFile = "";
 	private enum TrainingType {EM,L1LMax, L1SoftMaxEG};
-	@Option(name="-trainingType", usage="Training Type: EM EM Training; " +	"L1LMax PR with L1LMax;")
+	@Option(name="-trainingType", 
+			usage="Training Type: EM EM Training; " +	
+			"L1LMax PR with L1LMax; " + 
+			"L1SoftMaxEG PR with L1SoftMax and Exponentiated Gradient training")
 	private TrainingType trainingType = TrainingType.EM;
 	
 	@Option(name="-warmup-iters", usage="Number of warmupIter before starting using constraints")
@@ -190,17 +193,20 @@ public class RunModel {
 	private double cstr = 32;
 	
 	@Option(name="-soft-max-sharpness", usage="How sharp the softmax should be 0=l_1, and large approaches max")
-	private double softMaxSharpness = 15;
+	private double softMaxSharpness = 1;
 	
 	public void printModelTrainingOptions(PrintStream out){
 		out.println("-num-em-iters " + numEMIters);
 		out.println("-stats-file " + statsFile);
 		out.println("-trainingType " + trainingType);
-		if(trainingType == TrainingType.L1LMax){
+		if(trainingType == TrainingType.L1LMax || trainingType == TrainingType.L1SoftMaxEG){
 			out.println("-warmup-iters " + warmupIter);
 			out.println("-min-word-occurs-L1LMax " + minWordOccursL1LMax);
 			out.println("-c-str " + cstr);
 		} 
+		if(trainingType == TrainingType.L1SoftMaxEG){
+			out.println("-soft-max-sharpness " + softMaxSharpness);
+		}
 	}
 	
 	private enum TestSet {Train,Dev,Test,All};

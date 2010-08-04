@@ -8,6 +8,8 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 
+import util.MathUtil;
+
 import gnu.trove.TIntArrayList;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectProcedure;
@@ -148,7 +150,7 @@ public class L1SoftMaxEG implements CorpusConstraints{
 		System.out.println("After creating objective:" + mem.print());
 
 		for (int i = 0; i < 10; i++) {
-			objective.takeExpGradientStep(1.0/i);
+			objective.takeExpGradientStep(1.0/(i+1));
 		}
 		
 //		
@@ -184,7 +186,9 @@ public class L1SoftMaxEG implements CorpusConstraints{
 					for(int hs = 0; hs < nrHiddenStates; hs++){
 						//Get the corresponding parameters
 						double parameter = objective.getParameters()[posteriorMapping[sentenceNr][sentecePosition][hs]];
+						assert (!Double.isNaN(parameter));
 						posterior.observationCache[sentecePosition][hs] *= Math.exp(parameter);
+						assert (!Double.isNaN(posterior.observationCache[sentecePosition][hs]));
 					}
 				}
 			}	
@@ -286,6 +290,8 @@ public class L1SoftMaxEG implements CorpusConstraints{
 		public void takeExpGradientStep(double stepSize){
 			for (int i = 0; i < parameters.length; i++) {
 				parameters[i] -= stepSize*gradient[i];
+				assert !Double.isInfinite(parameters[i]);
+				assert !Double.isNaN(parameters[i]);
 			}
 			// just so we don't run out of numbers, max-subtract at each position.  This is the same as dividing 
 			// all the observations at a position by a constant; the likelihood changes, but the distribution won't. 
@@ -299,12 +305,15 @@ public class L1SoftMaxEG implements CorpusConstraints{
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							max = Math.max(max, parameters[getParameterIndex(sentenceNr,sentecePosition,hs)]);
 						}
+						assert !Double.isNaN(max);
+						assert !Double.isInfinite(max);
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							parameters[getParameterIndex(sentenceNr,sentecePosition,hs)] -= max;
 						}
 					}
 				}
 			}
+			updateFunction();
 		}
 	
 		public void setParameters(double[] params) {
@@ -349,8 +358,12 @@ public class L1SoftMaxEG implements CorpusConstraints{
 						//For each possible hidden state
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							//Get the corresponding parameters
-							double parameter = getParameter(getParameterIndex(sentenceNr,sentecePosition,hs));
+							double parameter = parameters[getParameterIndex(sentenceNr,sentecePosition,hs)];
+							assert !Double.isNaN(parameter);
+							assert !Double.isInfinite(parameter);
 							sd.observationCache[sentecePosition][hs] *= Math.exp(parameter);
+							assert (!Double.isNaN(sd.observationCache[sentecePosition][hs]));
+							assert (!Double.isInfinite(sd.observationCache[sentecePosition][hs]));
 						}
 					}
 				}
@@ -363,6 +376,8 @@ public class L1SoftMaxEG implements CorpusConstraints{
 						for(int hs = 0; hs < nrHiddenStates; hs++){
 							int pind = getParameterIndex(sentenceNr,sentecePosition,hs);
 							newPosteriors[pind] = sd.observationPosterior[sentecePosition][hs];
+							assert (!Double.isNaN(newPosteriors[pind]));
+							assert (!Double.isInfinite(newPosteriors[pind]));
 						}
 					}
 				}
@@ -372,7 +387,10 @@ public class L1SoftMaxEG implements CorpusConstraints{
 			// 
 			setGradientToSoftMaxPart(newPosteriors);
 			for (int i = 0; i < gradient.length; i++) {
+				if(MathUtil.almostZero(newPosteriors[i]) && MathUtil.almostZero(originalPosteriors[i])) continue;
 				gradient[i] += Math.log(newPosteriors[i]) - Math.log(originalPosteriors[i]);
+				assert(!Double.isNaN(gradient[i]));
+				assert(!Double.isInfinite(gradient[i]));
 			}
 			
 			
@@ -402,17 +420,26 @@ public class L1SoftMaxEG implements CorpusConstraints{
 		 * that depends on the projection. 
 		 */
 		public void setGradientToSoftMaxPart(final double[] qPosteriors) {
+			// projectionMapping is a mapping from word -> tag -> instance_# -> parameter_index
+			// e.g. maybe projectionMapping[run][NN][5] = 534234 means that the parameter 534234
+			// corresponds to the 5th occurrence of "run" as a "noun". 
 			projectionMapping.forEachValue(new TObjectProcedure<TIntObjectHashMap<TIntArrayList>>() {
-				public boolean execute(TIntObjectHashMap<TIntArrayList> tagsMapping) {
-					return tagsMapping.forEachValue(new TObjectProcedure<TIntArrayList>() {
-						public boolean execute(TIntArrayList instances) {
-							double[] toProject = new double[instances.size()];
+				public boolean execute(TIntObjectHashMap<TIntArrayList> tag2id2paramIndex) {
+					return tag2id2paramIndex.forEachValue(new TObjectProcedure<TIntArrayList>() {
+						public boolean execute(TIntArrayList id2paramIndex) {
+							double[] toProject = new double[id2paramIndex.size()];
 							for (int k = 0; k < toProject.length; k++) {
-								toProject[k] = Math.exp(sharpness*qPosteriors[instances.get(k)]);
+								toProject[k] = Math.exp(sharpness*qPosteriors[id2paramIndex.get(k)]);
 							}
 							double sum=ArrayMath.sum(toProject);
+							if (sum == 0) return true;
+							assert(!Double.isNaN(sum));
+							assert(!Double.isInfinite(sum));
 							for (int k = 0; k < toProject.length; k++) {
-								gradient[instances.get(k)]=(toProject[k]/sum)*str;
+								int ind=id2paramIndex.get(k);
+								gradient[ind]=(toProject[k]/sum)*str;
+								assert(!Double.isNaN(gradient[ind]));
+								assert(!Double.isInfinite(gradient[ind]));
 							}
 							return true;
 						}
