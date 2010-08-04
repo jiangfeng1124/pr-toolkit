@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<project name="pr-parsing" default="all" basedir=".">
+<project name="pr-toolkit" default="all" basedir=".">
     <description>
 	build all packages
     </description>
