@@ -87,13 +87,17 @@ public class LoadFromDictionary {
 			
 		
 			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,nrStates,c.getNrTags());
-		res.append(" Posterior E(Tag) " + infometric[0]+
-				" E(Gold) " + infometric[1 ] +
-				" MI " + infometric[2] +
-				" H(Gold |Tag) " + infometric[3] +
-				" H(Tag |Gold) " + infometric[4] +
-				" VI " + infometric[5] +
-				"\n");
+			res.append(" Posterior E(Tag) " + infometric[0]+
+					" E(Gold) " + infometric[1 ] +
+					" MI " + infometric[2] +
+					" H(Gold |Tag) " + infometric[3] +
+					" H(Tag |Gold) " + infometric[4] +
+					" VI " + infometric[5] +
+					" Homogenity " + infometric[6] + 
+					" Completeness " + infometric[7] +
+					" V " + infometric[8] +
+					" NVI " +  infometric[9] +
+					"\n");
 		
 		System.out.println(res.toString());
 	}

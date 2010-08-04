@@ -26,6 +26,7 @@ import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import model.distribution.trainer.TransitionMultinomialFeatureFunction;
 
 import optimization.gradientBasedMethods.Optimizer;
+import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.LineSearchMethod;
@@ -73,7 +74,7 @@ public class RunModel {
 		out.println("-corpus-params " + corpusParams);
 		out.println("-min-sentence-size " + minSentenceSize);
 		out.println("-max-sentence-size " + maxSentenceSize);
-		out.println("-max-number-of-sentences " + maxNumberOfSentences);
+		out.println("-max-number-sentences " + maxNumberOfSentences);
 	}
 	
 	// Model Selection
@@ -138,7 +139,10 @@ public class RunModel {
 	int maxEntMaxIterations = 1000;
 	@Option(name="-max-ent-em-warmup-iters", usage="-max-ent-em-warmup-iters iter")
 	int maxEntEMWarmupIters = 0;
-	
+	@Option(name="-max-ent-max-step-size", usage="-max-ent-max-step-size maxStepSize")
+	int maxEntMaxStepSize = 100;
+	@Option(name="-max-ent-use-progressive-optimization", usage="-max-ent-use-progressive-optimization")
+	boolean useProgrssiveOptimization = false;
 	
 	@Option(name="-vb-state-state-prior", usage="Variational bayes transition prior")
 	double stateToStatePrior = 000.1;
@@ -148,13 +152,15 @@ public class RunModel {
 	public void printModelUpdateOptions(PrintStream out){
 		out.println("-parameter_update_type " + updateParams);
 		if(updateParams.contains("MAX_ENT")){
-			out.println("-max-ent-features-file " + maxEntObservationFeaturesFile);
+			out.println("-max-ent-obs-features-file " + maxEntObservationFeaturesFile);
 			out.println("-max-ent-gaussian-prior " + gaussianPrior);
 			out.println("-max-ent-warm-start " + maxEntWarmStart);
 			out.println("-max-ent-gradient-convergence " + maxEntGradientConvergenceValue);
 			out.println("-max-ent-value-convergence " + maxEntValueConvergenceValue);
 			out.println("-max-ent-max-iter " + maxEntMaxIterations);
 			out.println("-max-ent-em-warmup-iters" + maxEntEMWarmupIters);
+			out.println("-max-ent-max-step-size" + maxEntMaxStepSize);
+			out.println("-max-ent-use-progressive-optimization" + useProgrssiveOptimization);
 			
 		} else if(updateParams.contains("VB")){
 			out.println("-vb-state-state-prior " + stateToStatePrior);
@@ -511,7 +517,7 @@ public class RunModel {
 			
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
 			wolfe.setDebugLevel(0);
 			lss.add(wolfe);
 		
@@ -527,7 +533,9 @@ public class RunModel {
 				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			opt.add(optimizer);
-			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
+			int[] individidualFeatures = fxy.getFeaturesByPrefix("word");
+			optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats optStats = 
+				new FeatureSplitOptimizerStats(individidualFeatures);
 			oss.add(optStats);
 		}
 
@@ -538,7 +546,7 @@ public class RunModel {
 		System.out.println("Max Iterations:" +maxEntMaxIterations);
 		System.out.println("Max Ent warm start:" +maxEntWarmStart);
 		return new MultinomialMaxEntTrainer(nrTags,
-				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart);
+				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
 	
 	public MultinomialMaxEntTrainer buildTransitionMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
@@ -555,7 +563,7 @@ public class RunModel {
 			
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
 			wolfe.setDebugLevel(0);
 			lss.add(wolfe);
 		
@@ -582,7 +590,7 @@ public class RunModel {
 		System.out.println("Max Iterations:" +maxEntMaxIterations);
 		System.out.println("Max Ent warm start:" +maxEntWarmStart);
 		return new MultinomialMaxEntTrainer(nrTags,
-				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart);
+				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
 	
 	/**
@@ -635,6 +643,10 @@ public class RunModel {
 				" H(Gold |Tag) " + infometric[3] +
 				" H(Tag |Gold) " + infometric[4] +
 				" VI " + infometric[5] +
+				" Homogenity " + infometric[6] + 
+				" Completeness " + infometric[7] +
+				" V " + infometric[8] +
+				" NVI " +  infometric[9] +
 				"\n");
 		
 		if(savePredictions){

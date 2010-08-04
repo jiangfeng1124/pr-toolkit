@@ -44,6 +44,7 @@ public class PosInstanceList extends InstanceList{
 		TIntArrayList wordsList  =new TIntArrayList();
 		TIntArrayList posList  =new TIntArrayList();
 		String line = reader.readLine();
+		int nrSentences = 0;
 		while(line != null) {
 			if(!line.matches("\\s*")){
 				String[] info = whitespace.split(line);
@@ -67,6 +68,10 @@ public class PosInstanceList extends InstanceList{
 				}
 				wordsList.clear();
 				posList.clear();
+				nrSentences++;
+				if(nrSentences >= maxNrSentences){
+					break;
+				}
 			}
 			line = reader.readLine();
 		}	
@@ -96,6 +101,7 @@ public class PosInstanceList extends InstanceList{
 		TIntArrayList wordsList  =new TIntArrayList();
 		TIntArrayList posList  =new TIntArrayList();
 		String line = reader.readLine();
+		int nrSentences = 0;
 		while(line != null) {
 			if(!line.matches("\\s*")){
 				String[] info = whitespace.split(line);
@@ -117,6 +123,10 @@ public class PosInstanceList extends InstanceList{
 				}
 				wordsList.clear();
 				posList.clear();
+				nrSentences++;
+				if(nrSentences >= maxNrSentences){
+					break;
+				}
 			}
 			line = reader.readLine();
 		}	

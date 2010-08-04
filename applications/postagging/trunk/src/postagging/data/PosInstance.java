@@ -34,14 +34,14 @@ public class PosInstance extends WordInstance{
 	@Override
 	public String toString() {
 		return super.toString() 
-		+ util.Printing.intArrayToString(tags, null,"sentence tags") + "\n";
+		+ util.ArrayPrinting.intArrayToString(tags, null,"sentence tags") + "\n";
 		
 	}
 
 	@Override
 	public String toString(Corpus c) {
 		return super.toString(c) 
-		+ util.Printing.intArrayToString(tags, ((PosCorpus)c).getTagStrings(tags),"sentence tags") + "\n";
+		+ util.ArrayPrinting.intArrayToString(tags, ((PosCorpus)c).getTagStrings(tags),"sentence tags") + "\n";
 		
 	}
 

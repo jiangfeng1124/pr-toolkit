@@ -4,7 +4,8 @@ import java.util.ArrayList;
 
 import postagging.data.PosCorpus;
 
-import model.chain.GenerativeFeatureFunction;
+
+import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 
 import data.InstanceList;
 import data.WordInstance;
@@ -17,9 +18,9 @@ public class Corpus2POSFeatures {
 	Alphabet xAlphabet;
 	Alphabet yAlphabet;
 	PosCorpus corpus;
-	GenerativeFeatureFunction fx;
+	ObservationMultinomialFeatureFunction fx;
 	
-	public Corpus2POSFeatures(Alphabet xAlphabet, Alphabet yAlphabet, PosCorpus c, GenerativeFeatureFunction fx) {
+	public Corpus2POSFeatures(Alphabet xAlphabet, Alphabet yAlphabet, PosCorpus c, ObservationMultinomialFeatureFunction fx) {
 		this.xAlphabet = xAlphabet;
 		this.yAlphabet = yAlphabet;
 		this.corpus = c;
@@ -44,7 +45,8 @@ public class Corpus2POSFeatures {
 			String[] y = new String[instance.words.length];
 			for (int position = 0; position < instance.words.length; position++) {
 				y[position] = corpus.tagAlphabet.lookupIndex(instance.getTagId(position));
-				util.SparseVector tmp = fx.apply(null, instance.getWordId(position));
+				
+				util.SparseVector tmp = fx.apply(instance.getTagId(position), instance.getWordId(position));
 				SparseVector sv = new SparseVector();
 				for (int j = 0; j < tmp.numEntries(); j++) {
 					sv.add(xAlphabet.lookupObject(fx.al.lookupIndex(tmp.getIndexAt(j))), tmp.getValueAt(j));

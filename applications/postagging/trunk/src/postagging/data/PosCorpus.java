@@ -159,7 +159,7 @@ public class PosCorpus extends Corpus{
 	}
 	
 	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-			PosCorpus c = new PosCorpus(args[0]);
+			PosCorpus c = new PosCorpus(args[0],0,Integer.MAX_VALUE, 100);
 			int i = 0;
 			for (WordInstance inst : c.trainInstances.instanceList) {
 				PosInstance inst2 = (PosInstance) inst;

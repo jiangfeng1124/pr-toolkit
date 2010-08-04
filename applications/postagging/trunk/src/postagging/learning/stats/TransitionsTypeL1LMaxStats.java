@@ -101,8 +101,8 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
 					try {
 						outputMax = InputOutput.openWriter(outputDir+"/transl1lmax-iter."+em.getCurrentIterationNumber());
 						outputSum = InputOutput.openWriter(outputDir+"/transSum-iter."+em.getCurrentIterationNumber());
-						outputMax.println((Printing.doubleArrayToString(maxTable, null, null, "Maxes table")));
-						outputSum.println((Printing.doubleArrayToString(sumTable, null, null, "Sum table")));
+						outputMax.println((util.ArrayPrinting.doubleArrayToString(maxTable, null, null, "Maxes table")));
+						outputSum.println((util.ArrayPrinting.doubleArrayToString(sumTable, null, null, "Sum table")));
 						outputMax.close();
 						outputSum.close();
 					} catch (FileNotFoundException e) {

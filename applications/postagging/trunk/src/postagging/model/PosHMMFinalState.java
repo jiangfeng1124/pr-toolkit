@@ -64,7 +64,7 @@ public class PosHMMFinalState extends HMMFinalState{
 		for (int i = 0; i < nrTags; i++) {
 			fxys.add(fxy);
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,100);
 			wolfe.setDebugLevel(2);
 			lss.add(wolfe);
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(0.1);
@@ -82,7 +82,7 @@ public class PosHMMFinalState extends HMMFinalState{
 		}
 
 		return new MultinomialMaxEntTrainer(nrTags,
-				1,fxys,lss,opt,oss,scs,false);
+				1,fxys,lss,opt,oss,scs,false,false);
 	}
 	
 	public static MultinomialMaxEntTrainer 
@@ -99,7 +99,7 @@ public class PosHMMFinalState extends HMMFinalState{
 			fxys.add(fxy);
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,100);
 			wolfe.setDebugLevel(2);
 			lss.add(wolfe);
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(0.1);
@@ -117,7 +117,7 @@ public class PosHMMFinalState extends HMMFinalState{
 		}
 
 		return new MultinomialMaxEntTrainer(nrTags,
-				1,fxys,lss,opt,oss,scs,false);
+				1,fxys,lss,opt,oss,scs,false,false);
 	}
 
 	

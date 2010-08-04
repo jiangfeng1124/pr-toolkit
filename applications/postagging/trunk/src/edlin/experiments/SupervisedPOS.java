@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import model.chain.GenerativeFeatureFunction;
+import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 
 import postagging.data.PosCorpus;
 import util.InputOutput;
@@ -69,7 +69,7 @@ public class SupervisedPOS {
 		String maxEntFeaturesFile = args[1];
 		PosCorpus c = new PosCorpus(corpusFile,0,Integer.MAX_VALUE,Integer.MAX_VALUE);
 		SupervisedPOS me = new SupervisedPOS();
-		GenerativeFeatureFunction fxy = new GenerativeFeatureFunction(c,maxEntFeaturesFile);
+		ObservationMultinomialFeatureFunction fxy = new ObservationMultinomialFeatureFunction(c,maxEntFeaturesFile);
 		me.parseOption(subArray(args,2));
 		Corpus2POSFeatures inPipe = new Corpus2POSFeatures(new Alphabet(), new Alphabet(), c, fxy);
 		ArrayList<SequenceInstance> allTraining = inPipe.getTrain();

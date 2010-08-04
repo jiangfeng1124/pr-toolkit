@@ -125,14 +125,16 @@ public class PosMapping {
 	 * H(Gold |Tag) -
 	 * H(Tag|Gold) - 
 	 * VI(Gold,Tag) - Variation of information between the two distributions
-	 * Meila (2003)
+	 * Meila (2007)
+	 * V Measure (Rosenberg 2007)
+	 * NVI Reichart
 	 *  
 	 * @param posMapping - Counts of number of tokens for each hidden state tag pair
 	 * @return a vector with all this measures by this order
 	 */
 	public static double[] informationTheorethicMeasures(int[][] posMapping, int nrHiddenStates,
 			int nrTags){
-		double[] infoMetrics = new double[6];
+		double[] infoMetrics = new double[10];
 		double[] tagSums = new double[nrTags];
 		double[] hiddenStateSums = new double[nrHiddenStates];
 		double totalSum = 0;
@@ -178,8 +180,40 @@ public class PosMapping {
 		//Conditional  Entropy H(Gold|Tag)
 		infoMetrics[4]=infoMetrics[1]-infoMetrics[2];
 		
+		//Metrics taken from The NVI Clustering Evaluation Measure
+		
 		//Variation of information
 		infoMetrics[5]=infoMetrics[3]+infoMetrics[4];
+		
+		//homogenity 
+		double homogenity = 0;
+		if (infoMetrics[1] == 0){ 
+			homogenity = 1;
+		}else{
+			homogenity = 1 - infoMetrics[4]/infoMetrics[1];
+		}
+		infoMetrics[6] = homogenity;
+		//homogenity 
+		double completeness = 0;
+		if (infoMetrics[0] == 0){ 
+			completeness = 1;
+		}else{
+			completeness = 1 - infoMetrics[3]/infoMetrics[0];
+		}
+		infoMetrics[7] = completeness;
+
+		//v measure
+		infoMetrics[8] = 2 * completeness * homogenity / (homogenity + completeness);
+	
+		//NVI
+		double nvi = 0;
+		if(infoMetrics[1] == 0){
+			nvi = infoMetrics[0];
+		}else{
+			nvi = infoMetrics[5] / infoMetrics[1];
+		}
+		infoMetrics[9] = nvi;
+			
 		return infoMetrics;
 	}
 	
