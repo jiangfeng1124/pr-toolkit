@@ -37,7 +37,10 @@ public class HMMDirectGradientObjective extends Objective {
 	public void updateValueAndGradient(){
 		// compute the correct counts.
 		counts.clear();
-		System.out.println("\nDirect gradient Iteration " + (iter+1));
+		initTrainer.getMultinomialAtCurrentParams(model.initialProbabilities);
+		transitionTrainer.getMultinomialAtCurrentParams(model.transitionProbabilities);
+		observationTrainer.getMultinomialAtCurrentParams(model.observationProbabilities);
+		System.out.println("\nDirect gradient Iteration " + (iter++));
 		System.out.flush();
 		//		corpusEStep(counts, sentenceDists, stats);
 		System.out.println("Using senteces on training:" + sentenceDists.length);
