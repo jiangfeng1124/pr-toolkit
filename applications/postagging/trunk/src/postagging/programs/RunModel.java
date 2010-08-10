@@ -17,6 +17,7 @@ import learning.stats.LikelihoodStats;
 import learning.stats.TrainStats;
 import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
+import model.chain.hmm.HMMDirectGradientObjective;
 import model.distribution.trainer.AbstractMultinomialTrainer;
 import model.distribution.trainer.MultinomialFeatureFunction;
 import model.distribution.trainer.MultinomialMaxEntTrainer;
@@ -24,7 +25,7 @@ import model.distribution.trainer.MultinomialVariationalBayesTrainer;
 import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import model.distribution.trainer.TransitionMultinomialFeatureFunction;
-
+import optimization.gradientBasedMethods.LBFGS;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
@@ -43,7 +44,6 @@ import org.kohsuke.args4j.Option;
 
 import postagging.constraints.L1LMax;
 import postagging.constraints.L1SoftMaxEG;
-
 import postagging.data.PosCorpus;
 import postagging.data.PosInstance;
 import postagging.evaluation.PosMapping;
@@ -52,7 +52,6 @@ import postagging.learning.stats.TransitionsTypeL1LMaxStats;
 import postagging.learning.stats.WordTypeL1LMaxStats;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
-import postagging.model.PosReverseHMM;
 import util.InputOutput;
 import data.InstanceList;
 
@@ -176,11 +175,12 @@ public class RunModel {
 	private int numEMIters = 0;
 	@Option(name="-stats-file", usage="Training statistics file")
 	private String statsFile = "";
-	private enum TrainingType {EM,L1LMax, L1SoftMaxEG};
+	private enum TrainingType {EM, DirectGradient,L1LMax, L1SoftMaxEG};
 	@Option(name="-trainingType", 
 			usage="Training Type: EM EM Training; " +	
-			"L1LMax PR with L1LMax; " + 
-			"L1SoftMaxEG PR with L1SoftMax and Exponentiated Gradient training")
+			"\n\t\tL1LMax PR with L1LMax; " + 
+			"\n\t\tDirectGradient direct gradient on likelihood, without PR constraints; " + 
+			"\n\t\tL1SoftMaxEG PR with L1SoftMax and Exponentiated Gradient training")
 	private TrainingType trainingType = TrainingType.EM;
 	
 	@Option(name="-warmup-iters", usage="Number of warmupIter before starting using constraints")
@@ -414,6 +414,35 @@ public class RunModel {
 				model.initTrainer = tempInit;	
 			}
 			em.em(numEMIters, stats);
+		} else if(TrainingType.DirectGradient == trainingType) {
+			if (!updateParams.equals("MAX_ENT")) 
+				throw new RuntimeException("can't deal with direct gradient unless we have max-ent model!");
+			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
+				EM em = new EM(model);
+				AbstractMultinomialTrainer tempObs = model.observationTrainer;
+				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
+				AbstractMultinomialTrainer tempInit = model.initTrainer;
+				model.observationTrainer = new TableNormalizerMultinomialTrainer();
+				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
+				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
+				em.em(maxEntEMWarmupIters, stats);
+				model.observationTrainer = tempObs;
+				model.transitionsTrainer = tempTran;
+				model.initTrainer = tempInit;	
+			}
+			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model);
+			// FIXME: got to here. 
+			WolfRuleLineSearch wolfe = 
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+			LBFGS optimizer = new LBFGS(wolfe,30);
+			optimizer.setMaxIterations(maxEntMaxIterations);
+			CompositeStopingCriteria stop = new CompositeStopingCriteria();
+			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
+			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
+			stop.add(stopGrad);
+			stop.add(stopValue);
+			OptimizerStats optStats = new OptimizerStats();
+			boolean succed = optimizer.optimize(objective,optStats,stop);
 		} else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
@@ -499,7 +528,8 @@ public class RunModel {
 				System.exit(-1);
 			}
 			model.observationTrainer = buildObservationMuiltinomialTrainer(c,model.getNrRealStates());
-			model.initTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
+			// FIXME: is this correct for initTrainer?  How are the number of classes determined?
+			model.initTrainer =  buildInitialMuiltinomialTrainer(c, model.getNrStates());
 			model.transitionsTrainer =  buildTransitionMuiltinomialTrainer(c, model.getNrStates());
 		}else if(updateParams.contains("VB")){
 			model.initTrainer = new MultinomialVariationalBayesTrainer(stateToStatePrior);
@@ -554,6 +584,51 @@ public class RunModel {
 		return new MultinomialMaxEntTrainer(nrTags,
 				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
+	
+	public MultinomialMaxEntTrainer buildInitialMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
+		TransitionMultinomialFeatureFunction fxy = new TransitionMultinomialFeatureFunction(c, nrTags);
+		ArrayList<MultinomialFeatureFunction> fxys = new ArrayList<MultinomialFeatureFunction>();
+
+		ArrayList<LineSearchMethod> lss = new ArrayList<LineSearchMethod>();
+		ArrayList<StopingCriteria> scs = new ArrayList<StopingCriteria>();
+		ArrayList<OptimizerStats> oss = new ArrayList<OptimizerStats>();
+		ArrayList<Optimizer> opt = new ArrayList<Optimizer>();
+		
+		for (int i = 0; i < 1; i++) {
+			fxys.add(fxy);
+			
+			// perform gradient descent
+			WolfRuleLineSearch wolfe = 
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+			wolfe.setDebugLevel(0);
+			lss.add(wolfe);
+		
+	
+
+			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
+			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
+			CompositeStopingCriteria stop = new CompositeStopingCriteria();
+			stop.add(stopGrad);
+			stop.add(stopValue);
+			scs.add(stop);
+			optimization.gradientBasedMethods.LBFGS optimizer = 
+				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+			optimizer.setMaxIterations(maxEntMaxIterations);
+			opt.add(optimizer);
+			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
+			oss.add(optStats);
+		}
+
+		System.out.println("Using transition max Ent training");
+		System.out.println("Gaussian Prior:" +gaussianPrior );
+		System.out.println("Gradient Precision:" +maxEntGradientConvergenceValue);
+		System.out.println("Value Precision:" +maxEntValueConvergenceValue);
+		System.out.println("Max Iterations:" +maxEntMaxIterations);
+		System.out.println("Max Ent warm start:" +maxEntWarmStart);
+		return new MultinomialMaxEntTrainer(1,
+				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
+	}
+
 	
 	public MultinomialMaxEntTrainer buildTransitionMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
 		TransitionMultinomialFeatureFunction fxy = new TransitionMultinomialFeatureFunction(c, nrTags);
