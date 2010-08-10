@@ -25,6 +25,7 @@ import util.SparseVector;
 public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 	
 	ArrayList<MaxEntClassifier> classifiers;
+	public double gaussianPriorVariance;
 	
 	boolean useProgressiveOptimization = false;
 	int numberOfUpdates = 0;

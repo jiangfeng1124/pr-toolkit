@@ -73,22 +73,24 @@ public class MaxEntClassifier {
 		
 	}
 	
+	public MaxEntMinimizationObjective getObjective(AbstractMultinomial counts, int variable){
+		return new MaxEntMinimizationObjective(initialParameters, counts, variable,gaussianPriorVariance);		
+	}
+	
 	public OptimizerStats batchTrain(AbstractMultinomial counts, int variable){	
-		
+
 		reset();
 		if(warmStart == false){
 			System.out.println("Restarting ME weights");
 			java.util.Arrays.fill(initialParameters, 0);
 		}
-		
-		MaxEntMinimizationObjective obj = 
-			new MaxEntMinimizationObjective(initialParameters, counts, variable,gaussianPriorVariance);
-			boolean succed = optimizer.optimize(obj,stats,stoppingCriteria);
-			return stats;
-//
-//		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
+		MaxEntMinimizationObjective obj = getObjective(counts, variable);
+		boolean succed = optimizer.optimize(obj,stats,stoppingCriteria);
+		return stats;
+		//
+		//		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
 	}
-	
+
 	/**
 	 * Given a variable and a list of values for that variable computes
 	 * the dot product between the parameters and the features. The features come
@@ -129,7 +131,7 @@ public class MaxEntClassifier {
 	 */
 	class MaxEntMinimizationObjective extends Objective {
 		double[] empiricalExpectations;
-		AbstractMultinomial counts;
+		private AbstractMultinomial counts;
 		double gaussianPriorVariance;
 		//Current function value and gradient
 		double objective;
@@ -153,6 +155,14 @@ public class MaxEntClassifier {
 			parameters = initialParameters;
 			setParameters(initialParameters);
 
+		}
+		
+		/**
+		 * set the counts from which the empirical expectations are computed. 
+		 */
+		public void setCounts(AbstractMultinomial counts){
+			this.counts = counts;
+			computerEmpiricalExpectations();
 		}
 		
 		/**

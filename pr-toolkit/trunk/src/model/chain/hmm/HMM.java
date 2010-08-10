@@ -51,7 +51,6 @@ public  class HMM extends AbstractModel{
 	public AbstractMultinomialTrainer observationTrainer;
 	public AbstractMultinomialTrainer transitionsTrainer;
 	public AbstractMultinomialTrainer initTrainer;
-
 	
 	protected int nrStates;
 	protected int nrWordTypes;
