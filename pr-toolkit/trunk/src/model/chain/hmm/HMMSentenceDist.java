@@ -1,6 +1,7 @@
 package model.chain.hmm;
 
 
+import util.ArrayPrinting;
 import model.chain.ChainSentenceDist;
 import model.chain.ForwardBackwardInference;
 import data.WordInstance;
@@ -305,6 +306,9 @@ public class HMMSentenceDist extends ChainSentenceDist{
 				System.out.println("Update init counts not a number");
 				prob=0;
 				model.printModelParameters();
+				if(observationCache!=null){
+					System.out.println(ArrayPrinting.doubleArrayToString(observationCache, null,null, "Observation cache"));
+				}
 				printStatePosteriors();
 				throw new AssertionError("Update init counts not a number");
 			}

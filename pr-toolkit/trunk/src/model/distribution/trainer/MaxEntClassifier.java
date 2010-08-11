@@ -8,6 +8,7 @@ import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
+import util.ArrayMath;
 import util.SparseVector;
 import util.StaticUtils;
 
@@ -170,6 +171,7 @@ public class MaxEntClassifier {
 		 * "from the count table" of each feature
 		 */
 		public void computerEmpiricalExpectations(){
+			ArrayMath.set(empiricalExpectations, 0);
 			TIntArrayList valuesIds = counts.getAvailableStates(variable);
 			for (int i = 0; i < valuesIds.size(); i++) {
 				int state = valuesIds.getQuick(i);

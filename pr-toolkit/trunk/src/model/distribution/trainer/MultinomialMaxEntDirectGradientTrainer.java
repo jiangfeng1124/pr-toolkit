@@ -90,19 +90,6 @@ public class MultinomialMaxEntDirectGradientTrainer implements DirectGradientTra
 				}
 				paramsTable.setCounts(i, value, prob);
 			}
-			double MLsum = countsTable.sum(i);
-			double kl = 0;
-			for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
-				int value = possibleValues.getQuick(valueIndex);
-				double prob = probs.getValue(value)/sum;
-				double mlProb = countsTable.getCounts(i, value)/MLsum;
-				double logP = Math.log(prob/mlProb);
-//				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
-				if(!(Double.isInfinite(prob) || Double.isInfinite(prob) || Double.isInfinite(logP) || Double.isInfinite(logP) )){
-					kl+= prob*logP;
-				}
-			}
-			kls.add(kl);
 		}
 		
 	}	
@@ -124,10 +111,33 @@ public class MultinomialMaxEntDirectGradientTrainer implements DirectGradientTra
 		return val;
 	}
 
-
 	@Override
 	public String toString() {
 		return "MultinominalMaxEntDirectGradientTrainer";
+	}
+	
+	public String featureToString(int i){
+		int model= classifiers.size()-1;
+		for (int j = 0; j < classifiers.size()-1; j++) {
+			if (offsets[j+1] > i) {
+				model = j;
+				break;
+			}
+		}
+		i-= offsets[model];
+		String prefix;
+		if(classifiers.size() <2) prefix = "";
+		else prefix = ""+model;
+		MaxEntClassifier me = classifiers.get(model);
+		if (me.fxy instanceof ObservationMultinomialFeatureFunction){
+			ObservationMultinomialFeatureFunction fxy = (ObservationMultinomialFeatureFunction) me.fxy;
+			return prefix+fxy.al.lookupInt(i);
+		}
+		if (me.fxy instanceof TransitionMultinomialFeatureFunction){
+			TransitionMultinomialFeatureFunction fxy = (TransitionMultinomialFeatureFunction) me.fxy;
+			return prefix+fxy.al.lookupInt(i);
+		}
+		return "unknown-"+i;
 	}
 	
 	public int numParams(){
