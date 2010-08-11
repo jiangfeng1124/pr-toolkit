@@ -25,6 +25,8 @@ import model.distribution.trainer.MultinomialVariationalBayesTrainer;
 import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import model.distribution.trainer.TransitionMultinomialFeatureFunction;
+import optimization.gradientBasedMethods.AbstractGradientBaseMethod;
+import optimization.gradientBasedMethods.GradientDescent;
 import optimization.gradientBasedMethods.LBFGS;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
@@ -430,11 +432,11 @@ public class RunModel {
 				model.transitionsTrainer = tempTran;
 				model.initTrainer = tempInit;	
 			}
-			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model);
-			// FIXME: got to here. 
+			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior);
 			WolfRuleLineSearch wolfe = 
 				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
-			LBFGS optimizer = new LBFGS(wolfe,30);
+			// AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
+			AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			CompositeStopingCriteria stop = new CompositeStopingCriteria();
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
@@ -443,6 +445,7 @@ public class RunModel {
 			stop.add(stopValue);
 			OptimizerStats optStats = new OptimizerStats();
 			boolean succed = optimizer.optimize(objective,optStats,stop);
+			System.out.println(optStats.prettyPrint(2));
 		} else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
