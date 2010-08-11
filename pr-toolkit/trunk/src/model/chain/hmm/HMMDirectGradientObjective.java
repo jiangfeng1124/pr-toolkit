@@ -34,6 +34,7 @@ public class HMMDirectGradientObjective extends Objective {
 		counts = hmm.getCountTable();
 		initOffset = 0;
 		gaussianPriorVariance = prior;
+		sentenceDists = model.getSentenceDists();
 		HMMCountTable hmmcounts = (HMMCountTable) counts;
 		initTrainer = new MultinomialMaxEntDirectGradientTrainer((MultinomialMaxEntTrainer) hmm.initTrainer, hmmcounts.initialCounts);
 		transitionOffset = initTrainer.numParams();
@@ -41,26 +42,25 @@ public class HMMDirectGradientObjective extends Objective {
 		observationOffset = transitionOffset+transitionTrainer.numParams();
 		observationTrainer = new MultinomialMaxEntDirectGradientTrainer((MultinomialMaxEntTrainer) hmm.observationTrainer, hmmcounts.observationCounts);
 		parameters = new double[observationOffset+observationTrainer.numParams()];
-		Random r = new Random(2);
-		for (int i = 0; i < parameters.length; i++) {
-			parameters[i] = (r.nextDouble()-0.5)/10;
+		// initialize parameters from first step of EM... 
+		counts.clear();
+		for(AbstractSentenceDist sd : sentenceDists){			
+			// sentenceEStep(sd, counts, stats);
+			sd.initSentenceDist();
+			model.computePosteriors(sd);
+			model.addToCounts(sd,counts);	
+			sd.clearCaches();
+			sd.clearPosteriors();
 		}
-//		// FIXME: debug
-//		parameters[17] = 1;
-//		parameters[18] = -1;	
-//		parameters[21] = 1;
-//		parameters[20] = -1;
-//		parameters[7] = 100;
-//		parameters[11] = 100;
+		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
+		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
+		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
 		gradient = new double[parameters.length];
-		sentenceDists = model.getSentenceDists();
 		updateValueAndGradient();
+		System.out.println("Finished initializing "+this.getClass().getSimpleName()+" value: "+value+" ||grad||^2="+ArrayMath.twoNormSquared(gradient));
 //		testGradient();
-//		setParameters(parameters);
-//		System.out.println("===========================");
-//		System.out.println("===========================");
 	}
-	// FIXME: the current way of doing things doesn't take into account the initialization, I don't think.
+	
 	public void updateValueAndGradient(){
 		// set parameters: this.params -> trainer.params; trainer.params -> hmm.params
 		HMMCountTable hmmcounts = (HMMCountTable) counts;
@@ -73,8 +73,6 @@ public class HMMDirectGradientObjective extends Objective {
 
 		// compute the inference-induced counts at the current parameters.
 		counts.clear();
-		//		corpusEStep(counts, sentenceDists, stats);
-		//System.out.println("Using senteces on training:" + sentenceDists.length);
 		value = 0;
 		for(AbstractSentenceDist sd : sentenceDists){			
 			// sentenceEStep(sd, counts, stats);
@@ -85,14 +83,13 @@ public class HMMDirectGradientObjective extends Objective {
 			sd.clearCaches();
 			sd.clearPosteriors();
 		}
-		// FIXME: I don't like having to compute the value seperately from the gradient
+		// FIXME: I don't like having to compute the value separately from the gradient
 		value +=  1/gaussianPriorVariance*ArrayMath.twoNormSquared(parameters);
 		// update the empirical counts so we can compute the value and gradient. 
 		initTrainer.setCountsAndParameters(hmmcounts.initialCounts, parameters, initOffset);
 		transitionTrainer.setCountsAndParameters(hmmcounts.transitionCounts, parameters, transitionOffset);
 		observationTrainer.setCountsAndParameters(hmmcounts.observationCounts, parameters, observationOffset);
 		//
-//		value = initTrainer.getValue() + transitionTrainer.getValue() + observationTrainer.getValue();
 		initTrainer.getGradient(gradient, initOffset);
 		transitionTrainer.getGradient(gradient, transitionOffset);
 		observationTrainer.getGradient(gradient, observationOffset);
@@ -101,22 +98,11 @@ public class HMMDirectGradientObjective extends Objective {
 	boolean myDebug=false;
 	@Override 
 	public void setParameters(double[] parameters){
-//		System.out.println("------------");
-//		System.out.println("------------ begin set parameters ------------");
-////		System.out.println(model.transitionProbabilities.toString("transition params before update = ",null,null));
-////		System.out.println(((HMMCountTable)counts).transitionCounts.toString("transition counts before update", null, null));
-//		System.out.println(model.observationProbabilities.toString("observation params before update = ",null,null));
-//		System.out.println(((HMMCountTable)counts).observationCounts.toString("observation counts before update", null, null));
 		super.setParameters(parameters);
 //		System.out.println(ArrayPrinting.doubleArrayToString(parameters, null, "new parameters"));
 //		myDebug = true;
 		updateValueAndGradient();
 //		myDebug = false;
-//		System.out.println(model.transitionProbabilities.toString("transition params after update = ",null,null));
-//		System.out.println(((HMMCountTable)counts).transitionCounts.toString("transition counts after update", null, null));
-//		System.out.println(model.observationProbabilities.toString("observation params after update = ",null,null));
-//		System.out.println(((HMMCountTable)counts).observationCounts.toString("observation counts after update", null, null));
-//		System.out.println("------------");
 //		testGradient();
 //		System.out.println("------------ end set parameters ------------");
 //		System.out.println("------------");

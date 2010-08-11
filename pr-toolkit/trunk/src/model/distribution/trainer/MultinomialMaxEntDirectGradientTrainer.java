@@ -95,6 +95,17 @@ public class MultinomialMaxEntDirectGradientTrainer implements DirectGradientTra
 	}	
 
 	
+	public void getParametersForCounts(AbstractMultinomial counts, double[] parameters, int offset){
+		this.countsTable = counts;
+		// train the classifiers... and copy their parameters
+		for (int i = 0; i < classifiers.size(); i++) {
+			MaxEntClassifier me = classifiers.get(i);
+			me.batchTrain(counts, i);
+			System.arraycopy(me.initialParameters, 0, 
+					parameters, offset+offsets[i], me.initialParameters.length);
+		}
+	}
+	
 	public void getGradient(double[] gradient, int offset) {
 		for (int i = 0; i < classifiers.size(); i++) {
 			double[] g = smallObjs[i].getGradient();
