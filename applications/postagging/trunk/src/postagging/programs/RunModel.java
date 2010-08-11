@@ -17,6 +17,7 @@ import learning.stats.LikelihoodStats;
 import learning.stats.TrainStats;
 import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
+import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMMDirectGradientObjective;
 import model.distribution.trainer.AbstractMultinomialTrainer;
 import model.distribution.trainer.MultinomialFeatureFunction;
@@ -435,17 +436,22 @@ public class RunModel {
 			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior);
 			WolfRuleLineSearch wolfe = 
 				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
-			// AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
-			AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
+			AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
+			//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			CompositeStopingCriteria stop = new CompositeStopingCriteria();
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
 			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
 			stop.add(stopGrad);
 			stop.add(stopValue);
-			OptimizerStats optStats = new OptimizerStats();
-			boolean succed = optimizer.optimize(objective,optStats,stop);
-			System.out.println(optStats.prettyPrint(2));
+			for (int i = 0; i < 5; i++) {
+				System.out.println("Optimization run + "+i);
+				OptimizerStats optStats = new OptimizerStats();
+				boolean succeed = optimizer.optimize(objective,optStats,stop);
+				System.out.println(optStats.prettyPrint(2));
+				if (succeed) System.out.println("Succeeded!");
+				else System.out.println("failed to finish optimization");
+			}
 		} else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
