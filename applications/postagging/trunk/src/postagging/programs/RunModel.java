@@ -436,15 +436,15 @@ public class RunModel {
 			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior);
 			WolfRuleLineSearch wolfe = 
 				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
-			AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
-			//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
-			optimizer.setMaxIterations(maxEntMaxIterations);
 			CompositeStopingCriteria stop = new CompositeStopingCriteria();
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
 			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
 			stop.add(stopGrad);
 			stop.add(stopValue);
 			for (int i = 0; i < 5; i++) {
+				AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
+				//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
+				optimizer.setMaxIterations(maxEntMaxIterations);
 				System.out.println("Optimization run + "+i);
 				OptimizerStats optStats = new OptimizerStats();
 				boolean succeed = optimizer.optimize(objective,optStats,stop);
