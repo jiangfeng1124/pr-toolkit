@@ -42,6 +42,14 @@ public class HMMDirectGradientObjective extends Objective {
 		observationOffset = transitionOffset+transitionTrainer.numParams();
 		observationTrainer = new MultinomialMaxEntDirectGradientTrainer((MultinomialMaxEntTrainer) hmm.observationTrainer, hmmcounts.observationCounts);
 		parameters = new double[observationOffset+observationTrainer.numParams()];
+		// the commented out code below is for debugging; it usually results in terrible performance
+		// and large gradients that cause the optimization to fail, so it's a good way to test
+		// fail-safes. 
+//		Random r = new Random(0);
+//		for (int i = 0; i < parameters.length; i++) {
+//			parameters[i] = r.nextDouble();
+//		}
+		// This is the better way to initialize:
 		// initialize parameters from first step of EM... 
 		counts.clear();
 		for(AbstractSentenceDist sd : sentenceDists){			
@@ -77,8 +85,37 @@ public class HMMDirectGradientObjective extends Objective {
 		for(AbstractSentenceDist sd : sentenceDists){			
 			// sentenceEStep(sd, counts, stats);
 			sd.initSentenceDist();
-			model.computePosteriors(sd);
-			model.addToCounts(sd,counts);	
+			try{
+				model.computePosteriors(sd);
+				model.addToCounts(sd,counts);	
+			} catch (AssertionError e){
+				System.err.println("Caught a deadly AssertionError");
+				e.printStackTrace(System.err);
+				System.err.println("max param = "+MathUtil.max(parameters)+ "   min param = "+MathUtil.min(parameters));
+				TIntArrayList[] obs=model.observationProbabilities.getAvailableStates();
+				for (int state = 0; state < obs.length; state++) {
+					double max= Double.NEGATIVE_INFINITY;
+					double min = Double.POSITIVE_INFINITY;
+					int maxi=0, mini=0;
+					for (int word = 0; word < obs[state].size(); word++) {
+						double v = model.observationProbabilities.getCounts(state, obs[state].get(word));
+						if (v > max){
+							max = v;
+							maxi = word;
+						}
+						if (v < min){
+							min = v;
+							mini = word;
+						}
+					}
+					System.err.println(String.format(
+							" state = %3d  min=%f  max=%f (%s)" 
+							, state,min,max,model.corpus.getWordStrings(new int[]{obs[state].get(maxi)})[0]));
+					value = Double.POSITIVE_INFINITY;
+				}
+//				throw e;
+				break;
+			}
 			value -= sd.getLogLikelihood();
 			sd.clearCaches();
 			sd.clearPosteriors();
