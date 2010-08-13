@@ -18,7 +18,7 @@
 
     <target name="jar" depends="compile">
         <mkdir dir="${dist}"/>
-        <jar destfile="${dist}/dep-parsing-0.1.jar" >
+        <jar destfile="${dist}/pr-postagging-0.1.jar" >
             <fileset dir="${build}" />
             <fileset dir="${src}"/>
         </jar>
