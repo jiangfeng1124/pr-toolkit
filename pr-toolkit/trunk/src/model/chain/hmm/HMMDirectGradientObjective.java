@@ -46,24 +46,24 @@ public class HMMDirectGradientObjective extends Objective {
 		// the commented out code below is for debugging; it usually results in terrible performance
 		// and large gradients that cause the optimization to fail, so it's a good way to test
 		// fail-safes. 
-//		Random r = new Random(0);
-//		for (int i = 0; i < parameters.length; i++) {
-//			parameters[i] = r.nextDouble();
-//		}
+		Random r = new Random(0);
+		for (int i = 0; i < parameters.length; i++) {
+			parameters[i] = r.nextDouble();
+		}
 		// This is the better way to initialize:
 		// initialize parameters from first step of EM... 
-		counts.clear();
-		for(AbstractSentenceDist sd : sentenceDists){			
-			// sentenceEStep(sd, counts, stats);
-			sd.initSentenceDist();
-			model.computePosteriors(sd);
-			model.addToCounts(sd,counts);	
-			sd.clearCaches();
-			sd.clearPosteriors();
-		}
-		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
-		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
-		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
+//		counts.clear();
+//		for(AbstractSentenceDist sd : sentenceDists){			
+//			// sentenceEStep(sd, counts, stats);
+//			sd.initSentenceDist();
+//			model.computePosteriors(sd);
+//			model.addToCounts(sd,counts);	
+//			sd.clearCaches();
+//			sd.clearPosteriors();
+//		}
+//		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
+//		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
+//		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
 		gradient = new double[parameters.length];
 		updateValueAndGradient();
 		System.out.println("Finished initializing "+this.getClass().getSimpleName()+" value: "+value+" ||grad||^2="+ArrayMath.twoNormSquared(gradient));
@@ -90,9 +90,14 @@ public class HMMDirectGradientObjective extends Objective {
 				model.computePosteriors(sd);
 				model.addToCounts(sd,counts);	
 			} catch (CantNormalizeException e){
-				System.err.println("Warning -- failed to normalize during update counts ("+e.problem+")");
+				System.err.print("Warning -- failed to normalize during update counts ("+e.problem+")");
+				System.err.println(" thrown at: "+e.getStackTrace()[0].toString());
 //				e.printStackTrace(System.err);
-				System.err.println("max param = "+MathUtil.max(parameters)+ "   min param = "+MathUtil.min(parameters));
+				System.err.println(String.format("max param = %.2f min param = %.2f; max grad = %.2f, min grad = %.2f, grad norm = %.2f",
+						MathUtil.max(parameters), MathUtil.min(parameters),
+						MathUtil.max(gradient), MathUtil.min(gradient),
+						Math.sqrt(ArrayMath.twoNormSquared(gradient))
+						));
 				TIntArrayList[] obs=model.observationProbabilities.getAvailableStates();
 				for (int state = 0; state < obs.length; state++) {
 					double max= Double.NEGATIVE_INFINITY;
