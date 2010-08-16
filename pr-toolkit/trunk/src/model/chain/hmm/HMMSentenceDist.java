@@ -2,6 +2,7 @@ package model.chain.hmm;
 
 
 import util.ArrayPrinting;
+import model.CantNormalizeException;
 import model.chain.ChainSentenceDist;
 import model.chain.ForwardBackwardInference;
 import data.WordInstance;
@@ -303,14 +304,15 @@ public class HMMSentenceDist extends ChainSentenceDist{
 		for (int state = 0; state < model.getNrRealStates(); state++) {
 			double prob =  getStatePosterior(0, state);
 			if(Double.isInfinite(prob) || Double.isNaN(prob)){
-				System.out.println("Update init counts not a number");
-				prob=0;
-				model.printModelParameters();
+				StringBuilder sb = new StringBuilder();
+				sb.append("Update init counts not a number\n");
+				sb.append(model.params2string());
+				sb.append("\n");
 				if(observationCache!=null){
-					System.out.println(ArrayPrinting.doubleArrayToString(observationCache, null,null, "Observation cache"));
+					sb.append(ArrayPrinting.doubleArrayToString(observationCache, null,null, "Observation cache"));
 				}
-				printStatePosteriors();
-				throw new AssertionError("Update init counts not a number");
+				sb.append(statePosteriorToString());
+				throw new CantNormalizeException(sb.toString(),prob);
 			}
 			counts.initialCounts.addCounts(0, state, prob);
 		}

@@ -9,6 +9,7 @@ import com.sun.tools.javac.comp.TransTypes;
 
 import model.AbstractCountTable;
 import model.AbstractSentenceDist;
+import model.CantNormalizeException;
 import model.distribution.trainer.MaxEntClassifier;
 import model.distribution.trainer.MultinomialMaxEntDirectGradientTrainer;
 import model.distribution.trainer.MultinomialMaxEntTrainer;
@@ -88,9 +89,9 @@ public class HMMDirectGradientObjective extends Objective {
 			try{
 				model.computePosteriors(sd);
 				model.addToCounts(sd,counts);	
-			} catch (AssertionError e){
-				System.err.println("Caught a deadly AssertionError");
-				e.printStackTrace(System.err);
+			} catch (CantNormalizeException e){
+				System.err.println("Warning -- failed to normalize during update counts ("+e.problem+")");
+//				e.printStackTrace(System.err);
 				System.err.println("max param = "+MathUtil.max(parameters)+ "   min param = "+MathUtil.min(parameters));
 				TIntArrayList[] obs=model.observationProbabilities.getAvailableStates();
 				for (int state = 0; state < obs.length; state++) {
@@ -113,7 +114,6 @@ public class HMMDirectGradientObjective extends Objective {
 							, state,min,max,model.corpus.getWordStrings(new int[]{obs[state].get(maxi)})[0]));
 					value = Double.POSITIVE_INFINITY;
 				}
-//				throw e;
 				break;
 			}
 			value -= sd.getLogLikelihood();

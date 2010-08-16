@@ -1,5 +1,6 @@
 package model.chain;
 
+import model.CantNormalizeException;
 import util.Printing;
 
 
@@ -131,10 +132,11 @@ public class ForwardBackwardInference {
 				likelihoodScalor+=prob;
 			}
 			if(likelihoodScalor == 0){
-				System.out.println("Likelihood scallor is zero for position " + pos);
-				System.out.println(sd.toString());
-				printForwardBackwardTables();
-				throw new RuntimeException("Likelihood scallor is zero for position "+pos);
+				StringBuilder sb = new StringBuilder("Likelihood scallor is zero for position " + pos);
+				sb.append("\n");
+				sb.append(sd.toString());
+				sb.append(this.toString());
+				throw new CantNormalizeException(sb.toString(), likelihoodScalor);
 			}
 			for (int state = 0; state < nrHiddenStates; state++) {
 				forward[state][pos] =  forward[state][pos]/likelihoodScalor;

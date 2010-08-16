@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Random;
 
+import util.ArrayPrinting;
+
 import model.AbstractCountTable;
 import model.AbstractModel;
 import model.AbstractSentenceDist;
@@ -336,6 +338,13 @@ public  class HMM extends AbstractModel{
 		initialProbabilities.print("Initial Parameters",null,null);
 		transitionProbabilities.print("Transition Parameters",null,null);
 		//observationProbabilities.print("Observatiob Parameters",null,null);
+	}
+	
+	public String params2string(){
+		return 
+		initialProbabilities.toString("Initial Parameters", null, null) + 
+		"\n"+
+		transitionProbabilities.toString("Transition Parameters",null,null);
 	}
 	
 //	private void mrfRetrain(AbstractCountTable counts) {
