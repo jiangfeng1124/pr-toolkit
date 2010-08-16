@@ -37,6 +37,7 @@ import optimization.linesearch.LineSearchMethod;
 import optimization.linesearch.WolfRuleLineSearch;
 import optimization.stopCriteria.CompositeStopingCriteria;
 import optimization.stopCriteria.NormalizedGradientL2Norm;
+import optimization.stopCriteria.NormalizedValueDifference;
 import optimization.stopCriteria.StopingCriteria;
 import optimization.stopCriteria.ValueDifference;
 
@@ -438,7 +439,7 @@ public class RunModel {
 				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
 			CompositeStopingCriteria stop = new CompositeStopingCriteria();
 			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
-			StopingCriteria stopValue = new ValueDifference(maxEntValueConvergenceValue);
+			StopingCriteria stopValue = new NormalizedValueDifference(maxEntValueConvergenceValue);
 			stop.add(stopGrad);
 			stop.add(stopValue);
 			for (int i = 0; i < 5; i++) {
