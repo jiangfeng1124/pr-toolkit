@@ -164,11 +164,11 @@ public class WordTypeL1LMaxStats extends TrainStats{
         		l1lmax[i]=l1lmax[i]*nrHiddenStates/numberOfEntries[i];
         	}
         	StringBuffer sb = new StringBuffer();
-        	sb.append("\nL1LMax word occurences < 20: " + l1lmax[0]+"\n");
-        	sb.append("L1LMax word occurences < 40: " + l1lmax[1]+"\n");
-        	sb.append("L1LMax word occurences < 80: " + l1lmax[2]+"\n");
-        	sb.append("L1LMax word occurences < 150: " + l1lmax[3]+"\n");
-        	sb.append("L1LMax word occurences > 150: " + l1lmax[4]);
+        	sb.append("\n<20:" + l1lmax[0]+"\t");
+        	sb.append("<40:" + l1lmax[1]+"\t");
+        	sb.append("<80:" + l1lmax[2]+"\t");
+        	sb.append("<150:" + l1lmax[3]+"\t");
+        	sb.append(">150: " + l1lmax[4]);
         	return sb.toString();
         }
         

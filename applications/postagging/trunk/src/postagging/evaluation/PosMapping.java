@@ -323,7 +323,6 @@ public class PosMapping {
 	
 	public static String printMappingCounts(PosCorpus c, int[][] statePosCounts,int hiddenStatesSize,int labelSetSize){
 		StringBuffer sb = new StringBuffer();
-		sb.append("\t");
 		for(int tag = 0; tag < labelSetSize; tag++){
 			if(c!=null){
 				sb.append(c.tagAlphabet.index2feat.get(tag)+"\t");

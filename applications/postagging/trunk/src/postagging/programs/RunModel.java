@@ -725,15 +725,15 @@ public class RunModel {
 			postagging.evaluation.PosMapping.manyTo1Mapping((PosCorpus)model.corpus,mappingCounts,Integer.MAX_VALUE, model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);
 		res.append(PosMapping.printMapping((PosCorpus)model.corpus,posteriorDecoding1ToManyMapping));
 		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, posteriorResults, Integer.MAX_VALUE);
-		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many" + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
-		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many" + 
+		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
+		res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to many per bin: " + 
 				postagging.evaluation.Evaluator.evaluatePerOccurences((PosCorpus)model.corpus, list.instanceList.size(), words,posteriorDecoding1ToMany,  gold)+"\n");
 		int[]  posteriorDecoding1to1Mapping =  
 			postagging.evaluation.PosMapping.oneToOnemapping((PosCorpus)model.corpus, mappingCounts,Integer.MAX_VALUE,model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);;
 			res.append(PosMapping.printMapping((PosCorpus)model.corpus,posteriorDecoding1to1Mapping));
 		int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, posteriorResults, Integer.MAX_VALUE); 
-			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1" + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
-			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1" + 
+			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
+			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
 					postagging.evaluation.Evaluator.evaluatePerOccurences((PosCorpus)model.corpus, list.instanceList.size(), words,posteriorDecoding1to1,  gold)+"\n");
 			
 		

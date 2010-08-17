@@ -147,11 +147,10 @@ public class Evaluator {
 		
 		public String toString(){
 			StringBuffer sb = new StringBuffer();
-			sb.append("\n");
 			for (int i = 0; i < bins.length; i++) {
-				sb.append("Bin: " + bins[i] + " " + evaluations[i].toString()+"\n");
+				sb.append(bins[i] + ":" + evaluations[i]._corpusAccurancy+"\t");
 			}
-			sb.append("Unk: " + evaluations[bins.length].toString()+"\n");
+			sb.append("Unk:" + evaluations[bins.length]._corpusAccurancy+"\n");
 			return sb.toString();
 		}
 		
