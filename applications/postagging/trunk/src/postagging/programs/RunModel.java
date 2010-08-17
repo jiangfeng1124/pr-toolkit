@@ -54,6 +54,9 @@ import postagging.evaluation.PosMapping;
 import postagging.learning.stats.AccuracyStats;
 import postagging.learning.stats.TransitionsTypeL1LMaxStats;
 import postagging.learning.stats.WordTypeL1LMaxStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientAccuracyStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientLikelihoodStats;
+import postagging.learning.stats.directMultinomialMaxEnt.MultinomialMaxEntDirectTrainerStats;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
 import util.InputOutput;
@@ -447,12 +450,21 @@ public class RunModel {
 				//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
 				optimizer.setMaxIterations(maxEntMaxIterations);
 				System.out.println("Optimization run + "+i);
-				OptimizerStats optStats = new OptimizerStats();
+				MultinomialMaxEntDirectTrainerStats optStats = new MultinomialMaxEntDirectTrainerStats();
+				optStats.add(new DirectGradientAccuracyStats(2));
+				optStats.add(new DirectGradientLikelihoodStats());
 				boolean succeed = optimizer.optimize(objective,optStats,stop);
 				System.out.println(optStats.prettyPrint(2));
+				
+				if(optStats.iterations.size() == 1){
+					System.out.println("Succeeded! with no iterations Existing loop");
+					break;
+				}
 				if (succeed) System.out.println("Succeeded!");
 				else System.out.println("failed to finish optimization");
 			}
+			
+			
 		} else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
