@@ -33,8 +33,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEndEM( model,em);
 			if(s!=""){
-				s= s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");
 			}
 		}
 		return sb.toString();
@@ -45,9 +47,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEndEMIter( model,em);
 			if(s!=""){
-				s= s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
-			}
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");			}
 
 		}
 		return sb.toString();
@@ -59,8 +62,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEndEStep(model,em);
 			if(s!=""){
-				s=  s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");
 			}
 		}
 		return sb.toString();
@@ -72,9 +77,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEndSentenceEStep(model,em);
 			if(s!=""){
-				s= s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
-			}
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");			}
 		}
 		return sb.toString();
 	}
@@ -86,8 +92,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEStepEndConstraints(model,em,constraints);
 			if(s!=""){
-				s= s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");
 			}
 		}
 		return sb.toString();
@@ -99,8 +107,10 @@ public class CompositeTrainStats<K extends AbstractModel, J extends AbstractSent
 		for(TrainStats<K,J> stat: stats){
 			String s = stat.printEndMStep(model,em);
 			if(s!=""){
-				s= s.replace("\n", "\n"+stat.getPrefix());
-				sb.append(stat.getPrefix()+s+"\n");
+				//Replace ending new lines by the corresponding prefix
+				s=  s.replace("\n", "\nIter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix());
+				//Add iterationd and prefix to the begining of file
+				sb.append("Iter:"+em.getCurrentIterationNumber()+"::"+stat.getPrefix()+s+"\n");
 			}
 		}
 		return sb.toString();
