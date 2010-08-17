@@ -46,24 +46,24 @@ public class HMMDirectGradientObjective extends Objective {
 		// the commented out code below is for debugging; it usually results in terrible performance
 		// and large gradients that cause the optimization to fail, so it's a good way to test
 		// fail-safes. 
-		Random r = new Random(0);
-		for (int i = 0; i < parameters.length; i++) {
-			parameters[i] = r.nextDouble();
-		}
+//		Random r = new Random(0);
+//		for (int i = 0; i < parameters.length; i++) {
+//			parameters[i] = r.nextDouble();
+//		}
 		// This is the better way to initialize:
 		// initialize parameters from first step of EM... 
-//		counts.clear();
-//		for(AbstractSentenceDist sd : sentenceDists){			
-//			// sentenceEStep(sd, counts, stats);
-//			sd.initSentenceDist();
-//			model.computePosteriors(sd);
-//			model.addToCounts(sd,counts);	
-//			sd.clearCaches();
-//			sd.clearPosteriors();
-//		}
-//		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
-//		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
-//		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
+		counts.clear();
+		for(AbstractSentenceDist sd : sentenceDists){			
+			// sentenceEStep(sd, counts, stats);
+			sd.initSentenceDist();
+			model.computePosteriors(sd);
+			model.addToCounts(sd,counts);	
+			sd.clearCaches();
+			sd.clearPosteriors();
+		}
+		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
+		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
+		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
 		gradient = new double[parameters.length];
 		updateValueAndGradient();
 		System.out.println("Finished initializing "+this.getClass().getSimpleName()+" value: "+value+" ||grad||^2="+ArrayMath.twoNormSquared(gradient));
