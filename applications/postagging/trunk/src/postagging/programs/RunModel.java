@@ -767,18 +767,17 @@ public class RunModel {
 		if(savePredictions){
 			util.FileSystem.createDir(saveDir);
 			PrintStream predictions = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec");
-	    	predictions.print(((PosCorpus)model.corpus).printClusters(list, posteriorResults));
-	    	predictions.close();
-	    	PrintStream predictions1ToMany = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1toMany");
-	    	predictions1ToMany.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1ToMany));
-	    	predictions1ToMany.close();
-	    	PrintStream predictions1To1 = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1to1");
-	    	predictions1To1.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1to1));
-	    	predictions1To1.close();	
+	    		predictions.print(((PosCorpus)model.corpus).printClusters(list, posteriorResults));
+	    		predictions.close();
+	    		PrintStream predictions1ToMany = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1toMany");
+	    		predictions1ToMany.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1ToMany));
+	    		predictions1ToMany.close();
+	    		PrintStream predictions1To1 = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1to1");
+	    		predictions1To1.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1to1));
+	    		predictions1To1.close();	
 		}
-		//Replace ending new lines by the corresponding prefix
-		res.append("FINAL:::");
-		return res.toString().replace("\n","FINAL:::");
+		
+		return res.toString();
     	
 	}
 	
