@@ -1,10 +1,11 @@
 package optimization.gradientBasedMethods;
 
-import optimization.gradientBasedMethods.stats.OptimizerStats;
+import optimization.gradientBasedMethods.stats.AbstractOptimizerStats;
+
 import optimization.stopCriteria.StopingCriteria;
 
 public interface Optimizer {
-	public boolean optimize(Objective o,OptimizerStats stats, StopingCriteria stoping);
+	public boolean optimize(Objective o,AbstractOptimizerStats stats, StopingCriteria stoping);
 	
 	
 	public double[] getDirection();

@@ -1,6 +1,7 @@
 package optimization.gradientBasedMethods;
 
 
+import optimization.gradientBasedMethods.stats.AbstractOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
@@ -28,7 +29,7 @@ public class LBFGS extends AbstractGradientBaseMethod{
 		ykList = new double[history][];
 
 	}
-	
+	@Override
 	public void reset(){
 		super.reset();
 		initialHessianParameters = 0;
@@ -78,8 +79,7 @@ public class LBFGS extends AbstractGradientBaseMethod{
 	
 	
 	@Override
-	public double[] getDirection() {
-		
+	public double[] getDirection() {	
 		calculateInitialHessianParameter();
 //		System.out.println("Initial hessian " + initialHessianParameters);
 		return direction = ArrayMath.negation(LBFGSTwoLoopRecursion(initialHessianParameters));		
@@ -101,19 +101,20 @@ public class LBFGS extends AbstractGradientBaseMethod{
 		}
 	}
 	
-	//TODO if structures exit just reset them to zero
-	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
+	@Override
+	public void initializeStructures(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		super.initializeStructures(o, stats, stop);
 		previousParameters = new double[o.getNumParameters()];
 		previousGradient = new double[o.getNumParameters()];
 	}
-	public void updateStructuresBeforeStep(Objective o,OptimizerStats stats, StopingCriteria stop){	
+	@Override
+	public void updateStructuresBeforeStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){	
 		super.initializeStructures(o, stats, stop);
 		System.arraycopy(o.getParameters(), 0, previousParameters, 0, previousParameters.length);
 		System.arraycopy(gradient, 0, previousGradient, 0, gradient.length);
 	}
-
-	public void 	updateStructuresAfterStep( Objective o,OptimizerStats stats, StopingCriteria stop){
+	@Override
+	public void 	updateStructuresAfterStep( Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		double[] diffX = ArrayMath.arrayMinus(o.getParameters(), previousParameters);
 		double[] diffGrad = ArrayMath.arrayMinus(gradient, previousGradient);
 		//Save new values and discard new ones

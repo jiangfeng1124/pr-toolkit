@@ -1,5 +1,6 @@
 package optimization.gradientBasedMethods;
 
+import optimization.gradientBasedMethods.stats.AbstractOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.DifferentiableLineSearchObjective;
 import optimization.linesearch.LineSearchMethod;
@@ -41,16 +42,16 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 		currValue = 0;
 	}
 	
-	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
+	public void initializeStructures(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		lso =   new DifferentiableLineSearchObjective(o);
 	}
-	public void updateStructuresBeforeStep(Objective o,OptimizerStats stats, StopingCriteria stop){
+	public void updateStructuresBeforeStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 	}
 	
-	public void updateStructuresAfterStep(Objective o,OptimizerStats stats, StopingCriteria stop){
+	public void updateStructuresAfterStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 	}
 	
-	public boolean optimize(Objective o,OptimizerStats stats, StopingCriteria stop){
+	public boolean optimize(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		//Initialize structures
 			
 		stats.collectInitStats(this, o);

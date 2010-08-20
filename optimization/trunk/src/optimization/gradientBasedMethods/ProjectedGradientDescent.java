@@ -1,5 +1,6 @@
 package optimization.gradientBasedMethods;
 
+import optimization.gradientBasedMethods.stats.AbstractOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.linesearch.ProjectedDifferentiableLineSearchObjective;
@@ -41,17 +42,19 @@ public class ProjectedGradientDescent extends ProjectedAbstractGradientBaseMetho
 	}
 	
 	//Use projected differential objective instead
-	public void initializeStructures(Objective o, OptimizerStats stats, StopingCriteria stop) {
+	@Override
+	public void initializeStructures(Objective o, AbstractOptimizerStats stats, StopingCriteria stop) {
 		lso = new ProjectedDifferentiableLineSearchObjective(o);
 	};
 	
 	
 	ProjectedObjective obj;
-	public boolean optimize(ProjectedObjective o,OptimizerStats stats, StopingCriteria stop){
+	public boolean optimize(ProjectedObjective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		obj = o;
 		return super.optimize(o, stats, stop);
 	}
 	
+	@Override
 	public double[] getDirection(){
 		for(int i = 0; i< gradient.length; i++){
 			direction[i] = -gradient[i];

@@ -8,10 +8,8 @@ import util.ArrayMath;
 import util.Printing;
 
 
-public class OptimizerStats {
+public class OptimizerStats extends AbstractOptimizerStats{
 	
-	public double start = 0;
-	public double totalTime = 0;
 	
 	public String objectiveFinalStats;
 	
@@ -27,7 +25,7 @@ public class OptimizerStats {
 	public double weightsNorm;
 	
 	public void reset(){
-		start = 0;
+		super.reset();
 		totalTime = 0;
 		weightsNorm = 0;
 		objectiveFinalStats="";
@@ -39,12 +37,6 @@ public class OptimizerStats {
 		prevValue =0;
 	}
 	
-	public void startTime() {
-		start = System.currentTimeMillis();
-	}
-	public void stopTime() {
-		totalTime += System.currentTimeMillis() - start;
-	}
 	
 	public String prettyPrint(int level){
 		StringBuffer res = new StringBuffer();
@@ -69,7 +61,7 @@ public class OptimizerStats {
 	
 	
 	public void collectInitStats(Optimizer optimizer, Objective objective){
-		startTime();
+		super.collectInitStats(optimizer, objective);
 		iterations.add(-1);
 		gradientNorms.add(ArrayMath.L2Norm(objective.getGradient()));
 		steps.add(0.0);
@@ -85,7 +77,7 @@ public class OptimizerStats {
 	
 	
 	public void collectFinalStats(Optimizer optimizer, Objective objective, boolean success){
-		stopTime();
+		super.collectFinalStats(optimizer, objective, success);
 		this.succeed = success;
 		paramUpdates = objective.getNumberUpdateCalls();
 		objectiveFinalStats = objective.finalInfoString();

@@ -1,6 +1,6 @@
 package optimization.gradientBasedMethods;
 
-import optimization.gradientBasedMethods.stats.OptimizerStats;
+import optimization.gradientBasedMethods.stats.AbstractOptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
 import util.ArrayMath;
@@ -16,53 +16,25 @@ public class ConjugateGradient extends AbstractGradientBaseMethod{
 	public ConjugateGradient(LineSearchMethod lineSearch) {
 		this.lineSearch = lineSearch;
 	}
-	
+	@Override
 	public void reset(){
 		super.reset();
 		java.util.Arrays.fill(previousDirection, 0);
 		java.util.Arrays.fill(previousGradient, 0);
 	}
-	
-	public void initializeStructures(Objective o,OptimizerStats stats, StopingCriteria stop){
+	@Override
+	public void initializeStructures(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		super.initializeStructures(o, stats, stop);
 		previousGradient = new double[o.getNumParameters()];
 		previousDirection = new double[o.getNumParameters()];
 	}
-	public void updateStructuresBeforeStep(Objective o,OptimizerStats stats, StopingCriteria stop){
+	@Override
+	public void updateStructuresBeforeStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		System.arraycopy(gradient, 0, previousGradient, 0, gradient.length);
 		System.arraycopy(direction, 0, previousDirection, 0, direction.length);	
 	}
-	
-//	public boolean optimize(Objective o,OptimizerStats stats, StopingCriteria stop){
-//		DifferentiableLineSearchObjective lso = new DifferentiableLineSearchObjective(o);
-//		stats.collectInitStats(this, o);
-//		direction = new double[o.getNumParameters()];
-//		initializeStructures(o, stats, stop);
-//		for (currentProjectionIteration = 0; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){
-//			previousValue = currValue;
-//			currValue = o.getValue();
-//			gradient =o.getGradient();
-//			if(stop.stopOptimization(gradient)){
-//				stats.collectFinalStats(this, o);
-//				return true;
-//			}
-//			getDirection();
-//			updateStructures(o, stats, stop);
-//			lso.reset(direction);
-//			step = lineSearch.getStepSize(lso);	
-//			if(step==-1){
-//				System.out.println("Failed to find a step size");
-//				System.out.println("Failed to find step");
-//				stats.collectFinalStats(this, o);
-//				return false;	
-//			}
-//			
-//			stats.collectIterationStats(this, o);
-//		}
-//		stats.collectFinalStats(this, o);
-//		return false;
-//	}
-	
+
+	@Override
 	public double[] getDirection(){
 		direction = ArrayMath.negation(gradient);
 		if(currentProjectionIteration != 1){
