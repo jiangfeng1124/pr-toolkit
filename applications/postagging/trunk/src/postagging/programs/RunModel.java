@@ -776,8 +776,9 @@ public class RunModel {
 	    	predictions1To1.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1to1));
 	    	predictions1To1.close();	
 		}
-		
-		return res.toString();
+		//Replace ending new lines by the corresponding prefix
+		res.append("FINAL:::");
+		return res.toString().replace("\n","FINAL:::");
     	
 	}
 	
