@@ -48,6 +48,10 @@ public class SuffixPipe extends Pipe{
 		}
 	}
 	
+	 public String getFeaturePrefix(){
+			return "suf";
+		}
+	
 	public String getName(){
 		return "Suffix len: " + len + " min occurs " + minSuffixOccur;
 	}

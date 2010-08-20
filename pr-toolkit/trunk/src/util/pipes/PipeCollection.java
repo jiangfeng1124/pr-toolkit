@@ -46,6 +46,14 @@ public class PipeCollection extends Pipe{
 		return bf.toString();
 	}
 
+	public  String getFeaturePrefix(){
+		StringBuffer bf = new StringBuffer();
+		for(Pipe p : pipes){
+			bf.append(p.getFeaturePrefix() + "\n");
+		}
+		return bf.toString();
+	}
+	
 	//Implements the simple factory design pattern to read from the file
 	public static Pipe buildPipe(String fileName) throws IOException, ClassNotFoundException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException{
 		PipeCollection pipes = new PipeCollection();

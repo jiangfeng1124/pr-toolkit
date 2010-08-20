@@ -30,6 +30,10 @@ public class PatternMatchPipe extends Pipe{
 		 }
 	}
 	 
+	 public String getFeaturePrefix(){
+			return name;
+		}
+	 
 	 public String getName(){
 			return "Pattern match: " + pattern+" "+name;
 	}

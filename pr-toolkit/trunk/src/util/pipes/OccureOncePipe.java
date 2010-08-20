@@ -41,6 +41,11 @@ public class OccureOncePipe extends Pipe{
 		}
 	}
 	
+	public String getFeaturePrefix(){
+		return "occur1";
+	}
+
+	
 	public String getName(){
 		return "Occurs 1: ";
 	}

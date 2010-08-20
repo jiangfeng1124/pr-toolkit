@@ -46,6 +46,10 @@ public class WordCountsPipe extends Pipe{
 		}
 	}
 	
+	public String getFeaturePrefix(){
+		return "woccur";
+	}
+	
 	public String getName(){
 		return "WordCountsPipe threshold: " + threshold;
 	}

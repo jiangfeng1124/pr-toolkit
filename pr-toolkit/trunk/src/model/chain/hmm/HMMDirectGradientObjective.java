@@ -10,6 +10,7 @@ import com.sun.tools.javac.comp.TransTypes;
 import model.AbstractCountTable;
 import model.AbstractSentenceDist;
 import model.CantNormalizeException;
+import model.chain.hmm.directGradientStats.MultinomialMaxEntDirectTrainerStats;
 import model.distribution.trainer.MaxEntClassifier;
 import model.distribution.trainer.MultinomialMaxEntDirectGradientTrainer;
 import model.distribution.trainer.MultinomialMaxEntTrainer;
@@ -28,9 +29,10 @@ public class HMMDirectGradientObjective extends Objective {
 	AbstractSentenceDist[] sentenceDists;
 	int iter = 0;
 	double value = Double.NaN;
+
+	MultinomialMaxEntDirectTrainerStats stats;
 	
-	
-	public HMMDirectGradientObjective(HMM hmm, double prior){
+	public HMMDirectGradientObjective(HMM hmm, double prior, MultinomialMaxEntDirectTrainerStats stats){
 		model = hmm;
 		counts = hmm.getCountTable();
 		initOffset = 0;
@@ -43,6 +45,7 @@ public class HMMDirectGradientObjective extends Objective {
 		observationOffset = transitionOffset+transitionTrainer.numParams();
 		observationTrainer = new MultinomialMaxEntDirectGradientTrainer((MultinomialMaxEntTrainer) hmm.observationTrainer, hmmcounts.observationCounts);
 		parameters = new double[observationOffset+observationTrainer.numParams()];
+		this.stats = stats;
 		// the commented out code below is for debugging; it usually results in terrible performance
 		// and large gradients that cause the optimization to fail, so it's a good way to test
 		// fail-safes. 
@@ -53,14 +56,18 @@ public class HMMDirectGradientObjective extends Objective {
 		// This is the better way to initialize:
 		// initialize parameters from first step of EM... 
 		counts.clear();
+		stats.beforeInference(this);
 		for(AbstractSentenceDist sd : sentenceDists){			
 			// sentenceEStep(sd, counts, stats);
+			stats.beforeSentenceInference(this,sd);
 			sd.initSentenceDist();
 			model.computePosteriors(sd);
 			model.addToCounts(sd,counts);	
+			stats.afterSentenceInference(this,sd);
 			sd.clearCaches();
 			sd.clearPosteriors();
 		}
+		stats.endInference(this);
 		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
 		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
 		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
@@ -69,6 +76,7 @@ public class HMMDirectGradientObjective extends Objective {
 		System.out.println("Finished initializing "+this.getClass().getSimpleName()+" value: "+value+" ||grad||^2="+ArrayMath.twoNormSquared(gradient));
 //		testGradient();
 	}
+	
 	
 	public void updateValueAndGradient(){
 		// set parameters: this.params -> trainer.params; trainer.params -> hmm.params
@@ -83,12 +91,15 @@ public class HMMDirectGradientObjective extends Objective {
 		// compute the inference-induced counts at the current parameters.
 		counts.clear();
 		value = 0;
+		stats.beforeInference(this);
 		for(AbstractSentenceDist sd : sentenceDists){			
 			// sentenceEStep(sd, counts, stats);
+			stats.beforeSentenceInference(this,sd);
 			sd.initSentenceDist();
 			try{
 				model.computePosteriors(sd);
 				model.addToCounts(sd,counts);	
+				stats.afterSentenceInference(this,sd);
 			} catch (CantNormalizeException e){
 				System.err.print("Warning -- failed to normalize during update counts ("+e.problem+")");
 				System.err.println(" thrown at: "+e.getStackTrace()[0].toString());
@@ -121,9 +132,11 @@ public class HMMDirectGradientObjective extends Objective {
 				}
 				break;
 			}
+			stats.endInference(this);
 			value -= sd.getLogLikelihood();
 			sd.clearCaches();
 			sd.clearPosteriors();
+			
 		}
 		// FIXME: I don't like having to compute the value separately from the gradient
 		value +=  1/gaussianPriorVariance*ArrayMath.twoNormSquared(parameters);

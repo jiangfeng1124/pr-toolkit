@@ -54,6 +54,11 @@ public class LongestSuffixPipe extends Pipe{
 		}
 	}
 	
+	public  String getFeaturePrefix(){
+		return "suf";
+	}
+	
+	
 	public String getName(){
 		return "LongestSuffix len: " + maxLen + " min occurs " + minSuffixOccur;
 	}

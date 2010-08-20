@@ -39,6 +39,10 @@ public class WordSizePipe extends Pipe{
 		}
 	}
 	
+	public String getFeaturePrefix(){
+		return "wsize";
+	}
+	
 	public String getName(){
 		return "WordSize min size: " + minSize;
 	}

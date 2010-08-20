@@ -80,6 +80,11 @@ public class FileSuffixPipe extends Pipe{
 		}
 	}
 	
+	public  String getFeaturePrefix(){
+		return "filesuf";
+	}
+	
+	
 	public String getName(){
 		return "File suffix: " + suffixFile + " min lenght " + minLen;
 	}

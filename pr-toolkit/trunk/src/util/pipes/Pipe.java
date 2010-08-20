@@ -16,4 +16,6 @@ public abstract class Pipe{
 	}
 	
 	public abstract String getName();
+	
+	public abstract String getFeaturePrefix();
 }

@@ -59,6 +59,11 @@ public class CapitalizationPipe extends Pipe{
 	
 	}
 	
+	public  String getFeaturePrefix(){
+		return "capitalized";
+	}
+	
+	
 	public String getName(){
 		return "Capitalized: ";
 	}

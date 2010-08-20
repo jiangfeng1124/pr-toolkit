@@ -8,6 +8,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import util.SparseVector;
 import util.pipes.Pipe;
@@ -26,6 +29,7 @@ public class ObservationMultinomialFeatureFunction implements MultinomialFeature
 	util.SparseVector[] precomputedValues;
 	public util.Alphabet al;
 	int minNumberOfOccurrances;
+	public ArrayList<String> featuresPrefix;
 	
 	private static final long serialVersionUID = 1L;
 
@@ -35,7 +39,20 @@ public class ObservationMultinomialFeatureFunction implements MultinomialFeature
 		precomputedValues = new util.SparseVector[corpus.getNrWordTypes()];
 		Pipe p = PipeCollection.buildPipe(maxEntObsFeaturesFile);
 		p.init(corpus);
-		System.out.println("MaxEnt Using Features:\n" + p.getName());
+		String[] fnames = p.getName().split("\n");
+		System.out.println("MaxEnt Using Features:\n");
+		for (int i = 0; i < fnames.length; i++) {
+			System.out.println(fnames[i]);
+		}
+		System.out.println("default");
+		featuresPrefix = new ArrayList<String>();
+		String[] fPref = p.getFeaturePrefix().split("\n");
+		for (int i = 0; i < fPref.length; i++) {
+			featuresPrefix.add(fPref[i]);
+		}
+		featuresPrefix.add("default");
+		System.out.println(featuresPrefix.toString());
+
 		for(int i = 0; i < corpus.getNrWordTypes(); i++){
 			String word = corpus.wordAlphabet.index2feat.get(i);
 			util.SparseVector v = new util.SparseVector();

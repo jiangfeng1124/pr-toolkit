@@ -30,9 +30,13 @@ public  class WordIdLower extends Pipe{
 	
 	public  void process(int wordId, String word,  Alphabet<String> alphabet,SparseVector sv){
 		if (c.getWordTypeCounts(wordId)> minWordOccurs){
-			sv.add(alphabet.lookupObject("word="+word.toLowerCase()), 1);
+			sv.add(alphabet.lookupObject("wordL="+word.toLowerCase()), 1);
 		}
 	}
+	
+	 public String getFeaturePrefix(){
+			return "wordL";
+		}
 	
 	public String getName(){
 		return "WordId min: " + minWordOccurs;

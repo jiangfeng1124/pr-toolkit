@@ -151,18 +151,8 @@ public class MorphChan extends Pipe {
 				}
 			}
 		}
-//		if (allSubsets2 || selfAndAllSubsets2){
-//			for (int s = 0; s < m.transformations.length; s++) {
-//				StringBuilder f = new StringBuilder("morph=all");
-//				for (int e = s; e < m.transformations.length; e++) {
-//					f.append(m.transformations[e]+"_");
-//					//System.out.println(f);
-//					if(selfAndAllSubsets) sv.add(a.lookupObject(f.toString()),1);
-//					//System.out.println(f+m.thisTransform);
-//					if (selfAndAllSubsets) sv.add(a.lookupObject(f+m.thisTransform),1);
-//				}
-//			}
-//		}
 	}
-
+	public String getFeaturePrefix(){
+		return "morph";
+	}
 }

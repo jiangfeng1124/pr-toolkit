@@ -121,6 +121,11 @@ public class DistributionalClustersPipeDiffCorpus extends Pipe{
 		}
 	}
 	
+	public  String getFeaturePrefix(){
+		return "dc";
+	}
+	
+	
 	public String getName(){
 		return "Distributional cluster: " + featureFile;
 	}

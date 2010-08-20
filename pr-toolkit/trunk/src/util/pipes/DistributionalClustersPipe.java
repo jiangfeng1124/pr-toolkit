@@ -75,6 +75,9 @@ public class DistributionalClustersPipe extends Pipe{
 			sv.add(alphabet.lookupObject("dc="+i), features.get(i));
 		}
 	}
+	public  String getFeaturePrefix(){
+		return "dc=";
+	}
 	
 	public String getName(){
 		return "Distributional cluster: " + file;

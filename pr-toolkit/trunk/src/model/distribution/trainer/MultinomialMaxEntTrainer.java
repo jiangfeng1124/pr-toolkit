@@ -86,7 +86,6 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 	public AbstractMultinomial update(AbstractMultinomial countsTable,
 			AbstractMultinomial paramsTable) {
 		ArrayList<OptimizerStats> optimizationStats = new ArrayList<OptimizerStats>();
-		TDoubleArrayList kls = new TDoubleArrayList();
 		OptimizerStats stats;
 		numberOfUpdates++;
 		if(useProgressiveOptimization){
@@ -117,46 +116,12 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 				}
 				paramsTable.setCounts(i, value, prob);
 			}
-			double MLsum = countsTable.sum(i);
-			double kl = 0;
-			for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
-				int value = possibleValues.getQuick(valueIndex);
-				double prob = probs.getValue(value)/sum;
-				double mlProb = countsTable.getCounts(i, value)/MLsum;
-				double logP = Math.log(prob/mlProb);
-//				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
-				if(!(Double.isInfinite(prob) || Double.isInfinite(prob) || Double.isInfinite(logP) || Double.isInfinite(logP) )){
-					kl+= prob*logP;
-				}
-			}
-			kls.add(kl);
-		}
-//		//Debug code
-//		double[] individiualFeatures= new double[classifiers.size()];
-//		double[] coarceFeatures = new double[classifiers.size()];
-//		ObservationMultinomialFeatureFunction ff = (ObservationMultinomialFeatureFunction) classifiers.get(0).fxy;
-//		for(int i  =0; i < ff.nrFeatures(); i++){
-//			for(int j = 0; j < classifiers.size(); j++){
-//				double weight = classifiers.get(j).initialParameters[i];
-//				weight = weight*weight;
-//				if(((String) ff.al.index2feat.get(i)).startsWith("word")){
-//					individiualFeatures[j] += weight;
-//				}else{
-//					coarceFeatures[j] += weight;
-//				}
-//			}	
-//		}
-//		for(int j = 0; j < classifiers.size(); j++){
-//			individiualFeatures[j] = Math.sqrt(individiualFeatures[j]);
-//			coarceFeatures[j] = Math.sqrt(coarceFeatures[j]);
-//		}
-		
-		System.out.println(printOptimizationStats(optimizationStats,kls));
+		}		
+		System.out.println(printOptimizationStats(optimizationStats));
 		return paramsTable;
 	}	
 
-	public String printOptimizationStats(ArrayList<OptimizerStats> stats,
-			TDoubleArrayList kl){
+	public String printOptimizationStats(ArrayList<OptimizerStats> stats){
 		StringBuilder res = new StringBuilder();
 		if(stats.get(0) instanceof FeatureSplitOptimizerStats){
 			res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t " +
@@ -167,7 +132,7 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 		}else{
 			res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t" +
 					" gradNorm \t upd " +
-			"\t kl \t weightN \t steps \n");
+			"\t weightN \t steps \n");
 		}
 		for (int i = 0; i < stats.size(); i++) {
 			OptimizerStats os = stats.get(i);
@@ -185,8 +150,6 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 					"\t" + 
 					Printing.prettyPrint(os.paramUpdates, "0000", 4)+
 					"\t" + 
-					Printing.prettyPrint(kl.get(i), "0.0000", 6)
-					+"\t"+
 					Printing.prettyPrint(os.weightsNorm, "0.0000", 6)
 					+"\t");
 			if(os instanceof FeatureSplitOptimizerStats){

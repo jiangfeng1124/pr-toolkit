@@ -33,7 +33,9 @@ public  class WordId extends Pipe{
 			sv.add(alphabet.lookupObject("word="+word), 1);
 		}
 	}
-	
+	public String getFeaturePrefix(){
+		return "word";
+	}
 	public String getName(){
 		return "WordId min: " + minWordOccurs;
 	}

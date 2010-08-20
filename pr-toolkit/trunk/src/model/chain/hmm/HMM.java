@@ -581,7 +581,6 @@ public  class HMM extends AbstractModel{
         Properties props = new Properties(); 
         props.put("nrStates", nrStates);
         props.put("nrWordTypes", nrWordTypes);
-        props.store(file, "");
 		
 	}
 	
