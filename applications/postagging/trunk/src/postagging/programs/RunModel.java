@@ -14,6 +14,8 @@ import learning.EM;
 import learning.stats.CompositeTrainStats;
 import learning.stats.GlobalEMTimeCounter;
 import learning.stats.LikelihoodStats;
+import model.chain.hmm.directGradientStats.CompositeMultinomialMaxEntDirectTrainerStats;
+import model.chain.hmm.directGradientStats.MultinomialMaxEntDirectTrainerStats;
 import learning.stats.TrainStats;
 import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
@@ -55,8 +57,11 @@ import postagging.learning.stats.AccuracyStats;
 import postagging.learning.stats.TransitionsTypeL1LMaxStats;
 import postagging.learning.stats.WordTypeL1LMaxStats;
 import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientAccuracyStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientFeatureOptimizationStats;
 import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientLikelihoodStats;
-import postagging.learning.stats.directMultinomialMaxEnt.MultinomialMaxEntDirectTrainerStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientOptimizationStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientTransitionsTypeL1LMaxStats;
+import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientWordTypeL1LMax;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
 import util.InputOutput;
@@ -352,7 +357,7 @@ public class RunModel {
 			trainModel(corpus,model,stats);
 			
 			if(saveModel){
-				System.out.println("Saving model not yet implement");
+				model.saveModel(baseOutputString+"/saved/final/");
 			}
 
 			testModel(model, corpus);
@@ -405,7 +410,7 @@ public class RunModel {
 	}
 	
 	
-	private void trainModel(PosCorpus c, HMM model, TrainStats stats) throws CmdLineException, UnsupportedEncodingException, IOException {
+	private void trainModel(PosCorpus c, HMM model, TrainStats stats) throws CmdLineException, UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		if(TrainingType.EM== trainingType) {
 			EM em = new EM(model);
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
@@ -437,7 +442,16 @@ public class RunModel {
 				model.transitionsTrainer = tempTran;
 				model.initTrainer = tempInit;	
 			}
-			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior);
+			CompositeMultinomialMaxEntDirectTrainerStats optStats = new CompositeMultinomialMaxEntDirectTrainerStats();
+			optStats.add(new DirectGradientAccuracyStats(2));
+			optStats.add(new DirectGradientLikelihoodStats());
+			optStats.add(new DirectGradientWordTypeL1LMax((PosCorpus) model.corpus,model,"5",2,baseOutputString+"/l1LMaxClusters/",1000));
+			optStats.add(new DirectGradientTransitionsTypeL1LMaxStats((PosCorpus) model.corpus,model,"5",baseOutputString+"/Transitionsl1LMaxClusters/",1000));
+			optStats.add(new DirectGradientOptimizationStats());
+			//TODO should not be creating the features again, we are duplicating size
+			ObservationMultinomialFeatureFunction feats = new ObservationMultinomialFeatureFunction(c, maxEntObservationFeaturesFile);
+			optStats.add(new DirectGradientFeatureOptimizationStats(feats));
+			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior,optStats);
 			WolfRuleLineSearch wolfe = 
 				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
 			CompositeStopingCriteria stop = new CompositeStopingCriteria();
@@ -449,14 +463,12 @@ public class RunModel {
 				AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
 				//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
 				optimizer.setMaxIterations(maxEntMaxIterations);
-				System.out.println("Optimization run + "+i);
-				MultinomialMaxEntDirectTrainerStats optStats = new MultinomialMaxEntDirectTrainerStats();
-				optStats.add(new DirectGradientAccuracyStats(2));
-				optStats.add(new DirectGradientLikelihoodStats());
+				System.out.println("Optimization run + "+i);	
 				boolean succeed = optimizer.optimize(objective,optStats,stop);
 				System.out.println(optStats.prettyPrint(2));
-				
-				if(optStats.iterations.size() == 1){
+				//reset stats for next iteration
+				optStats.reset();
+				if(optStats.getIterationNumber() == 0){
 					System.out.println("Succeeded! with no iterations Existing loop");
 					break;
 				}
@@ -769,12 +781,7 @@ public class RunModel {
     	
 	}
 	
-	public void savePredictions(HMM model, InstanceList list, String description) throws FileNotFoundException{
-    	
-    	
-    	
-    }
-	
+		
 	
 	
 }

@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 
 import model.chain.hmm.HMM;
 import model.chain.hmm.HMMDirectGradientObjective;
+import model.chain.hmm.directGradientStats.MultinomialMaxEntDirectTrainerStats;
 import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
@@ -15,26 +16,31 @@ import postagging.programs.RunModel;
  * @author graca
  *
  */
-public class DirectGradientAccuracyStats extends OptimizerStats{
+public class DirectGradientAccuracyStats extends MultinomialMaxEntDirectTrainerStats{
 	
 	int printEvery;
-	int currentCall = 0;
+
 	
 	public DirectGradientAccuracyStats(int printEvery){
 		this.printEvery = printEvery;
 	}
 	
-	public void collectIterationStats(Optimizer optimizer, Objective objective){
-		if(currentCall%printEvery != 0){
-			currentCall = 0;
-			return;
+	
+
+	@Override
+    public String getPrefix() {
+            return "ACC::";
+    }
+
+	@Override
+	public String iterationOutputString(Optimizer optimizer, Objective objective) {
+		if(getIterationNumber()%printEvery != 0){
+			return "";
 		}
-		currentCall++;
 		HMMDirectGradientObjective obs = (HMMDirectGradientObjective) objective;
-		String result;
+		String result = "";
 		try {
-			result = RunModel.testModel((HMM) obs.model, obs.model.corpus.testInstances.get(0),"testCorpus",false,"");
-			System.out.println(result);
+			result =  RunModel.testModel((HMM) obs.model, obs.model.corpus.testInstances.get(0),"testCorpus",false,"");
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -42,5 +48,6 @@ public class DirectGradientAccuracyStats extends OptimizerStats{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return result;
 	}
 }

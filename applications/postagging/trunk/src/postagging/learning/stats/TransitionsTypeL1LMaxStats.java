@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import data.Corpus;
 import postagging.data.PosCorpus;
 import postagging.model.PosHMM;
+import util.ArrayMath;
 import util.InputOutput;
 import util.Printing;
 import gnu.trove.TIntDoubleHashMap;
@@ -32,9 +33,8 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
 		String outputDir;
 		//L1LMax for transitions previous state next state
 		double[][] maxTable;
-		
-		//sum for transitions previous state next state
-		double[][] sumTable;
+		double[][] l2Table;
+	
 		
 		PosCorpus c;
 		String[] allTags;
@@ -43,7 +43,7 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
         	this.nrHiddenStates = model.getNrRealStates();
 			this.printEvery = Integer.parseInt(printEvery);
 			maxTable = new double[nrHiddenStates][nrHiddenStates];
-			sumTable = new double[nrHiddenStates][nrHiddenStates];
+			l2Table = new double[nrHiddenStates][nrHiddenStates];
 			if(outputDir!=null){
 				this.outputDir = outputDir;
 				util.FileSystem.createDir(outputDir);
@@ -61,7 +61,7 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
         	if(em.getCurrentIterationNumber() % printEvery == 0){
         		for (int i = 0; i < nrHiddenStates; i++) {
         			java.util.Arrays.fill(maxTable[i],0);
-        			java.util.Arrays.fill(sumTable[i],0);
+        			java.util.Arrays.fill(l2Table[i],0);
         		}
         	}
         }
@@ -77,7 +77,7 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
 								if(maxTable[prevState][nextState] < prob){
 									maxTable[prevState][nextState] = prob;
 								}
-								sumTable[prevState][nextState] += prob;
+								l2Table[prevState][nextState] += prob*prob;
 							}
 						}
 					}
@@ -87,24 +87,25 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
         public String printEndEStep(AbstractModel model,EM em) {
         	if(em.getCurrentIterationNumber() % printEvery == 0){
             	double totals[] = new double[nrHiddenStates];
-            	double totalL1LMax=0;
+            	double l2totals[] = new double[nrHiddenStates];
             	for (int i = 0; i < nrHiddenStates; i++) {		
             		for (int j = 0; j < nrHiddenStates; j++) {
             			totals[i] += maxTable[i][j];
-            			totalL1LMax +=maxTable[i][j];
+            			l2totals[i] +=l2Table[i][j];
 					}
+            		l2totals[i] = Math.sqrt(l2totals[i])/nrHiddenStates;
             		totals[i]/=nrHiddenStates;
 				}
             	
             	if(em.getCurrentIterationNumber() % printClustersIter == 0 && outputDir!= null){
-            		PrintStream outputMax, outputSum;
+            		PrintStream outputMax,outputL2, outputSum;
 					try {
 						outputMax = InputOutput.openWriter(outputDir+"/transl1lmax-iter."+em.getCurrentIterationNumber());
-						outputSum = InputOutput.openWriter(outputDir+"/transSum-iter."+em.getCurrentIterationNumber());
+						outputL2 = InputOutput.openWriter(outputDir+"/transl1l2-iter."+em.getCurrentIterationNumber());
 						outputMax.println((util.ArrayPrinting.doubleArrayToString(maxTable, null, null, "Maxes table")));
-						outputSum.println((util.ArrayPrinting.doubleArrayToString(sumTable, null, null, "Sum table")));
+						outputL2.println((util.ArrayPrinting.doubleArrayToString(l2Table, null, null, "L2 table")));
 						outputMax.close();
-						outputSum.close();
+						outputL2.close();
 					} catch (FileNotFoundException e) {
 						System.out.println("Unable to print transition l1LmaxValues");
 						e.printStackTrace();
@@ -117,8 +118,10 @@ public class TransitionsTypeL1LMaxStats extends TrainStats{
 					}
             		
             	}
-            	
-            	return "Total L1LMax " + totalL1LMax + " avg " + totalL1LMax/nrHiddenStates;
+            double totalL1LMax = ArrayMath.sum(totals);
+            double totalL1L2 = ArrayMath.sum(l2totals);
+            	return "L1LMax" + totalL1LMax + " AVG " + totalL1LMax/nrHiddenStates 
+            	     + "L1LMax" + totalL1L2 + " AVG " + totalL1L2/nrHiddenStates;
         	}else return "";
         }
         
