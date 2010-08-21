@@ -138,22 +138,32 @@ public class L1LMax implements CorpusConstraints{
 		nrWordTypesToProject=projectionMapping.size();
 	}
 	
-	public void project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
+	public double lastObjectiveValue = Double.NaN;	
+	public boolean beVeryVeryQuiet = false;
+	@SuppressWarnings("unchecked")
+	public double project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
 		MemoryTracker mem  = new MemoryTracker();
 		mem.start();
 		
 		
 		//Make a copy of the original parameters:
 		//Initialize the gradient and the function values and the original posteriors cache
-		trainStats.eStepStart(model, pr);
+		if (pr != null){
+			trainStats.eStepStart(model, pr);
+		}
 		ProjectedObjective objective = new L1LMaxObjective(model,posteriors,numberOfParameters,str,parameters);
+		lastObjectiveValue = objective.getValue();
 		mem.finish();
-		System.out.println("After creating objective:" + mem.print());
+		if (!beVeryVeryQuiet){
+			System.out.println("After creating objective:" + mem.print());
+		}
 		//System.out.println("Parameters before optimization:\n" + objective.toString());
 		LineSearchMethod ls = new ArmijoLineSearchMinimizationAlongProjectionArc(new NonNewtonInterpolationPickFirstStep(initialStep));
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(ls);
 		mem.finish();
-		System.out.println("After creating projection and line search:" + mem.print());
+		if (!beVeryVeryQuiet){
+			System.out.println("After creating projection and line search:" + mem.print());
+		}
 //		LineSearchMethod ls = new NonMonotoneArmijoLineSearchMinimizationAlongProjectionArc(new InterpolationPickFirstStep(40));		
 //		NonMonotoneSpectralProjectedGradient optimizer = new NonMonotoneSpectralProjectedGradient(ls);
 		
@@ -168,9 +178,10 @@ public class L1LMax implements CorpusConstraints{
 
 		boolean succed = optimizer.optimize(objective, stats,stop);
 		mem.finish();
-		
-		System.out.println("After  optimization:" + mem.print());
-		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
+		if (!beVeryVeryQuiet){
+			System.out.println("After  optimization:" + mem.print());
+			System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
+		}
 		
 		
 
@@ -196,17 +207,26 @@ public class L1LMax implements CorpusConstraints{
 					}
 				}
 			}	
-			trainStats.eStepSentenceStart(model,pr,posterior);
+			if (pr!=null){
+				trainStats.eStepSentenceStart(model,pr,posterior);
+			}
 			model.computePosteriors(posterior);
 			model.addToCounts(posterior, counts);
-			trainStats.eStepSentenceEnd(model,pr,posterior);
+			if (pr!=null) {
+				trainStats.eStepSentenceEnd(model,pr,posterior);
+			}
 			posterior.clearCaches();
 			posterior.clearPosteriors();
 		}
 		mem.finish();
-		System.out.println("End project objective:" + mem.print());
-		trainStats.eStepEnd(model, pr);
-		System.out.print(trainStats.printEndEStep(model,pr));
+		if (!beVeryVeryQuiet){	
+			System.out.println("End project objective:" + mem.print());
+		}
+		if (pr!=null){
+			trainStats.eStepEnd(model, pr);
+			System.out.print(trainStats.printEndEStep(model,pr));
+		}
+		return lastObjectiveValue;
 	}
 	
 	/**

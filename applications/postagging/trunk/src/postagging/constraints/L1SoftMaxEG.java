@@ -137,7 +137,7 @@ public class L1SoftMaxEG implements CorpusConstraints{
 		nrWordTypesToProject=projectionMapping.size();
 	}
 	
-	public void project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
+	public double project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
 		MemoryTracker mem  = new MemoryTracker();
 		mem.start();
 		
@@ -203,6 +203,8 @@ public class L1SoftMaxEG implements CorpusConstraints{
 		System.out.println("End project objective:" + mem.print());
 		trainStats.eStepEnd(model, pr);
 		System.out.print(trainStats.printEndEStep(model,pr));
+		// FIXME -- to test.  
+		return Double.NaN;
 	}
 	
 	/**
