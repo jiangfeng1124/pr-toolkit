@@ -1,6 +1,8 @@
 package optimization.stopCriteria;
 
 import optimization.gradientBasedMethods.Objective;
+import util.ArrayMath;
+import util.MathUtil;
 
 public class AverageValueDifference implements StopingCriteria{
 	
@@ -22,6 +24,10 @@ public class AverageValueDifference implements StopingCriteria{
 
 	
 	public boolean stopOptimization(Objective obj){
+		if(ArrayMath.L2Norm(obj.gradient) == 0){
+			System.out.println("Value Stop: Gradient is zero");
+			return true;
+		}
 		if(Double.isNaN(currentValue)){
 			currentValue = obj.getValue();
 			return false;
