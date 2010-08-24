@@ -1,19 +1,16 @@
 package model.distribution.trainer;
 
-import gnu.trove.TDoubleArrayList;
 import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
 
 import model.distribution.AbstractMultinomial;
-import model.distribution.trainer.stats.MultinomialMaxEntFeatureOptStats;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
 
-import util.ArrayMath;
 import util.Printing;
 import util.SparseVector;
 
@@ -131,69 +128,11 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 	}	
 
 	
-	public String printIterationOptimizationStats(ArrayList<OptimizerStats> stats){
+	public String getOptimizationStats(ArrayList<OptimizerStats> stats){
 		StringBuilder res = new StringBuilder();
-		for(int i = 0; i < stats.size(); i++){
-			if(stats.get(i) instanceof MultinomialMaxEntFeatureOptStats){
-				res.append(printIterationOptimizationStat((MultinomialMaxEntFeatureOptStats)stats.get(i),i));
-			}else{
-				res.append(printIterationOptimizationStat(stats.get(i),i));
-			}
-		}
-		String out = res.toString();
-		if(this.classifiers.size() == 1){
-			out = out.replace("\n", "\nINIT::");
-		}else if(this.classifiers.get(0).fxy instanceof ObservationMultinomialFeatureFunction){
-			out = out.replace("\n", "\nOBS::");
-		}else{
-			out = out.replace("\n", "\nTRANS::");
-		}
-		return out;
-	}
-	
-	
-	public String printIterationOptimizationStat(OptimizerStats stat, int i){
-		StringBuilder res = new StringBuilder();
-//		
-//		res.append(" Iteration "
-//				+i
-//				+ " updates "
-//				+(stat.paramUpdates)
-//				+" step "
-//				+Printing.prettyPrint(stat.steps.get(i), "0.00E00", 6)
-//				+" Params "
-//				//+Printing.prettyPrint(ArrayMath.L2Norm(objective.getParameters()), "0.00E00", 6)
-//				+Printing.prettyPrint(0, "0.00E00", 6)
-//				+ " gradientNorm "+ 
-//				Printing.prettyPrint(stat.gradientNorms.get(i), "0.00000E00", 10)
-//				+ " gradientNormalizedNorm "+ 
-//				Printing.prettyPrint(norm/originalNorm, "0.00000E00", 10)
-//				+ " value "+ Printing.prettyPrint(stats., "0.000000E00",11));
-//		
-//		
-//		System.out.println("Printing optimization stats");
-		return res.toString();
-	}
-	
-	public String printIterationOptimizationStat(MultinomialMaxEntFeatureOptStats stat, int i){
-		StringBuilder res = new StringBuilder();
-		System.out.println("Printing MaxEnt optimization stats");
-		return res.toString();
-	}
-	
-	public String printOptimizationStats(ArrayList<OptimizerStats> stats){
-		StringBuilder res = new StringBuilder();
-		if(stats.get(0) instanceof FeatureSplitOptimizerStats){
-			res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t " +
-					"gradNorm \t upd " +
-			"\t weightW  \t " +
-			"individualW \t coarceW \t individualG \t coarceG \t" +
-			"steps \n");
-		}else{
-			res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t" +
-					" gradNorm \t upd " +
-			"\t weightN \t steps \n");
-		}
+		res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t" +
+		" gradNorm \t upd " +
+		"\t weightN \t steps \n");
 		for (int i = 0; i < stats.size(); i++) {
 			OptimizerStats os = stats.get(i);
 			StringBuilder steps = new StringBuilder();
@@ -212,28 +151,77 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 					"\t" + 
 					Printing.prettyPrint(os.weightsNorm, "0.0000", 6)
 					+"\t");
-			if(os instanceof FeatureSplitOptimizerStats){
-				res.append(Printing.prettyPrint(((FeatureSplitOptimizerStats)os).individiualWeightsL2, "0.0000", 6)
-					+"\t"+
-					Printing.prettyPrint(((FeatureSplitOptimizerStats)os).coarceWeightsL2, "0.0000", 6)
-					+"\t"+
-					Printing.prettyPrint(((FeatureSplitOptimizerStats)os).individiualGradL2, "0.0000", 6)
-							+"\t"+
-							Printing.prettyPrint(((FeatureSplitOptimizerStats)os).coarcelGradL2, "0.0000", 6)
-							+"\t");
+			res.append("("+steps.toString()+")" 
+					+"\n");	
+		}
+		return res.toString();
+	}	
+
+	
+	
+	public String getFeatureOptimizationStats(ArrayList<OptimizerStats> stats){
+		StringBuilder res = new StringBuilder();
+		ObservationMultinomialFeatureFunction fxy = (ObservationMultinomialFeatureFunction) classifiers.get(0).fxy;
+		ArrayList<String> featNames = fxy.featuresPrefix;
+		res.append("MEO-State \t ");
+		for (int i = 0; i < featNames.size(); i++) {
+			res.append(featNames.get(i) +"\t");
+
+		}
+		res.append("\n");
+		double[] total = new double[featNames.size()];
+		for (int i = 0; i < stats.size(); i++) {
+			FeatureSplitOptimizerStats os = (FeatureSplitOptimizerStats) stats.get(i);
+			res.append("GRAD::MEO-state-"+i+"\t");
+			for (int j = 0; j < featNames.size(); j++) {
+				res.append(os.gradPerFeat[j] +"\t");
+				total[j]+=os.gradPerFeat[j];
 			}
-				
-				res.append("("+steps.toString()+")" 
-					+"\n");
+			res.append("\n");
+		}
+		res.append("GRAD::TOTAL::"+"\t");
+		for (int j = 0; j < featNames.size(); j++) {
+			res.append(total[j] +"\t");
+
+		}
+		res.append("\n");	
+		total = new double[featNames.size()];
+		for (int i = 0; i < stats.size(); i++) {
+			FeatureSplitOptimizerStats os = (FeatureSplitOptimizerStats) stats.get(i);
+			res.append("WEIGTHS::MEO-state-"+i+"\t");
+			for (int j = 0; j < featNames.size(); j++) {
+				res.append(os.weightsPerFeat[j] +"\t");
+				total[j]+=os.weightsPerFeat[j];
+			}
+			res.append("\n");
+		}
+		res.append("WEIGHTS::TOTAL::"+"\t");
+		for (int j = 0; j < featNames.size(); j++) {
+			res.append(total[j] +"\t");
+
+		}
+		res.append("\n");		
+
+		return res.toString();
+	}
+	
+	public String printOptimizationStats(ArrayList<OptimizerStats> stats){
+		StringBuilder res = new StringBuilder();
+		if(stats.get(0) instanceof FeatureSplitOptimizerStats){
+			res.append(getOptimizationStats(stats));
+			res.append(getFeatureOptimizationStats(stats));
+		}else{
+			res.append(getOptimizationStats(stats));
 		}
 		String out = res.toString();
 		if(this.classifiers.size() == 1){
-			out = out.replace("\n", "\nINIT::");
+			out = "INIT::"+out.replace("\n", "\nINIT::");
 		}else if(this.classifiers.get(0).fxy instanceof ObservationMultinomialFeatureFunction){
-			out = out.replace("\n", "\nOBS::");
+			out = "OBS::"+out.replace("\n", "\nOBS::");
 		}else{
-			out = out.replace("\n", "\nTRANS::");
+			out = "TRANS::"+out.replace("\n", "\nTRANS::");
 		}
 		return out;
-	}	
+	}
+		
 }
