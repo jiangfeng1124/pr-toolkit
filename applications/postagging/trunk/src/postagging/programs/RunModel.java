@@ -27,7 +27,6 @@ import model.distribution.trainer.MultinomialVariationalBayesTrainer;
 import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import model.distribution.trainer.TransitionMultinomialFeatureFunction;
-import model.distribution.trainer.stats.MultinomialMaxEntFeatureOptStats;
 import optimization.gradientBasedMethods.AbstractGradientBaseMethod;
 import optimization.gradientBasedMethods.GradientDescent;
 import optimization.gradientBasedMethods.LBFGS;
@@ -633,8 +632,14 @@ public class RunModel {
 				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			opt.add(optimizer);
-			MultinomialMaxEntFeatureOptStats optStats = 
-				new MultinomialMaxEntFeatureOptStats(fxy);
+			int[][] featuresPos = new int[fxy.featuresPrefix.size()][];
+			int featInd =0;
+			for(String prefix : fxy.featuresPrefix){
+				featuresPos[featInd] =  fxy.getFeaturesByPrefix(prefix);
+				featInd++;
+			}
+			FeatureSplitOptimizerStats optStats = 
+				new FeatureSplitOptimizerStats(featuresPos);
 			oss.add(optStats);
 		}
 
