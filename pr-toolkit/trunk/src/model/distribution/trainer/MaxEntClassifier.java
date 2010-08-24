@@ -82,7 +82,7 @@ public class MaxEntClassifier {
 
 		reset();
 		if(warmStart == false){
-			System.out.println("Restarting ME weights");
+//			System.out.println("Restarting ME weights");
 			java.util.Arrays.fill(initialParameters, 0);
 		}
 		MaxEntMinimizationObjective obj = getObjective(counts, variable);

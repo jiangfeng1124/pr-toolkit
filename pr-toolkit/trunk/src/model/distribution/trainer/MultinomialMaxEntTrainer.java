@@ -6,12 +6,14 @@ import gnu.trove.TIntArrayList;
 import java.util.ArrayList;
 
 import model.distribution.AbstractMultinomial;
+import model.distribution.trainer.stats.MultinomialMaxEntFeatureOptStats;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.linesearch.LineSearchMethod;
 import optimization.stopCriteria.StopingCriteria;
 
+import util.ArrayMath;
 import util.Printing;
 import util.SparseVector;
 
@@ -101,32 +103,90 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 			scores.plusEquals(-max);
 			SparseVector probs = scores.expEntries();
 			double sum = probs.sum();
-			if(sum <= 0 || Double.isInfinite(sum) || Double.isNaN(sum)){
+			if(sum <= 0){
+				for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
+					int value = possibleValues.getQuick(valueIndex);
+					paramsTable.setCounts(i, value, 0);
+				}
+			}
+			else if( Double.isInfinite(sum) || Double.isNaN(sum)){
 				System.out.println("Max Entropy normalization failed - sum: " + sum);
 				System.out.println(probs.toString());
 				throw new RuntimeException();
-			}
-			for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
-				int value = possibleValues.getQuick(valueIndex);
-				double prob = probs.getValue(value)/sum;
-				if(prob < 0 || Double.isInfinite(prob) || Double.isNaN(prob)){
+			}else{
+				for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
+					int value = possibleValues.getQuick(valueIndex);
+					double prob = probs.getValue(value)/sum;
+					if(prob < 0 || Double.isInfinite(prob) || Double.isNaN(prob)){
 					System.out.println("Max Entropy normalization prob failed - prob: " 
 							+ prob + ":" + probs.getValue(value) + ":" + sum);
 					throw new RuntimeException();
+					}
+					paramsTable.setCounts(i, value, prob);
 				}
-				paramsTable.setCounts(i, value, prob);
 			}
 		}		
 		System.out.println(printOptimizationStats(optimizationStats));
 		return paramsTable;
 	}	
 
+	
+	public String printIterationOptimizationStats(ArrayList<OptimizerStats> stats){
+		StringBuilder res = new StringBuilder();
+		for(int i = 0; i < stats.size(); i++){
+			if(stats.get(i) instanceof MultinomialMaxEntFeatureOptStats){
+				res.append(printIterationOptimizationStat((MultinomialMaxEntFeatureOptStats)stats.get(i),i));
+			}else{
+				res.append(printIterationOptimizationStat(stats.get(i),i));
+			}
+		}
+		String out = res.toString();
+		if(this.classifiers.size() == 1){
+			out = out.replace("\n", "\nINIT::");
+		}else if(this.classifiers.get(0).fxy instanceof ObservationMultinomialFeatureFunction){
+			out = out.replace("\n", "\nOBS::");
+		}else{
+			out = out.replace("\n", "\nTRANS::");
+		}
+		return out;
+	}
+	
+	
+	public String printIterationOptimizationStat(OptimizerStats stat, int i){
+		StringBuilder res = new StringBuilder();
+//		
+//		res.append(" Iteration "
+//				+i
+//				+ " updates "
+//				+(stat.paramUpdates)
+//				+" step "
+//				+Printing.prettyPrint(stat.steps.get(i), "0.00E00", 6)
+//				+" Params "
+//				//+Printing.prettyPrint(ArrayMath.L2Norm(objective.getParameters()), "0.00E00", 6)
+//				+Printing.prettyPrint(0, "0.00E00", 6)
+//				+ " gradientNorm "+ 
+//				Printing.prettyPrint(stat.gradientNorms.get(i), "0.00000E00", 10)
+//				+ " gradientNormalizedNorm "+ 
+//				Printing.prettyPrint(norm/originalNorm, "0.00000E00", 10)
+//				+ " value "+ Printing.prettyPrint(stats., "0.000000E00",11));
+//		
+//		
+//		System.out.println("Printing optimization stats");
+		return res.toString();
+	}
+	
+	public String printIterationOptimizationStat(MultinomialMaxEntFeatureOptStats stat, int i){
+		StringBuilder res = new StringBuilder();
+		System.out.println("Printing MaxEnt optimization stats");
+		return res.toString();
+	}
+	
 	public String printOptimizationStats(ArrayList<OptimizerStats> stats){
 		StringBuilder res = new StringBuilder();
 		if(stats.get(0) instanceof FeatureSplitOptimizerStats){
 			res.append("MEO-State \t Result \t Time(s) \t Iter \t obj \t " +
 					"gradNorm \t upd " +
-			"\t kl \t weightW  \t " +
+			"\t weightW  \t " +
 			"individualW \t coarceW \t individualG \t coarceG \t" +
 			"steps \n");
 		}else{
@@ -166,10 +226,14 @@ public class MultinomialMaxEntTrainer implements AbstractMultinomialTrainer{
 				res.append("("+steps.toString()+")" 
 					+"\n");
 		}
-		return res.toString();
-	}
-	
-	
-	
-	
+		String out = res.toString();
+		if(this.classifiers.size() == 1){
+			out = out.replace("\n", "\nINIT::");
+		}else if(this.classifiers.get(0).fxy instanceof ObservationMultinomialFeatureFunction){
+			out = out.replace("\n", "\nOBS::");
+		}else{
+			out = out.replace("\n", "\nTRANS::");
+		}
+		return out;
+	}	
 }

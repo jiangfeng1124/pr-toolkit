@@ -23,6 +23,7 @@ import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import data.Corpus;
 import data.InstanceList;
 import data.WordInstance;
+import decoderStats.AbstractDecoderStats;
 
 /** Implements an HMM without Final State.
  * 
@@ -32,16 +33,6 @@ import data.WordInstance;
 public  class HMM extends AbstractModel{
 
 	
-	/**
-	 * TABLE_UP - All parameters table are updated by normalizing the counts
-	 * VM - Variational Bayes with Dirichlet Prior on the parameterts
-	 * OBS_MAX_ENT - Train a Max-Ent model for the observation parameters
-	 * TRANS_MAX_ENT - Train a Max-Ent model for the transition parameters
-	 * MAX_ENT - Train a Max-Ent for both observations and transition parameters
-	 */
-//	public enum Update_Parameters  {TABLE_UP, OBS_MAX_ENT, TRANS_MAX_ENT, MAX_ENT,VB, MRF};
-	
-//	public Update_Parameters updateType = Update_Parameters.TABLE_UP;
 
 	/**
 	 * Model Parameters
@@ -61,30 +52,11 @@ public  class HMM extends AbstractModel{
 
 	public Corpus corpus;
 	
-	//Optimization and maxent options
-//	public double gradientConvergenceValue;
-//	public double valueConvergenceValue;
-//	public int maxIter = 1000;
-//	public double gaussianPrior = 1;
-//	//Feature function used for Max Ent
-//	public model.chain.GenerativeFeatureFunction fxy = null; 
-//	public boolean warmStart=true;
-//	
-//	
-//	
-//	//Variational Baeys parameters
-//	public double stateToStatePrior = 000.1;
-//	public double stateToObservationPrior = 000.1;
-//	
 	
 	
 	protected 	HMM(){
 		
 	}
-	
-	
-	
-	
 	
 	/**
 	 * Initialize multinomial tables
@@ -130,7 +102,6 @@ public  class HMM extends AbstractModel{
 		dist.updateInitCounts((HMMCountTable) counts);
 		dist.updateTransitionCounts((HMMCountTable) counts);
 		dist.updateObservationCounts((HMMCountTable) counts);
-		//dist.clearPosteriors();		
 	}
 
 	@Override
@@ -226,50 +197,6 @@ public  class HMM extends AbstractModel{
 		initTrainer.update(((HMMCountTable)counts).initialCounts,initialProbabilities);		
 	}
 	
-//	/**
-//	 * For now just normalize but this should be a class
-//	 * so we can switch between variational, maxEntropy, or
-//	 * tabular
-//	 * TODO: Just this be a part of EM???
-//	 */
-//	@Override
-//	public void updateParameters(AbstractCountTable counts) {
-////		((HMMCountTable) counts).print();
-//		//Debug Check Counts
-////		checkCountsTable(counts);
-////		((HMMCountTable)counts).initialCounts.print("Initial Counts", null,null);
-////		((HMMCountTable)counts).transitionCounts.print("Transition Counts", null,null);
-////		((HMMCountTable)counts).observationCounts.print("Observation Counts", null,null);
-//		
-//		if(updateType == Update_Parameters.TABLE_UP){
-//			initialProbabilities.copyAndNormalize(((HMMCountTable)counts).initialCounts);
-//			transitionProbabilities.copyAndNormalize(((HMMCountTable)counts).transitionCounts);
-//			observationProbabilities.copyAndNormalize(((HMMCountTable)counts).observationCounts);
-//		}else if(updateType == Update_Parameters.OBS_MAX_ENT){
-//			initialProbabilities.copyAndNormalize(((HMMCountTable)counts).initialCounts);
-//			transitionProbabilities.copyAndNormalize(((HMMCountTable)counts).transitionCounts);
-//			
-//			maxEntRetrain(observationProbabilities, ((HMMCountTable)counts).observationCounts, 
-//					corpus,fxy, 
-//					gaussianPrior, 
-//					gradientConvergenceValue, 
-//					valueConvergenceValue,
-//					maxIter);
-//		}else if(updateType == Update_Parameters.MAX_ENT){
-//			throw new UnsupportedOperationException("Update method not implemented");	
-//		}else if(updateType == Update_Parameters.TRANS_MAX_ENT){
-//			throw new UnsupportedOperationException("Update method not implemented");	
-//		}else if(updateType == Update_Parameters.VB){
-//			variationalBaeysParameterUpdates(counts);
-//		}else if(updateType == Update_Parameters.MRF){
-//			mrfRetrain(counts);
-//
-//		}else{
-//			System.out.println("Update Counts method not implemented: " + updateType);
-//			System.exit(-1);
-//		}
-//		//printModelParameters();
-//	}
 	
 
 
@@ -347,169 +274,10 @@ public  class HMM extends AbstractModel{
 		transitionProbabilities.toString("Transition Parameters",null,null);
 	}
 	
-//	private void mrfRetrain(AbstractCountTable counts) {
-//		TIntArrayList lengths = new TIntArrayList();
-//		for (int i = 0; i < corpus.trainInstances.instanceList.size(); i++) {
-//			int len = corpus.trainInstances.instanceList.get(i).words.length;
-//			while(len >= lengths.size()) 
-//				lengths.add(0);
-//			//System.out.println(lengths.size()+" "+len);
-//			lengths.set(len, lengths.get(len)+1);
-//		}
-//		MRFObjective mrf = new MRFObjective((HMMCountTable)counts, lengths.toNativeArray(), corpus, fxy, gaussianPrior);
-//		// potentially the following should really go somewhere else... 
-//		WolfRuleLineSearch wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9);
-//		
-//		wolfe.setDebugLevel(0);
-//		// LineSearchMethod ls = new ArmijoLineSearchMinimization();
-//		optimization.gradientBasedMethods.LBFGS optimizer = 
-//			new optimization.gradientBasedMethods.LBFGS(wolfe,30);
-//		optimization.gradientBasedMethods.stats.OptimizerStats stats = new OptimizerStats();
-//		StopingCriteria stopGrad = new NormalizedGradientL2Norm(gradientConvergenceValue);
-//		StopingCriteria stopValue = new ValueDifference(valueConvergenceValue);
-//		CompositeStopingCriteria stop = new CompositeStopingCriteria();
-//		stop.add(stopGrad);
-//		stop.add(stopValue);
-//		optimizer.setMaxIterations(maxIter);
-//		boolean succed = optimizer.optimize(mrf,stats,stop);
-//		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(0));
-//		if(nrStates == getNrRealStates()){
-//			System.out.println("WARNING!!! MRF NOT SET UP TO DEAL WITH non-final state HMM!!!");
-//		}
-//		// save the resulting values...
-//		double[] initials = new double[getNrRealStates()];
-//		double[] finals = new double[getNrRealStates()];
-//		for (int state = 0; state < getNrRealStates(); state++) { 
-//			initials[state] = mrf.getInitial(state);
-//			finals[state] = mrf.getFinal(state);
-//		}
-//		ArrayMath.plusEquals(initials, -ArrayMath.max(initials));
-//		ArrayMath.plusEquals(finals, -ArrayMath.max(finals));
-//		ArrayMath.exponentiate(initials);
-//		ArrayMath.exponentiate(finals);
-//		for (int state = 0; state < initials.length; state++) { 
-//			initialProbabilities.setCounts(0, state, initials[state]);
-//			transitionProbabilities.setCounts(state, getNrRealStates(), finals[state]);
-//		}
-//		initialProbabilities.setCounts(0, getNrRealStates(), 0);
-//		// transition parameters... 
-//		double max = 0;
-//		double[][] transitions = new double[getNrRealStates()][getNrRealStates()];
-//		for (int state = 0; state < getNrRealStates(); state++) {
-//			for (int nextState = 0; nextState < getNrRealStates(); nextState++) {
-//				transitions[state][nextState] = mrf.getTransition(state, nextState);
-//				max = Math.max(max , transitions[state][nextState]);
-//			}
-//		}
-//		for (int state = 0; state < getNrRealStates(); state++) {
-//			for (int nextState = 0; nextState < getNrRealStates(); nextState++) {
-//				transitions[state][nextState] -= max;
-//				transitionProbabilities.setCounts(state, nextState, Math.exp(transitions[state][nextState]));
-//			}
-//			// final probabilities set above (i.e. transitions[state][#states])
-//		}
-//		for (int nextState = 0; nextState < getNrRealStates(); nextState++) {
-//			// final state can't transition to anything. 
-//			transitionProbabilities.setCounts(getNrRealStates(), nextState, 0);
-//		}
-//		// Observation params.. 
-//		double[][] observations = new double[getNrRealStates()][corpus.getNrWordTypes()];
-//		max = 0;
-//		for (int state = 0; state < observations.length; state++) {
-//			for (int w = 0; w < observations[state].length; w++) {
-//				observations[state][w] = mrf.getEmissionDot(state, w);
-//				max = Math.max(max, observations[state][w]);
-//			}
-//		}
-//		for (int state = 0; state < observations.length; state++) {
-//			for (int w = 0; w < observations[state].length; w++) {
-//				observations[state][w] -= max;
-//				observationProbabilities.setCounts(state, w, Math.exp(observations[state][w]));
-//			}
-//		}
-//		for (int w = 0; w < corpus.getNrWordTypes(); w++) {
-//			observationProbabilities.setCounts(getNrRealStates(), w, 0);
-//		}
-//	}
 	
-	/**
-	 * This method updates the observation counts using a maximum entropy model instead of just 
-	 * normalizing the counts. This way we can add features about morphology of the words.
-	 * 
-	 */
-//	public util.LinearClassifier[] maxEntModels;	
-//	//Weigths of the observations 
-//	double counts[];
 	
-//	public void maxEntRetrain(AbstractMultinomial toUpdate, AbstractMultinomial other,Corpus c,GenerativeFeatureFunction fxy, double gaussianPrior
-//			,double gradientPrecision,double valuePrecision,int maxIterations){
-//		if(other instanceof Multinomial){
-//			maxEntRetrain((Multinomial)toUpdate, (Multinomial)other, c, fxy, gaussianPrior, gradientPrecision, valuePrecision, maxIterations);
-//		}		
-//	}
-//	
-//	public void maxEntRetrain(Multinomial toUpdate, Multinomial other,Corpus c,GenerativeFeatureFunction fxy, double gaussianPrior
-//			,double gradientPrecision,double valuePrecision,int maxIterations){
-//		util.DummyAlphabet dummyAlphabet = new util.DummyAlphabet(c.getNrWordTypes());
-//		model.chain.GenerativeMaxEntropy maxEnt = new model.chain.GenerativeMaxEntropy(gaussianPrior,dummyAlphabet,dummyAlphabet,fxy);
-//		util.SparseVector x = new util.SparseVector();
-//		if (maxEntModels == null){
-//			maxEntModels = new util.LinearClassifier[nrStates];
-//			for(int state = 0; state < nrStates; state++){
-//				maxEntModels[state] = new util.LinearClassifier(dummyAlphabet,dummyAlphabet,fxy);
-//			}
-//		}
-//		else if(!warmStart){
-//			System.out.println("Restarting ME weights");
-//			//Fill parameters with zero
-//			for(int state = 0; state < nrStates; state++){
-//				java.util.Arrays.fill(maxEntModels[state].w, 0);
-//			}
-//		}
-//		//For each hidden state train a maximum entropy model
-//		for(int state = 0; state < getNrRealStates(); state++){
-//			//Get the weights from the count table for each word
-//			if(counts == null){
-//				counts = new double[c.getNrWordTypes()];
-//			}
-//			for(int i = 0; i < c.getNrWordTypes(); i++){
-//				counts[i]=other.getCounts(state, i);
-//			}
-//			//Train the classifier 
-//			util.LinearClassifier classifier = maxEnt.batchTrain(counts,maxEntModels[state],gradientPrecision,valuePrecision,maxIterations);	
-//			//Predict
-//			classifier.scores(x);
-//			double[] scores = classifier.scores(x);
-//			
-//			//Update the counts table
-//			double[] probs = util.StaticUtils.exp(scores);
-//			double Z = util.StaticUtils.sum(probs);
-//			for(int i = 0; i < c.getNrWordTypes(); i++){
-//				
-//				double prob = probs[i]/Z;
-//				if(Double.isNaN(prob) || Double.isInfinite(prob)){
-//					System.out.println("Error probabililty of max-ent is nan");
-//					throw new RuntimeException();
-//				}
-//				toUpdate.setCounts(state, i, prob);
-//			}
-//			
-//			//Debug compute the kl between the probs of doing ME vs the probs of doing ML
-//			double MLsum = util.StaticUtils.sum(counts);
-//			double kl = 0;
-//			for(int i = 0; i < c.getNrWordTypes(); i++){
-//				double prob = probs[i]/Z;
-//				double mlProb = counts[i]/MLsum;
-//				double logP = Math.log(prob/mlProb);
-////				System.out.println("prob: " + prob + " mlProb " + mlProb + " kl " + prob*logP);
-//				kl+= prob*logP;
-//			}
-//			System.out.println("Kl between ME and ML estimates for state "+state+": " + kl);	
-//		}	
-//	}
-	
-	public int[][] decode(ChainDecoder decoder, InstanceList list){
-		int[][] output = decoder.decodeSet(this, list);
+	public int[][] decode(ChainDecoder decoder, InstanceList list, AbstractDecoderStats stats){
+		int[][] output = decoder.decodeSet(this, list,stats);
 		proceddDecodingOutput(output);
 		return output;
 	}
@@ -517,58 +285,6 @@ public  class HMM extends AbstractModel{
 	public void proceddDecodingOutput(int[][] output){
 	}
 	
-//	public void variationalBaeysParameterUpdates(AbstractCountTable countsTable){
-//		//Observation counts
-//		for(int state = 0; state < getNrRealStates(); state++){
-//			double sum=0;
-//			for(int observation = 0; observation < corpus.getNrWordTypes(); observation++){
-//				double counts = ((HMMCountTable)countsTable).observationCounts.getCounts(state, observation);
-//				sum += counts;
-//			}
-//			double newSum  = util.DigammaFunction.expDigamma(sum+corpus.getNrWordTypes()*stateToObservationPrior);
-//			if(newSum < 1.E-100 || Double.isNaN(newSum) || Double.isInfinite(newSum)){
-//				System.out.println("Probem normalizing Observation table newSum is NAN or zero.... Keeping old version");
-//			}else{
-//				for(int observation = 0; observation <corpus.getNrWordTypes(); observation++){
-//					double counts = ((HMMCountTable)countsTable).observationCounts.getCounts(state, observation);
-//					double newCounts = util.DigammaFunction.expDigamma(counts+stateToObservationPrior);
-//					observationProbabilities.setCounts(state, observation, newCounts/newSum);
-//				}
-//			}
-//		}
-//		
-//		//Transition counts -- In this case must all the states since in case of a fake 
-//		// parameter we have a position for it
-//		for(int currentState = 0; currentState < nrStates; currentState++){
-//			double sum=0;
-//			for(int nextState = 0; nextState < nrStates; nextState++){
-//				double counts = ((HMMCountTable)countsTable).transitionCounts.getCounts(currentState, nextState);
-//				sum += counts;
-//			}
-//			double newSum  = util.DigammaFunction.expDigamma(sum+nrStates*stateToStatePrior);
-//			if(newSum < 1.E-100 || Double.isNaN(newSum) || Double.isInfinite(newSum)){
-//				System.out.println("Probem normalizing transition table newSum is NAN or zero.... Keeping old version");
-//			}else{
-//				for(int nextState = 0; nextState < nrStates; nextState++){
-//					double counts = ((HMMCountTable)countsTable).transitionCounts.getCounts(currentState, nextState);
-//					double newCounts = util.DigammaFunction.expDigamma(counts+stateToStatePrior);
-//					transitionProbabilities.setCounts(currentState, nextState, newCounts/newSum);
-//				}
-//			}
-//		}
-//		
-//		double sum=0;
-//		for(int state = 0; state < getNrRealStates(); state++){
-//			sum += ((HMMCountTable)countsTable).initialCounts.getCounts(0,state);
-//		}
-//		sum = util.DigammaFunction.expDigamma(sum+getNrRealStates()*stateToStatePrior);
-//
-//		for(int state = 0; state < getNrRealStates(); state++){
-//			double counts = ((HMMCountTable)countsTable).initialCounts.getCounts(0,state);
-//			double newCounts = util.DigammaFunction.expDigamma(counts+stateToStatePrior);
-//			initialProbabilities.setCounts(0,state, newCounts/sum);
-//		}
-//	}
 	
 	public void printStamp(PrintStream file){
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -604,18 +320,5 @@ public  class HMM extends AbstractModel{
 		transitionProbabilities.saveTable(directory+"/transProb");
 	}
 	
-//	public static void main(String[] args) throws UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
-//		Corpus c = new Corpus(args[0]);
-//		HMM hmm = new HMM(c,c.getNrWordTypes(),10);
-//
-//		hmm.initializeRandom(new Random(), 1);
-//		System.out.println("Initialized HMM");
-//		EM em = new EM(hmm);
-//		LikelihoodStats stats = new LikelihoodStats();
-//		em.em(5	, stats);
-//		hmm.printModelParameters();
-//		PosteriorDecoder decoding = new PosteriorDecoder();
-//		decoding.decodeSet(hmm, c.trainInstances);
-//	}
 	
 }

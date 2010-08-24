@@ -48,11 +48,12 @@ public class ObservationMultinomialFeatureFunction implements MultinomialFeature
 		featuresPrefix = new ArrayList<String>();
 		String[] fPref = p.getFeaturePrefix().split("\n");
 		for (int i = 0; i < fPref.length; i++) {
-			featuresPrefix.add(fPref[i]);
+			if(!featuresPrefix.contains(fPref[i])){
+				featuresPrefix.add(fPref[i]);
+			}
 		}
 		featuresPrefix.add("default");
 		System.out.println(featuresPrefix.toString());
-
 		for(int i = 0; i < corpus.getNrWordTypes(); i++){
 			String word = corpus.wordAlphabet.index2feat.get(i);
 			util.SparseVector v = new util.SparseVector();

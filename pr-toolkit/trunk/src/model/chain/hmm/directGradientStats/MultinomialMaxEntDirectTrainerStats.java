@@ -48,6 +48,7 @@ public abstract class MultinomialMaxEntDirectTrainerStats extends AbstractOptimi
 	}
 	public void collectIterationStats(Optimizer optimizer, Objective objective){
 		super.collectIterationStats(optimizer, objective);
+		System.out.println(iterationOutputString(optimizer, objective));
 		iter++;
 	}
 

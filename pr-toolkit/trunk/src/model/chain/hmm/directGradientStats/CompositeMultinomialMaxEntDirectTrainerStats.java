@@ -48,8 +48,6 @@ public class CompositeMultinomialMaxEntDirectTrainerStats extends MultinomialMax
 	
 	public void collectIterationStats(Optimizer optimizer, Objective objective){
 		super.collectIterationStats(optimizer, objective);
-		// Collect the output string of all stats class
-		System.out.println(iterationOutputString(optimizer, objective));
 	}
 	
 	public String iterationOutputString(Optimizer optimizer, Objective objective){

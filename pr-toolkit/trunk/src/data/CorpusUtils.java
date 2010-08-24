@@ -45,9 +45,34 @@ public class CorpusUtils {
 		return al;
 	}
 	
+	/**
+	 * Creates an alphabet of all ngrams of length lenght
+	 * @param c
+	 * @param lenght
+	 * @return
+	 */
+	public static CountAlphabet<String> createTypesNGramAlphabet(Corpus c, int lenght){
+		CountAlphabet<String> al = new CountAlphabet<String>();
+		for(int i = 0; i < c.getNrWordTypes(); i++){
+			String word = c.wordAlphabet.index2feat.get(i);
+			if(word.length() > lenght){
+				for(int j = 0; j < word.length() - lenght; j++)
+				al.lookupObject(word.substring(j,j+lenght));
+			}
+		}
+		return al;
+	}
 	
 	public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-		Corpus c = new Corpus(args[0]);
+		Corpus c = new Corpus(args[0],0,2,1);
+		System.out.println("Words"+c.wordAlphabet.toString());
+		CountAlphabet<String> ngramAlphabet = CorpusUtils.createTypesNGramAlphabet(c, 1);
+		System.out.println(ngramAlphabet.toString());
+		ngramAlphabet = CorpusUtils.createTypesNGramAlphabet(c, 2);
+		System.out.println(ngramAlphabet.toString());
+		ngramAlphabet = CorpusUtils.createTypesNGramAlphabet(c, 3);
+		System.out.println(ngramAlphabet.toString());
+
 		
 		//Word type suffix
 //		System.out.println("Type suffix");
