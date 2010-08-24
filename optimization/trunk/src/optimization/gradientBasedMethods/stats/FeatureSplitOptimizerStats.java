@@ -6,32 +6,29 @@ import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
 
 /**
- * Extends the optimization stats with a method to split the features in two sets
- * like coarse and grain. It receives the indexes of the weights that should go to 
- * place one.
+ * Extends the optimization stats and computes the l2^2 norm of weight and parameters
+ * for different positions of the vectors. The positions are received as arguments and 
+ * concern the normally different features sets. 
  * @author javg
- *
  */
 public class FeatureSplitOptimizerStats extends OptimizerStats{
-	int[] positions;
-	int nrPositions;
-	public double individiualWeightsL2 = 0;
-	public double individiualGradL2 = 0;
-	public double coarceWeightsL2 = 0;
-	public double coarcelGradL2 = 0;
+	int[][] positions;
+	public double[] weightsPerFeat;
+	public double[] gradPerFeat;
 	
-	public FeatureSplitOptimizerStats(int[] positions) {
+	//Differnt sets of positions to collect stats
+	public FeatureSplitOptimizerStats(int[][] positions) {
 		super();
+		
 		this.positions = positions;
-		nrPositions = positions.length;
+		weightsPerFeat = new double[positions.length];
+		gradPerFeat = new double[positions.length];
 	}
 	
 	public void reset(){
 		super.reset();
-		individiualWeightsL2 = 0;
-		individiualGradL2 = 0;
-		coarceWeightsL2 = 0;
-		coarcelGradL2 = 0;
+		java.util.Arrays.fill(weightsPerFeat, 0);
+		java.util.Arrays.fill(gradPerFeat, 0);
 	}
 	public void collectFinalStats(Optimizer optimizer, Objective objective, boolean success){
 		super.collectFinalStats(optimizer, objective, success);
@@ -39,23 +36,22 @@ public class FeatureSplitOptimizerStats extends OptimizerStats{
 		
 	}
 	
-	public void divideWeightsByFeatuares(Optimizer optimizer, Objective objective){
-		individiualWeightsL2 = 0;
-		individiualGradL2 = 0;
+	public void divideWeightsByFeatuares(Optimizer optimizer, Objective objective){		
 		double[] gradient = objective.getGradient();
 		double[] parameters = objective.getParameters();
-		for(int i  =0; i < nrPositions; i++){
-			double grad = gradient[positions[i]];
-			individiualGradL2 += grad*grad;
-			double weights = parameters[positions[i]];
-			individiualWeightsL2 += weights*weights;
+		for(int featType = 0; featType < positions.length; featType++){
+			int[] positionsPerFeat = positions[featType];
+			int nrPositions = positionsPerFeat.length;
+			double gradFeat = 0;
+			double weightFeat = 0;
+			for(int i  =0; i < nrPositions; i++){
+				double grad = gradient[positionsPerFeat[i]];
+				gradFeat += grad*grad;
+				double weights = parameters[positionsPerFeat[i]];
+				weightFeat += weights*weights;
+			}
+			gradPerFeat[featType] = gradFeat;
+			weightsPerFeat[featType] = weightFeat;
 		}
-		coarceWeightsL2 = weightsNorm*weightsNorm - individiualWeightsL2;
-		coarcelGradL2 = gradientNorms.get(gradientNorms.size()-1)*gradientNorms.get(gradientNorms.size()-1) - individiualGradL2;
-		individiualGradL2 = Math.sqrt(individiualGradL2);
-		individiualWeightsL2 = Math.sqrt(individiualWeightsL2);
-		coarceWeightsL2 = Math.sqrt(coarceWeightsL2);
-		coarcelGradL2 = Math.sqrt(coarcelGradL2);
 	}
-	
 }
