@@ -99,9 +99,12 @@ public class DirectGradientTransitionsTypeL1LMaxStats extends MultinomialMaxEntD
             		l2totals[i] = Math.sqrt(l2totals[i])/nrHiddenStates;
             		totals[i]/=nrHiddenStates;
 				}
+            
+            	double totalL1LMax = ArrayMath.sum(totals);
+            	double totalL1L2 = ArrayMath.sum(l2totals);
             	
             	if(getIterationNumber() % printClustersIter == 0 && outputDir!= null){
-            		PrintStream outputMax,outputL2, outputSum;
+            		PrintStream outputMax,outputL2;
 					try {
 						outputMax = InputOutput.openWriter(outputDir+"/transl1lmax-iter."+getIterationNumber());
 						outputL2 = InputOutput.openWriter(outputDir+"/transl1l2-iter."+getIterationNumber());
@@ -121,10 +124,9 @@ public class DirectGradientTransitionsTypeL1LMaxStats extends MultinomialMaxEntD
 					}
             		
             	}
-            double totalL1LMax = ArrayMath.sum(totals);
-            double totalL1L2 = ArrayMath.sum(l2totals);
-            	return "L1LMax" + totalL1LMax + " AVG " + totalL1LMax/nrHiddenStates 
-            	     + "L1LMax" + totalL1L2 + " AVG " + totalL1L2/nrHiddenStates;
+            
+            	return "L1LMax " + totalL1LMax + " AVG " + totalL1LMax/nrHiddenStates 
+            	     + " L1LL2 " + totalL1L2 + " AVG " + totalL1L2/nrHiddenStates;
         	}else return "";
         }
         

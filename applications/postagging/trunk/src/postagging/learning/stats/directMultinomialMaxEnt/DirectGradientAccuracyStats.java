@@ -40,7 +40,9 @@ public class DirectGradientAccuracyStats extends MultinomialMaxEntDirectTrainerS
 		HMMDirectGradientObjective obs = (HMMDirectGradientObjective) objective;
 		String result = "";
 		try {
-			result =  RunModel.testModel((HMM) obs.model, obs.model.corpus.testInstances.get(0),"testCorpus",false,"");
+			result =  RunModel.testModel((HMM) obs.model, 
+					obs.model.corpus.testInstances.get(0),
+					"testCorpus",false,"",null);
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

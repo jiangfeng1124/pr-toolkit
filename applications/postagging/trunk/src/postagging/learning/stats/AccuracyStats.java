@@ -56,7 +56,8 @@ public class AccuracyStats extends TrainStats{
             String result = "";     
         	if(em.getCurrentIterationNumber() % printEvery == 0){
                       result =  RunModel.testModel((HMM)model, list, 
-                    		  "em-" + em.getCurrentIterationNumber()+ "-",savePredictions && (em.getCurrentIterationNumber() != 0 & em.getCurrentIterationNumber() % saveEvery == 0),saveDir);
+                    		  "em-" + em.getCurrentIterationNumber()+ "-",savePredictions && (em.getCurrentIterationNumber() != 0 & em.getCurrentIterationNumber() % saveEvery == 0)
+                    		  ,saveDir,null);
                       
         	}
         	return result;
