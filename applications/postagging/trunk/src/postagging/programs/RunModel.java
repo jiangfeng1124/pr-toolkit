@@ -1,7 +1,6 @@
 package postagging.programs;
 
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -18,7 +17,6 @@ import model.chain.hmm.directGradientStats.CompositeMultinomialMaxEntDirectTrain
 import learning.stats.TrainStats;
 import model.chain.PosteriorDecoder;
 import model.chain.hmm.HMM;
-import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMMDirectGradientObjective;
 import model.distribution.trainer.AbstractMultinomialTrainer;
 import model.distribution.trainer.MultinomialFeatureFunction;
@@ -28,8 +26,8 @@ import model.distribution.trainer.ObservationMultinomialFeatureFunction;
 import model.distribution.trainer.TableNormalizerMultinomialTrainer;
 import model.distribution.trainer.TransitionMultinomialFeatureFunction;
 import optimization.gradientBasedMethods.AbstractGradientBaseMethod;
-import optimization.gradientBasedMethods.GradientDescent;
 import optimization.gradientBasedMethods.LBFGS;
+import optimization.gradientBasedMethods.NotADescentDirectionException;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
@@ -48,13 +46,14 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import constraints.CorpusConstraints;
+
 import postagging.constraints.L1LMax;
 import postagging.constraints.L1SoftMaxEG;
 import postagging.data.PosCorpus;
 import postagging.data.PosInstance;
 import postagging.evaluation.PosMapping;
 import postagging.learning.stats.AccuracyStats;
-import postagging.learning.stats.NormalizedEntropyStats;
 import postagging.learning.stats.TransitionsTypeL1LMaxStats;
 import postagging.learning.stats.WordTypeL1LMaxStats;
 import postagging.learning.stats.decodeStats.DecodeWordTypeL1LMax;
@@ -68,7 +67,6 @@ import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientTransitio
 import postagging.learning.stats.directMultinomialMaxEnt.DirectGradientWordTypeL1LMax;
 import postagging.model.PosHMM;
 import postagging.model.PosHMMFinalState;
-import util.ArrayMath;
 import util.InputOutput;
 import data.InstanceList;
 import decoderStats.AbstractDecoderStats;
@@ -111,12 +109,12 @@ public class RunModel {
 	}
 	
 	// Model initialization
-	private enum ModelInit {RANDOM,SUPERVISED,SAVED,RANDOM_SUPERVISED, E_STEP_RANDOM};
+	private enum ModelInit {RANDOM,SUPERVISED,SAVED,RANDOM_SUPERVISED,RANDOM_MAX_ENT};
 	@Option(name="-model-init", usage = "RANDOM = Random, SUPERVISED = Max likelihood, " +
-			"or SAVED = Load saved model" +
+			"SAVED = Load saved model, " +
 			"RANDOM_SUPERVISED = randomly choose n sentences and " +
-					"initialize supervised (n is set with the option)" +
-			"E_STEP_RANDOM  = Init HMM parameters random and run an E-Step to initialized the ME parameters")
+				"initialize supervised (n is set with the option), "+
+				"RANDOM_MAX_ENT = randomly choose max-ent parameters, and set HMM params accordingly")
 	private ModelInit initType = ModelInit.RANDOM;
 	
 	@Option(name="-seed", usage="Seed for random number generator for random start (default = 1)")
@@ -195,12 +193,14 @@ public class RunModel {
 	private int numEMIters = 0;
 	@Option(name="-stats-file", usage="Training statistics file")
 	private String statsFile = "";
-	private enum TrainingType {EM, DirectGradient,L1LMax, L1SoftMaxEG};
+	private enum TrainingType {EM, DirectGradient,L1LMax, L1SoftMaxEG, DGthenL1LMax, DirectL1LMax, DGthenDGL1LMax};
 	@Option(name="-trainingType", 
 			usage="Training Type: EM EM Training; " +	
 			"\n\t\tL1LMax PR with L1LMax; " + 
 			"\n\t\tDirectGradient direct gradient on likelihood, without PR constraints; " + 
-			"\n\t\tL1SoftMaxEG PR with L1SoftMax and Exponentiated Gradient training")
+			"\n\t\tL1SoftMaxEG PR with L1SoftMax and Exponentiated Gradient training; "+
+			"\n\t\tDGthenL1LMax Direct Gradient on likelihood, followed by constrained EM with L1LMax; "+
+			"\n\t\tDirectL1LMax Direct gradient on the PR objective")
 	private TrainingType trainingType = TrainingType.EM;
 	
 	@Option(name="-warmup-iters", usage="Number of warmupIter before starting using constraints")
@@ -219,8 +219,11 @@ public class RunModel {
 		out.println("-num-em-iters " + numEMIters);
 		out.println("-stats-file " + statsFile);
 		out.println("-trainingType " + trainingType);
-		if(trainingType == TrainingType.L1LMax || trainingType == TrainingType.L1SoftMaxEG){
-			out.println("-warmup-iters " + warmupIter);
+		if(trainingType == TrainingType.L1LMax || trainingType == TrainingType.L1SoftMaxEG 
+				|| trainingType == TrainingType.DGthenL1LMax || trainingType == TrainingType.DirectL1LMax){
+			if (trainingType != TrainingType.DGthenL1LMax){
+				out.println("-warmup-iters " + warmupIter);
+			}
 			out.println("-min-word-occurs-L1LMax " + minWordOccursL1LMax);
 			out.println("-c-str " + cstr);
 		} 
@@ -291,6 +294,7 @@ public class RunModel {
 	
 	
 
+	@SuppressWarnings("unchecked")
 	public void parseCommandLineArguments(String[] args)
 	throws ClassNotFoundException, InvocationTargetException, IllegalAccessException, InstantiationException, IOException {
 
@@ -333,7 +337,7 @@ public class RunModel {
 					stats.addStats(new AccuracyStats(5,savePredictionsTrainingIter,baseOutputString+"/predictions/",savePredictionsTraining,corpus.devInstances));
 					stats.addStats(new AccuracyStats("5","101",baseOutputString+"/predictions/",corpus.devInstances));
 				}
-			}else if(trainingTestSet == TestSet.Test){
+			} else if(trainingTestSet == TestSet.Test){
 				if(corpus.testInstances == null || corpus.testInstances.size() == 0){
 					System.out.println("No Test instances available for evaluation during training");
 					System.out.println("Defaulting to training instances");
@@ -361,7 +365,6 @@ public class RunModel {
 			
 			stats.addStats(new WordTypeL1LMaxStats(corpus,model,"2",minWordOccursL1LMax,baseOutputString+"/l1LMaxClusters/",50));
 			stats.addStats(new TransitionsTypeL1LMaxStats(corpus,model,"2",baseOutputString+"/l1LMaxClusters/",5));
-			stats.addStats(new NormalizedEntropyStats(1));
 //			stats.addStats(new MeParametersStats(50,baseOutputString+"/me-parameters/"));
 			trainModel(corpus,model,stats);
 			
@@ -395,9 +398,9 @@ public class RunModel {
 				System.out.println(testModel(model, corpus.trainInstances, "Final",savePredictionsEnd,baseOutputString+"/predictions/final/",stats));
 			}else{
 				System.out.println(testModel(model, corpus.devInstances, "Final",savePredictionsEnd,baseOutputString+"/predictions/final/",stats));
-				
+
 			}
-		}else if(testSet == TestSet.Test){
+		} else if(testSet == TestSet.Test){
 			if(corpus.testInstances == null || corpus.testInstances.size() == 0){
 				System.out.println("No Test instances available for evaluation at the end");
 				System.out.println("Defaulting to training instances");
@@ -420,106 +423,106 @@ public class RunModel {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
+	private void doMultinomialWarmup(HMM model, EM em, TrainStats stats, int iters) throws UnsupportedEncodingException, IOException{
+		AbstractMultinomialTrainer tempObs = model.observationTrainer;
+		AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
+		AbstractMultinomialTrainer tempInit = model.initTrainer;
+		model.observationTrainer = new TableNormalizerMultinomialTrainer();
+		model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
+		model.initTrainer = new  TableNormalizerMultinomialTrainer();	
+		em.em(iters, stats);
+		model.observationTrainer = tempObs;
+		model.transitionsTrainer = tempTran;
+		model.initTrainer = tempInit;			
+	}
 	
+	private void doDirectGradient(HMM model, PosCorpus c, CorpusConstraints constraints) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
+		if (!updateParams.equals("MAX_ENT")) 
+			throw new RuntimeException("can't deal with direct gradient unless we have max-ent model!");
+		CompositeMultinomialMaxEntDirectTrainerStats optStats = new CompositeMultinomialMaxEntDirectTrainerStats();
+        optStats.add(new DirectGradientAccuracyStats(5));
+        optStats.add(new DirectGradientLikelihoodStats());
+        optStats.add(new DirectGradientWordTypeL1LMax((PosCorpus) model.corpus,model,"5",5,baseOutputString+"/l1LMaxClusters/",1000));
+        optStats.add(new DirectGradientTransitionsTypeL1LMaxStats((PosCorpus) model.corpus,model,"5",baseOutputString+"/Transitionsl1LMaxClusters/",1000));
+        optStats.add(new DirectGradientOptimizationStats());
+        optStats.add(new DirectGradientNormalizedEntropyStats(1));
+        //TODO should not be creating the features again, we are duplicating size
+        ObservationMultinomialFeatureFunction feats = new ObservationMultinomialFeatureFunction(c, maxEntObservationFeaturesFile);
+		HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model,gaussianPrior,constraints,optStats);
+		optStats.add(new DirectGradientFeatureOptimizationStats(feats,model.getNrRealStates(),objective));
+		WolfRuleLineSearch wolfe = 
+			new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+//		CompositeStopingCriteria stop = new CompositeStopingCriteria();
+//		StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
+//		StopingCriteria stopValue = new NormalizedValueDifference(maxEntValueConvergenceValue);
+//		stop.add(stopGrad);
+//		stop.add(stopValue);
+        StopingCriteria valueAvg = new AverageValueDifference(maxEntValueConvergenceValue);
+        CompositeStopingCriteria stop = new CompositeStopingCriteria();
+        stop.add(valueAvg);
+
+		for (int i = 0; i < 5; i++) {
+			AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
+			//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
+			optimizer.setMaxIterations(maxEntMaxIterations);
+			System.out.println("Optimization run + "+i);
+			boolean succeed;
+			try{
+				succeed = optimizer.optimize(objective,optStats,stop);
+			} catch (NotADescentDirectionException e){
+				System.out.println("Failed -- got a "+e.getClass().getSimpleName());
+				e.printStackTrace(System.err);
+				continue;
+			}
+			System.out.println(optStats.prettyPrint(2));	
+			if(optStats.getIterationNumber() == 0){
+				System.out.println("Succeeded! with no iterations Existing loop");
+				break;
+			}
+			if (succeed) System.out.println("Succeeded!");
+			else System.out.println("failed to finish optimization");
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
 	private void trainModel(PosCorpus c, HMM model, TrainStats stats) throws CmdLineException, UnsupportedEncodingException, IOException, IllegalArgumentException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		if(TrainingType.EM== trainingType) {
 			EM em = new EM(model);
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
-				AbstractMultinomialTrainer tempObs = model.observationTrainer;
-				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
-				AbstractMultinomialTrainer tempInit = model.initTrainer;
-				model.observationTrainer = new TableNormalizerMultinomialTrainer();
-				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
-				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
-				em.em(maxEntEMWarmupIters, stats);
-				model.observationTrainer = tempObs;
-				model.transitionsTrainer = tempTran;
-				model.initTrainer = tempInit;	
+				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
 			}
 			em.em(numEMIters, stats);
-		} else if(TrainingType.DirectGradient == trainingType) {
+		} else if (TrainingType.DGthenL1LMax == trainingType){
+			doDirectGradient(model, c, null);
+			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
+			CorpusPR learning = new CorpusPR(model,l1lmax);
+			learning.em(numEMIters, stats);
+		} 
+		else if(TrainingType.DirectGradient == trainingType) {
+			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
+				EM em = new EM(model);
+				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
+			}
+			doDirectGradient(model, c, null);
+		} else if(TrainingType.DGthenDGL1LMax == trainingType) {
+			doDirectGradient(model, c, null);
+			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
+			doDirectGradient(model,c,l1lmax);
+		} else if(TrainingType.DirectL1LMax == trainingType) {
 			if (!updateParams.equals("MAX_ENT")) 
 				throw new RuntimeException("can't deal with direct gradient unless we have max-ent model!");
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
 				EM em = new EM(model);
-				AbstractMultinomialTrainer tempObs = model.observationTrainer;
-				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
-				AbstractMultinomialTrainer tempInit = model.initTrainer;
-				model.observationTrainer = new TableNormalizerMultinomialTrainer();
-				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
-				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
-				em.em(maxEntEMWarmupIters, stats);
-				model.observationTrainer = tempObs;
-				model.transitionsTrainer = tempTran;
-				model.initTrainer = tempInit;	
+				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
 			}
-			CompositeMultinomialMaxEntDirectTrainerStats optStats = new CompositeMultinomialMaxEntDirectTrainerStats();
-			optStats.add(new DirectGradientAccuracyStats(5));
-			optStats.add(new DirectGradientLikelihoodStats());
-			optStats.add(new DirectGradientWordTypeL1LMax((PosCorpus) model.corpus,model,"5",5,baseOutputString+"/l1LMaxClusters/",1000));
-			optStats.add(new DirectGradientTransitionsTypeL1LMaxStats((PosCorpus) model.corpus,model,"5",baseOutputString+"/Transitionsl1LMaxClusters/",1000));
-			optStats.add(new DirectGradientOptimizationStats());
-			optStats.add(new DirectGradientNormalizedEntropyStats(1));
-			//TODO should not be creating the features again, we are duplicating size
-			ObservationMultinomialFeatureFunction feats = new ObservationMultinomialFeatureFunction(c, maxEntObservationFeaturesFile);
-			HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model, gaussianPrior,optStats);
-			optStats.add(new DirectGradientFeatureOptimizationStats(feats,model.getNrRealStates(),objective));
-			
-			if(initType  == initType.RANDOM){
-				objective.initializeRandom(new Random(seed), jitter);
-			}else if(initType == initType.E_STEP_RANDOM){
-				
-				objective.model.initializeRandom(new Random(seed), jitter);
-				objective.initializeFromFirstEstep();
-			}
-			objective.updateValueAndGradient();
-			System.out.println("Finished initializing "+objective.getClass().getSimpleName()+" value: "+objective.getValue()+" ||grad||^2="+ArrayMath.twoNormSquared(objective.getGradient()));
-
-			
-			
-			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
-//			CompositeStopingCriteria stop = new CompositeStopingCriteria();
-//			StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
-//			StopingCriteria stopValue = new NormalizedValueDifference(maxEntValueConvergenceValue);
-//			stop.add(stopGrad);
-//			stop.add(stopValue);
-			StopingCriteria valueAvg = new AverageValueDifference(maxEntValueConvergenceValue);
-			CompositeStopingCriteria stop = new CompositeStopingCriteria();
-			stop.add(valueAvg);
-
-			for (int i = 0; i < 5; i++) {
-				AbstractGradientBaseMethod optimizer = new LBFGS(wolfe,30);
-				//AbstractGradientBaseMethod optimizer = new GradientDescent(wolfe);
-				optimizer.setMaxIterations(maxEntMaxIterations);
-				System.out.println("Optimization run + "+i);	
-				boolean succeed = optimizer.optimize(objective,optStats,stop);
-				System.out.println(optStats.prettyPrint(2));
-				//reset stats for next iteration
-				optStats.reset();
-				if(optStats.getIterationNumber() == 0){
-					System.out.println("Succeeded! with no iterations Existing loop");
-					break;
-				}
-				if (succeed) System.out.println("Succeeded!");
-				else System.out.println("failed to finish optimization");
-			}
-			
-			
-		} else if(TrainingType.L1LMax== trainingType){
+			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
+			doDirectGradient(model,c,l1lmax);
+		}else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
-				AbstractMultinomialTrainer tempObs = model.observationTrainer;
-				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
-				AbstractMultinomialTrainer tempInit = model.initTrainer;
-				model.observationTrainer = new TableNormalizerMultinomialTrainer();
-				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
-				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
-				em.em(maxEntEMWarmupIters, stats);
-				model.observationTrainer = tempObs;
-				model.transitionsTrainer = tempTran;
-				model.initTrainer = tempInit;	
+				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
 			}
 			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
 			CorpusPR learning = new CorpusPR(model,l1lmax);
@@ -528,16 +531,7 @@ public class RunModel {
 			EM em = new EM(model);
 			em.em(warmupIter, stats);
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
-				AbstractMultinomialTrainer tempObs = model.observationTrainer;
-				AbstractMultinomialTrainer tempTran = model.transitionsTrainer;
-				AbstractMultinomialTrainer tempInit = model.initTrainer;
-				model.observationTrainer = new TableNormalizerMultinomialTrainer();
-				model.transitionsTrainer = new TableNormalizerMultinomialTrainer();
-				model.initTrainer = new  TableNormalizerMultinomialTrainer();	
-				em.em(maxEntEMWarmupIters, stats);
-				model.observationTrainer = tempObs;
-				model.transitionsTrainer = tempTran;
-				model.initTrainer = tempInit;	
+				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
 			}
 			L1SoftMaxEG l1lmax = new L1SoftMaxEG(c, model, minWordOccursL1LMax, cstr, softMaxSharpness);
 			CorpusPR learning = new CorpusPR(model,l1lmax);
@@ -550,14 +544,20 @@ public class RunModel {
 
 	private void initializeModel(HMM model) {
 		switch(initType) {
-		case RANDOM: seed = (seed == null? 1 : seed);
-					 System.out.println("Random initialization with seed " + seed);
-					 model.initializeRandom(new Random(seed), jitter); break;
+		case RANDOM: 
+			seed = (seed == null? 1 : seed);
+			System.out.println("Random initialization with seed " + seed);
+			model.initializeRandom(new Random(seed), jitter); 
+			break;
+		case RANDOM_MAX_ENT:
+			if(!updateParams.equals("MAX_ENT")) throw new AssertionError("Update type has to be max-ent for RANDOM_MAX_ENT initialization but was "+updateParams);
+			HMMDirectGradientObjective.initializeRandom(model, new Random(seed), jitter);
 		case SUPERVISED: 
-		 System.out.println("Supervised initialization");
-		 model.initializeSupervised(1e-200, ((PosCorpus)model.corpus).getNrTags(), model.corpus.trainInstances);
-		 break;
-		default: assert(false) : "Why didn't args4j catch this model-init options error?"; break;
+			System.out.println("Supervised initialization");
+			model.initializeSupervised(1e-200, ((PosCorpus)model.corpus).getNrTags(), model.corpus.trainInstances);
+			break;
+		default: 
+			throw new AssertionError("Error: don't know how to deal with init type "+initType); 
 		}
 		System.out.println();
 	}
@@ -652,7 +652,7 @@ public class RunModel {
 		return new MultinomialMaxEntTrainer(nrTags,
 				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
-	
+
 	public MultinomialMaxEntTrainer buildInitialMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
 		TransitionMultinomialFeatureFunction fxy = new TransitionMultinomialFeatureFunction(c, nrTags);
 		ArrayList<MultinomialFeatureFunction> fxys = new ArrayList<MultinomialFeatureFunction>();
@@ -702,7 +702,6 @@ public class RunModel {
 				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
 
-	
 	public MultinomialMaxEntTrainer buildTransitionMuiltinomialTrainer(PosCorpus c,int nrTags) throws IllegalArgumentException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, InvocationTargetException{
 		TransitionMultinomialFeatureFunction fxy = new TransitionMultinomialFeatureFunction(c, nrTags);
 		ArrayList<MultinomialFeatureFunction> fxys = new ArrayList<MultinomialFeatureFunction>();
@@ -751,18 +750,19 @@ public class RunModel {
 		return new MultinomialMaxEntTrainer(nrTags,
 				gaussianPrior,fxys,lss,opt,oss,scs,maxEntWarmStart,useProgrssiveOptimization);
 	}
-	
+
+
 	/**
 	 * 
 	 * @param model
 	 * @throws IOException 
 	 * @throws UnsupportedEncodingException 
 	 */
-	public static String testModel(HMM model, InstanceList list, 
-			String description, boolean savePredictions, 
+	public static String testModel(HMM model, InstanceList list,
+			String description, boolean savePredictions,
 			String saveDir,
 			AbstractDecoderStats stats) throws UnsupportedEncodingException, IOException{
-		
+
 		StringBuffer res = new StringBuffer();        	
 		int[][]  gold = new int[list.instanceList.size()][];
 		for (int i = 0; i < gold.length; i++) {
@@ -774,17 +774,17 @@ public class RunModel {
 		for (int i = 0; i < words.length; i++) {
 			words[i] = list.instanceList.get(i).words;
 		}
-		
+
 		PosteriorDecoder posterior = new PosteriorDecoder();
 		int[][] posteriorResults = model.decode(posterior, list,stats);
-		
+
 		int[][] mappingCounts = 
 			PosMapping.statePosCounts((PosCorpus)model.corpus, Integer.MAX_VALUE, model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);
-		
+
 		String cm =PosMapping.printMappingCounts((PosCorpus)model.corpus,mappingCounts, model.getNrRealStates(),
 				((PosCorpus)model.corpus).getNrTags()); 	
 		res.append("CM::"+cm.replace("\n", "\nCM::"));
-		
+
 		res.append("\n");
 		int[]  posteriorDecoding1ToManyMapping =  
 			postagging.evaluation.PosMapping.manyTo1Mapping((PosCorpus)model.corpus,mappingCounts,Integer.MAX_VALUE, model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);
@@ -796,40 +796,40 @@ public class RunModel {
 		int[]  posteriorDecoding1to1Mapping =  
 			postagging.evaluation.PosMapping.oneToOnemapping((PosCorpus)model.corpus, mappingCounts,Integer.MAX_VALUE,model.getNrRealStates(), posteriorResults, ((PosCorpus)model.corpus).getNrTags(),gold);;
 			res.append("1To1::"+PosMapping.printMapping((PosCorpus)model.corpus,posteriorDecoding1to1Mapping));
-		int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, posteriorResults, Integer.MAX_VALUE); 
+			int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, posteriorResults, Integer.MAX_VALUE); 
 			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
 			res.append(description + "-"+list.name+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
 					postagging.evaluation.Evaluator.evaluatePerOccurences((PosCorpus)model.corpus, list.instanceList.size(), words,posteriorDecoding1to1,  gold)+"\n");
-			
-    	double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,model.getNrRealStates(),((PosCorpus)model.corpus).getNrTags());
-		res.append(description + "-"+list.name+" " 
-				+ " Posterior E(Tag) " + infometric[0]+
-				" E(Gold) " + infometric[1 ] +
-				" MI " + infometric[2] +
-				" H(Gold |Tag) " + infometric[3] +
-				" H(Tag |Gold) " + infometric[4] +
-				" VI " + infometric[5] +
-				" Homogenity " + infometric[6] + 
-				" Completeness " + infometric[7] +
-				" V " + infometric[8] +
-				" NVI " +  infometric[9] +
-				"\n");
-		
-		if(savePredictions){
-			util.FileSystem.createDir(saveDir);
-			PrintStream predictions = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec");
-	    		predictions.print(((PosCorpus)model.corpus).printClusters(list, posteriorResults));
-	    		predictions.close();
-	    		PrintStream predictions1ToMany = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1toMany");
-	    		predictions1ToMany.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1ToMany));
-	    		predictions1ToMany.close();
-	    		PrintStream predictions1To1 = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1to1");
-	    		predictions1To1.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1to1));
-	    		predictions1To1.close();	
-		}
-		String out = "FINAL::"+res.toString().replace("\n", "\nFINAL::");
-		return out;
-    	
+
+			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,model.getNrRealStates(),((PosCorpus)model.corpus).getNrTags());
+			res.append(description + "-"+list.name+" " 
+					+ " Posterior E(Tag) " + infometric[0]+
+					" E(Gold) " + infometric[1 ] +
+					" MI " + infometric[2] +
+					" H(Gold |Tag) " + infometric[3] +
+					" H(Tag |Gold) " + infometric[4] +
+					" VI " + infometric[5] +
+					" Homogenity " + infometric[6] + 
+					" Completeness " + infometric[7] +
+					" V " + infometric[8] +
+					" NVI " +  infometric[9] +
+			"\n");
+
+			if(savePredictions){
+				util.FileSystem.createDir(saveDir);
+				PrintStream predictions = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec");
+				predictions.print(((PosCorpus)model.corpus).printClusters(list, posteriorResults));
+				predictions.close();
+				PrintStream predictions1ToMany = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1toMany");
+				predictions1ToMany.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1ToMany));
+				predictions1ToMany.close();
+				PrintStream predictions1To1 = InputOutput.openWriter(saveDir+description + "-"+list.name+".posteriorDec.1to1");
+				predictions1To1.print(((PosCorpus)model.corpus).printTags(list, posteriorDecoding1to1));
+				predictions1To1.close();	
+			}
+			String out = "FINAL::"+res.toString().replace("\n", "\nFINAL::");
+			return out;
+
 	}
 	
 		
