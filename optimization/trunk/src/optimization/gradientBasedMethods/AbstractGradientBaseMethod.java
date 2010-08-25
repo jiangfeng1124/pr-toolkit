@@ -70,9 +70,7 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 			
 			getDirection();
 			if(ArrayMath.dotProduct(gradient, direction) > 0){
-				System.out.println("Not a descent direction");
-				System.out.println(" current stats " + stats.prettyPrint(1));
-				System.exit(-1);
+				throw new NotADescentDirectionException("Not a descent direction current stats\n" + stats.prettyPrint(1));
 			}
 			updateStructuresBeforeStep(o, stats, stop);
 			lso.reset(direction);
