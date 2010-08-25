@@ -25,7 +25,8 @@ public class HMMDirectGradientObjective extends Objective {
 
 	AbstractCountTable counts;
 	MultinomialMaxEntDirectGradientTrainer initTrainer, transitionTrainer, observationTrainer;
-	int initOffset, transitionOffset, observationOffset;
+	int initOffset, transitionOffset;
+	public int observationOffset;
 	public HMM model;
 	double gaussianPriorVariance;
 	AbstractSentenceDist[] sentenceDists;
