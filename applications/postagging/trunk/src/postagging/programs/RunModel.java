@@ -551,7 +551,8 @@ public class RunModel {
 			break;
 		case RANDOM_MAX_ENT:
 			if(!updateParams.equals("MAX_ENT")) throw new AssertionError("Update type has to be max-ent for RANDOM_MAX_ENT initialization but was "+updateParams);
-			HMMDirectGradientObjective.initializeRandom(model, new Random(seed), jitter);
+			HMMDirectGradientObjective.initializeRandom(model, new Random(seed==null? 1: seed), jitter);
+			break;
 		case SUPERVISED: 
 			System.out.println("Supervised initialization");
 			model.initializeSupervised(1e-200, ((PosCorpus)model.corpus).getNrTags(), model.corpus.trainInstances);
