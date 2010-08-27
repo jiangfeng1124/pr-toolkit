@@ -520,10 +520,10 @@ public class RunModel {
 			doDirectGradient(model,c,l1lmax);
 		}else if(TrainingType.L1LMax== trainingType){
 			EM em = new EM(model);
-			em.em(warmupIter, stats);
 			if(updateParams.contains("MAX_ENT") && maxEntEMWarmupIters != 0){
 				doMultinomialWarmup(model, em, stats, maxEntEMWarmupIters);
 			}
+			em.em(warmupIter, stats);
 			L1LMax l1lmax = new L1LMax(c,model,minWordOccursL1LMax,cstr);
 			CorpusPR learning = new CorpusPR(model,l1lmax);
 			learning.em(numEMIters, stats);
