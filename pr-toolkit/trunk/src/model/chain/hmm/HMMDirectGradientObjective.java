@@ -60,9 +60,10 @@ public class HMMDirectGradientObjective extends Objective {
 //		}
 		// This is the better way to initialize:
 		// initialize parameters from first step of EM... 
-		if (constraints != null){
-			constraints.project(counts, sentenceDists, null, null);
-		} else {
+		
+//		if (constraints != null){
+//			constraints.project(counts, sentenceDists, null, null);
+//		} else {
 			counts.clear();
 			stats.beforeInference(this);
 			for(AbstractSentenceDist sd : sentenceDists){			
@@ -76,10 +77,13 @@ public class HMMDirectGradientObjective extends Objective {
 				sd.clearPosteriors();
 			}
 			stats.endInference(this);
-		}
+//		}
 		initTrainer.getParametersForCounts(hmmcounts.initialCounts, parameters, initOffset);
 		transitionTrainer.getParametersForCounts(hmmcounts.transitionCounts, parameters, transitionOffset);
 		observationTrainer.getParametersForCounts(hmmcounts.observationCounts, parameters, observationOffset);
+//		initTrainer.getParametersForCounts(hmm.initialProbabilities, parameters, initOffset);
+//		transitionTrainer.getParametersForCounts(hmm.transitionProbabilities, parameters, transitionOffset);
+//		observationTrainer.getParametersForCounts(hmm.observationProbabilities, parameters, observationOffset);
 		gradient = new double[parameters.length];
 		updateValueAndGradient();
 		System.out.println("Finished initializing "+this.getClass().getSimpleName()+" value: "+value+" ||grad||^2="+ArrayMath.twoNormSquared(gradient));
@@ -113,7 +117,7 @@ public class HMMDirectGradientObjective extends Objective {
 		observationTrainer.getMultinomialAtCurrentParams(model.observationProbabilities);
 	}
 
-	
+	int numFailedUpdateValueAndGradient=0;
 	public void updateValueAndGradient(){
 		// set parameters: this.params -> trainer.params; trainer.params -> hmm.params
 		HMMCountTable hmmcounts = (HMMCountTable) counts;
@@ -125,11 +129,17 @@ public class HMMDirectGradientObjective extends Objective {
 			transitionTrainer.getMultinomialAtCurrentParams(model.transitionProbabilities);
 			observationTrainer.getMultinomialAtCurrentParams(model.observationProbabilities);
 		} catch (CantNormalizeException e){
+			System.out.println("Warning: updateValueAndGradient failing ("+numFailedUpdateValueAndGradient+
+					") because we can't set counts and parameters");
+			System.out.println(String.format("    paramNorm=%.2f gradNorm=%.2f",
+					Math.sqrt(ArrayMath.twoNormSquared(parameters)),
+					Math.sqrt(ArrayMath.twoNormSquared(gradient))));
 			e.printStackTrace(System.err);
 			value = Double.POSITIVE_INFINITY;
 			for (int i = 0; i < gradient.length; i++) {
 				gradient[i] = 0;
 			}
+			numFailedUpdateValueAndGradient++;
 			return;
 		}
 
@@ -137,7 +147,7 @@ public class HMMDirectGradientObjective extends Objective {
 		if (constraints != null){
 			// FIXME -- this is to test the idea. 
 			try{
-			value = -constraints.project(counts, sentenceDists, null, null);
+				value = -constraints.project(counts, sentenceDists, null, null);
 			} catch (CantNormalizeException e){
 				System.err.println("Warning -- failed to normalize projection of constraints. ");
 				System.err.println(e.getMessage());
@@ -149,6 +159,7 @@ public class HMMDirectGradientObjective extends Objective {
 						Math.sqrt(ArrayMath.twoNormSquared(gradient))
 				));
 				value = Double.POSITIVE_INFINITY;
+				numFailedUpdateValueAndGradient++;
 			}
 		} else {
 			counts.clear();
@@ -193,6 +204,7 @@ public class HMMDirectGradientObjective extends Objective {
 								, model.corpus.getWordStrings(new int[]{obs[state].get(mini)})[0]));
 						value = Double.POSITIVE_INFINITY;
 					}
+					numFailedUpdateValueAndGradient++;
 					break;
 				}
 				stats.endInference(this);
@@ -212,6 +224,7 @@ public class HMMDirectGradientObjective extends Objective {
 		initTrainer.getGradient(gradient, initOffset);
 		transitionTrainer.getGradient(gradient, transitionOffset);
 		observationTrainer.getGradient(gradient, observationOffset);
+		if (!Double.isInfinite(value)) numFailedUpdateValueAndGradient = 0;
 	}
 	
 	boolean myDebug=false;
