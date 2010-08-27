@@ -117,12 +117,21 @@ public class HMMDirectGradientObjective extends Objective {
 	public void updateValueAndGradient(){
 		// set parameters: this.params -> trainer.params; trainer.params -> hmm.params
 		HMMCountTable hmmcounts = (HMMCountTable) counts;
-		initTrainer.setCountsAndParameters(hmmcounts.initialCounts, parameters, initOffset);
-		transitionTrainer.setCountsAndParameters(hmmcounts.transitionCounts, parameters, transitionOffset);
-		observationTrainer.setCountsAndParameters(hmmcounts.observationCounts, parameters, observationOffset);
-		initTrainer.getMultinomialAtCurrentParams(model.initialProbabilities);
-		transitionTrainer.getMultinomialAtCurrentParams(model.transitionProbabilities);
-		observationTrainer.getMultinomialAtCurrentParams(model.observationProbabilities);
+		try {
+			initTrainer.setCountsAndParameters(hmmcounts.initialCounts, parameters, initOffset);
+			transitionTrainer.setCountsAndParameters(hmmcounts.transitionCounts, parameters, transitionOffset);
+			observationTrainer.setCountsAndParameters(hmmcounts.observationCounts, parameters, observationOffset);
+			initTrainer.getMultinomialAtCurrentParams(model.initialProbabilities);
+			transitionTrainer.getMultinomialAtCurrentParams(model.transitionProbabilities);
+			observationTrainer.getMultinomialAtCurrentParams(model.observationProbabilities);
+		} catch (CantNormalizeException e){
+			e.printStackTrace(System.err);
+			value = Double.POSITIVE_INFINITY;
+			for (int i = 0; i < gradient.length; i++) {
+				gradient[i] = 0;
+			}
+			return;
+		}
 
 		// compute the inference-induced counts at the current parameters.
 		if (constraints != null){

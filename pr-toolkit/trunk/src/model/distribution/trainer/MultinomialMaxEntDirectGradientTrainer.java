@@ -5,6 +5,7 @@ import gnu.trove.TIntArrayList;
 
 import java.util.ArrayList;
 
+import model.CantNormalizeException;
 import model.distribution.AbstractMultinomial;
 import model.distribution.trainer.MaxEntClassifier.MaxEntMinimizationObjective;
 import util.SparseVector;
@@ -78,7 +79,7 @@ public class MultinomialMaxEntDirectGradientTrainer implements DirectGradientTra
 			if(sum <= 0 || Double.isInfinite(sum) || Double.isNaN(sum)){
 				System.out.println("Max Entropy normalization failed - sum: " + sum);
 				System.out.println(probs.toString());
-				throw new RuntimeException();
+				throw new CantNormalizeException("Max Entropy normalization failed - sum: "+sum+"  max:"+max,sum);
 			}
 			for(int valueIndex = 0; valueIndex < possibleValues.size(); valueIndex++){
 				int value = possibleValues.getQuick(valueIndex);
