@@ -138,7 +138,7 @@ public class L1LMax implements CorpusConstraints{
 		nrWordTypesToProject=projectionMapping.size();
 	}
 	
-	public double lastObjectiveValue = Double.NaN;	
+	//public double lastObjectiveValue = Double.NaN;	
 	public boolean beVeryVeryQuiet = false;
 	@SuppressWarnings("unchecked")
 	public double project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
@@ -151,8 +151,23 @@ public class L1LMax implements CorpusConstraints{
 		if (pr != null){
 			trainStats.eStepStart(model, pr);
 		}
+		// make sure we're not having probems with NaN or Infinites
+		int numNaN = 0;
+		int numInf = 0;
+		for (int i = 0; i < parameters.length; i++) {
+			if(Double.isNaN(parameters[i])){
+				parameters[i] = 0;
+				numNaN ++;
+			} 
+			if  (Double.isInfinite(parameters[i])){
+				parameters[i] = 0;
+				numInf = 0;
+			}
+		}
+		if (numNaN != 0 || numInf != 0){
+			System.err.println(getClass().getSimpleName()+" had inf/nan in parameters: "+numNaN+" nan and "+numInf+" infinite");
+		}
 		ProjectedObjective objective = new L1LMaxObjective(model,posteriors,numberOfParameters,str,parameters);
-		lastObjectiveValue = objective.getValue();
 		mem.finish();
 		if (!beVeryVeryQuiet){
 			System.out.println("After creating objective:" + mem.print());
@@ -177,14 +192,13 @@ public class L1LMax implements CorpusConstraints{
 		
 
 		boolean succed = optimizer.optimize(objective, stats,stop);
+		
 		mem.finish();
 		if (!beVeryVeryQuiet){
 			System.out.println("After  optimization:" + mem.print());
 			System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 		}
 		
-		
-
 		//System.out.println("Parameters after optimization:\n" + objective.toString());
 		parameters = objective.getParameters();
 		initialStep = optimizer.getCurrentStep();
@@ -226,7 +240,7 @@ public class L1LMax implements CorpusConstraints{
 			trainStats.eStepEnd(model, pr);
 			System.out.print(trainStats.printEndEStep(model,pr));
 		}
-		return lastObjectiveValue;
+		return objective.getValue();
 	}
 	
 	/**
