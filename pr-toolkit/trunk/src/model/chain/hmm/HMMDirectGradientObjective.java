@@ -149,7 +149,7 @@ public class HMMDirectGradientObjective extends Objective {
 			try{
 				value = -constraints.project(counts, sentenceDists, null, null);
 			} catch (CantNormalizeException e){
-				System.err.println("Warning -- failed to normalize projection of constraints. ");
+				System.err.println("Warning -- failed to normalize projection of constraints.  This is the "+numFailedUpdateValueAndGradient+"'th consecutive time we can't update params.");
 				System.err.println(e.getMessage());
 				System.err.println(e.getStackTrace().toString());
 				System.err.println("Assuming this is because parameters are too big/small");
