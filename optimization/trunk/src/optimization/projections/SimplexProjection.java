@@ -23,11 +23,6 @@ public class SimplexProjection extends Projection{
 	 * for learning in high dimensions"
 	 */
 	public void project(double[] original){
-		if(scale == 0){		
-//			System.err.println("Cant project to a simplex of size 0");
-			java.util.Arrays.fill(original, 0);
-			return;
-		}
 		double[] ds = new double[original.length];
 		System.arraycopy(original, 0, ds, 0, ds.length);
 		//If sum is smaller then zero then its ok
@@ -44,6 +39,7 @@ public class SimplexProjection extends Projection{
 		double previousTheta = 0;
 		double theta = 0;
 		for (int i = 0; i < ds.length; i++) {
+			previousTheta = ds[i];
 			currentSum+=ds[i];
 			theta = (currentSum-scale)/(i+1);
 			if(ds[i]-theta <= 0){
