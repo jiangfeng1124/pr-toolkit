@@ -28,7 +28,7 @@ public class SimplexProjection extends Projection{
 		//If sum is smaller then zero then its ok
 		for (int i = 0; i < ds.length; i++) ds[i] = ds[i]>0? ds[i]:0;
 		double sum = ArrayMath.sum(ds);
-		if (scale - sum >=  -1.E-10 ){
+		if (scale - sum >= 0){// -1.E-10 ){
 			System.arraycopy(ds, 0, original, 0, ds.length);
 			//System.out.println("Not projecting");
 			return;
@@ -36,13 +36,12 @@ public class SimplexProjection extends Projection{
 		//System.out.println("projecting " + sum + " scontraints " + scale);	
 		util.Array.sortDescending(ds);
 		double currentSum = 0;
-		double previousTheta = 0;
+		double previousTheta = ds[0];
 		double theta = 0;
 		for (int i = 0; i < ds.length; i++) {
-			previousTheta = ds[i];
 			currentSum+=ds[i];
 			theta = (currentSum-scale)/(i+1);
-			if(ds[i]-theta <= 0){
+			if(ds[i] <= theta){
 				break;
 			}
 			previousTheta = theta;
