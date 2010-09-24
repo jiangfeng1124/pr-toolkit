@@ -32,9 +32,8 @@ public class DepCorpus extends Corpus {
 		this.tagAlphabet = new CountAlphabet<String>();	
 	}
 	
-	public void stopGrowingAlphabets(){
-		super.stopGrowingAlphabets();
-		this.tagAlphabet.stopGrowth();
+	public void freezeAlphabetsCounts(){
+		super.freezeAlphabetsCounts();
 		this.tagAlphabet.setStopCounts(true);
 	}
 

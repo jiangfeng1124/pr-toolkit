@@ -117,7 +117,10 @@ public class DepModel extends AbstractModel {
 	@Override
 	public void updateParameters(AbstractCountTable counts) {
 		params.fill(counts);
-		params.addChildBackoff(childBackoff);
+		
+		if(childBackoff > 0)
+			params.addChildBackoff(childBackoff);
+		
 		if(updateType == UpdateType.TABLE_UP) {
 			params.logNormalize();
 		} else if(updateType == UpdateType.VB) {

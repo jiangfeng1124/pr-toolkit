@@ -12,18 +12,34 @@
     <target name="init">
         <tstamp/>
 	<mkdir dir="${build}"/>
+
+	<path id="build.classpath">
+	  <pathelement location="${CLASSPATH}"/>
+	  <fileset dir="lib">
+            <include name="*.jar"/>
+	  </fileset>
+	</path>
     </target>
 
     <target name="all" depends="compile"/>
 
     <target name="jar" depends="compile">
         <mkdir dir="${dist}"/>
+
+	<manifestclasspath property="lib.list"  jarfile="${dist}/dep-parsing-0.1.jar">
+	  <classpath refid="build.classpath"/>
+	</manifestclasspath>
+
         <jar destfile="${dist}/dep-parsing-0.1.jar" >
             <fileset dir="${build}" />
             <fileset dir="${src}"/>
+	    <manifest>
+              <attribute name="Main-Class" value="depparsing.programs.RunModel"/>
+              <attribute name="Class-Path" value="${lib.list}"/>
+            </manifest>
         </jar>
     </target>
-
+      
     <!-- Compile the java code from ${src} into ${build} -->
     <target name="compile" depends="init" description="compile the source" >
         <javac srcdir="${src}" destdir="${build}" debug="true">

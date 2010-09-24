@@ -206,8 +206,6 @@ public abstract class L1LMax implements CorpusConstraints {
 		L1LMaxObjective objective = new L1LMaxObjective(lambda, this, posteriors);
 		// objective.doTestGradient = true;
 		GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1);
-		// FIXME: I pulled the max step size of 1000 out of my ass.  Does anyone know what this 
-		// shoul be?  Joao -- you 
 		LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2, 1000);
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(linesearch);
 		optimizer.setMaxIterations(maxProjectionIterations);

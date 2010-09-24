@@ -282,7 +282,6 @@ public class L1LMaxObjective extends ProjectedObjective {
 			double[] ds = new double[parent.edge2scp[edgeType].length];
 			assert parent.param2scp[index+ds.length-1] == parent.edge2scp[edgeType][ds.length-1];
 			System.arraycopy(lambda, index, ds, 0, ds.length);
-			ArrayMath.sumPart(lambda, index, index+ds.length);
 			assert(ArrayMath.sumPart(lambda, index, index+ds.length) == ArrayMath.sum(ds));
 			double theta = doSimplexProjection(ds, parent.getConstraintStrength(edgeType));
 			for (int i = 0; i < ds.length; i++) {
