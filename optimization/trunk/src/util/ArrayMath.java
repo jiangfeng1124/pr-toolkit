@@ -237,7 +237,10 @@ public class ArrayMath {
 	
 	public static double sum(double[] array) {
 		double res = 0;
-		for (int i = 0; i < array.length; i++) res += array[i];
+		for (int i = 0; i < array.length; i++) {
+			res += array[i];
+		}
+		
 		return res;
 	}
 
@@ -261,7 +264,10 @@ public class ArrayMath {
 
 	public static int sum(int[] array) {
 		int res = 0;
-		for (int i = 0; i < array.length; i++) res += array[i];
+		for (int i = 0; i < array.length; i++) {
+			res += array[i];
+		}
+		
 		return res;
 	}
 	
@@ -303,8 +309,11 @@ public class ArrayMath {
 		 * @return
 		 */
 		public static double sumPart(double[] array, int start, int end) {
-			int res = 0;
-			for (int i = start; i < end; i++) res += array[i];
+			double res = 0;
+			for (int i = start; i < end; i++) {
+				res += array[i];
+			}
+			
 			return res;
 		}
 			 
