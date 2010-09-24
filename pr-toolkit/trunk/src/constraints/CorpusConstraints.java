@@ -9,7 +9,6 @@ import model.AbstractSentenceDist;
 
 public interface CorpusConstraints {
 
-	// FIXME -- changed the result to double to test the idea. 
 	/**
 	 * Receives the posterios to projects and the counts table.
 	 * It is required to return the updated count table this way
@@ -19,6 +18,6 @@ public interface CorpusConstraints {
 	 * @param counts
 	 * @param posteriors
 	 */
-	double project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats stats, CorpusPR pr);
+	void project(AbstractCountTable counts, AbstractSentenceDist[] posteriors, TrainStats stats, CorpusPR pr);
 
 }

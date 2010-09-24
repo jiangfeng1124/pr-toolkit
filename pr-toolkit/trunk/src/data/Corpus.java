@@ -194,7 +194,7 @@ public  class Corpus {
 				readerType,lowerCase, minSentenceLenght,
 				maxSentenceLenght,maxNrSentences,fullVocab,this.unknownWordsTresh);
 		if(!transductive) {
-			stopGrowingAlphabets();
+			freezeAlphabetsCounts();
 		}
 		
 		//Dev and test include all possible sizes
@@ -216,7 +216,7 @@ public  class Corpus {
 		}
 		
 		// Stop growing alphabets
-		stopGrowingAlphabets();
+		freezeAlphabetsCounts();
 		
 		if(transductive){
 			System.out.println("Transductive setting add dev and test");
@@ -417,14 +417,10 @@ public  class Corpus {
 		}
 	}
 	
-	
-	
-	
-	
-	public void stopGrowingAlphabets(){
-		// this.wordAlphabet.stopGrowth();
+	public void freezeAlphabetsCounts() {
 		this.wordAlphabet.setStopCounts(true);
 	}
+	
 	public void printCorpusStats(){
 		System.out.println("Corpus name: " + this.getName());
 		System.out.println("Min Sentence Lenght: " + this.minSentenceLenght);

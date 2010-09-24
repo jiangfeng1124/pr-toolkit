@@ -5,8 +5,6 @@ import gnu.trove.TIntProcedure;
 
 import java.util.Random;
 
-import com.sun.tools.javac.comp.TransTypes;
-
 import constraints.CorpusConstraints;
 
 import model.AbstractCountTable;
@@ -146,21 +144,21 @@ public class HMMDirectGradientObjective extends Objective {
 		// compute the inference-induced counts at the current parameters.
 		if (constraints != null){
 			// FIXME -- this is to test the idea. 
-			try{
-				value = -constraints.project(counts, sentenceDists, null, null);
-			} catch (CantNormalizeException e){
-				System.err.println("Warning -- failed to normalize projection of constraints.  This is the "+numFailedUpdateValueAndGradient+"'th consecutive time we can't update params.");
-				System.err.println(e.getMessage());
-				System.err.println(e.getStackTrace().toString());
-				System.err.println("Assuming this is because parameters are too big/small");
-				System.err.println(String.format("max param = %.2f min param = %.2f; max grad = %.2f, min grad = %.2f, grad norm = %.2f",
-						MathUtil.max(parameters), MathUtil.min(parameters),
-						MathUtil.max(gradient), MathUtil.min(gradient),
-						Math.sqrt(ArrayMath.twoNormSquared(gradient))
-				));
+			//try{
+				//value = -constraints.project(counts, sentenceDists, null, null);
+			//} catch (CantNormalizeException e){
+				//System.err.println("Warning -- failed to normalize projection of constraints.  This is the "+numFailedUpdateValueAndGradient+"'th consecutive time we can't update params.");
+				//System.err.println(e.getMessage());
+				//System.err.println(e.getStackTrace().toString());
+				//System.err.println("Assuming this is because parameters are too big/small");
+				//System.err.println(String.format("max param = %.2f min param = %.2f; max grad = %.2f, min grad = %.2f, grad norm = %.2f",
+				//		MathUtil.max(parameters), MathUtil.min(parameters),
+				//		MathUtil.max(gradient), MathUtil.min(gradient),
+				//		Math.sqrt(ArrayMath.twoNormSquared(gradient))
+				//));
 				value = Double.POSITIVE_INFINITY;
 				numFailedUpdateValueAndGradient++;
-			}
+			//}
 		} else {
 			counts.clear();
 			value = 0;
