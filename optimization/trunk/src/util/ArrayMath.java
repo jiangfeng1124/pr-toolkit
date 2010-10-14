@@ -310,10 +310,9 @@ public class ArrayMath {
 		 */
 		public static double sumPart(double[] array, int start, int end) {
 			double res = 0;
-			for (int i = start; i < end; i++) {
+			for (int i = start; i < end; i++){
 				res += array[i];
 			}
-			
 			return res;
 		}
 			 

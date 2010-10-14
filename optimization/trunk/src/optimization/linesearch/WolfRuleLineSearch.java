@@ -5,6 +5,13 @@ import java.util.ArrayList;
 
 import optimization.util.Interpolation;
 
+/**
+ * Nocedal gives example values 
+  of c1 = 10-4 and c2 = 0.9 
+ * for Newton or quasi-Newton methods 
+ * and c2 = 0.1 for the
+ * nonlinear conjugate gradient method. 
+ */
 
 
 
@@ -24,15 +31,16 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	double maxStep;
 	
 	int extrapolationIteration;
-	int maxExtrapolationIteration = 1000;
+	int maxExtrapolationIteration = 10;
 	
 	
-	double minZoomDiffTresh = 10E-10;
+	double minZoomDiffTresh = 10E-8;
 
 	
 	ArrayList<Double> steps;
 	ArrayList<Double> gradientDots;
 	ArrayList<Double> functionVals;
+	ArrayList<Boolean> inZoom;
 	
 	int debugLevel = 0;
 	boolean foudStep = false;
@@ -75,6 +83,8 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 			gradientDots.clear();
 		if(functionVals != null)
 			functionVals.clear();
+		if(inZoom != null)
+			inZoom.clear();
 	}
 	
 	public void setInitialStep(double initial){
@@ -100,6 +110,7 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 			steps = new ArrayList<Double>();
 			gradientDots = new ArrayList<Double>();
 			functionVals  =new ArrayList<Double>();
+			inZoom = new ArrayList<Boolean>();
 		}
 		
 		//test
@@ -118,6 +129,7 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 				steps.add(currentStep);
 				functionVals.add(currentValue);
 				gradientDots.add(objective.getCurrentGradient());
+				inZoom.add(false);
 			}
 			
 			
@@ -168,13 +180,11 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 		if(!foudStep){
 			System.out.println("Wolfe Rule exceed number of iterations");
 			if(debugLevel >= 1){
-				printSmallWolfeStats(System.out);
-//				System.out.println("Line search values");
-//				DebugHelpers.getLineSearchGraph(o,  direction, originalParameters,origValue, origGradDirectionDot,c1,c2);			
+				printSmallWolfeStats(System.out);		
 			}
 			return -1;
 		}
-		if(debugLevel >= 1){
+		if(debugLevel >= 2){
 			printSmallWolfeStats(System.out);
 		}
 
@@ -196,7 +206,7 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	
 	public void printSmallWolfeStats(PrintStream out){
 		for(int i = 0; i < steps.size(); i++){		
-			out.print(steps.get(i) + ":"+functionVals.get(i)+":"+gradientDots.get(i)+" ");
+			out.print(inZoom.get(i) + ":"+ steps.get(i) + ":"+functionVals.get(i)+":"+gradientDots.get(i)+" ");
 		}
 		System.out.println();
 	}
@@ -214,57 +224,71 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 	 * satisfying both conditions exists in such interval.
 	 * 
 	 * LowerStep always satisfies at least the sufficient decrease
+	 * 
+	 * Step can never leave the interval lowerStep higherStep 
 	 * @return
 	 */
 	public double zoom(DifferentiableLineSearchObjective o, double lowerStep, double higherStep,
 			int lowerStepIter, int higherStepIter){
 		
-		
-		if(debugLevel >=2){
+		if(debugLevel >=1){
 			System.out.println("Entering zoom with " + lowerStep+"-"+higherStep);
 		}
-		
 		//Case the limits are the same
 		if(Math.abs(lowerStep - higherStep) < 1E-10){
 			foudStep = true;
 			return lowerStep; 
 		}
-		
-		
-		double currentStep=-1;
-		
+		double currentStep=-1;	
 		int zoomIter = 0;
-		while(zoomIter < 1000){		
+		while(zoomIter < 30){	
+			//If difference between steps is too small leave and return the smaller step which satisfies 
+			// the decrease condition
 			if(Math.abs(lowerStep-higherStep) < minZoomDiffTresh){
 				o.updateAlpha(lowerStep);
 				if(debugLevel >= 1){
 					steps.add(lowerStep);
 					functionVals.add(o.getCurrentValue());
 					gradientDots.add(o.getCurrentGradient());
+					inZoom.add(true);
 				}
 				foudStep = true;
 				return lowerStep;
 			}	
 	
-			//Cubic interpolation
-			currentStep = 
-				Interpolation.cubicInterpolation(lowerStep, o.getValue(lowerStepIter), o.getGradient(lowerStepIter), 
-						higherStep, o.getValue(higherStepIter), o.getGradient(higherStepIter));
 			
-			//Safeguard.... should not be required check in what condtions it is required
-			if(currentStep < 0 ){
-				currentStep = (lowerStep+higherStep)/2;
-			}
-			if(Double.isNaN(currentStep) || Double.isInfinite(currentStep)){
-				currentStep = (lowerStep+higherStep)/2;
-			}
-//			currentStep = (lowerStep+higherStep)/2;
+			
+			
+			//FIXME ITERPOLATION IS NOT WORKING. SHOULD LOOK AT WHAT VALUES ARE IN O AND IF CODE IS WELL MADE
+			// FOR NOW I AM REMOVING IT
+			//Try to find a step using cubic interpolation
+//			currentStep = 
+//				Interpolation.cubicInterpolation(lowerStep, o.getValue(lowerStepIter), o.getGradient(lowerStepIter), 
+//						higherStep, o.getValue(higherStepIter), o.getGradient(higherStepIter));
+//			
+//			
+//			if(currentStep > higherStep || currentStep < lowerStep){
+//				System.err.println("Cubic Interpolation return a step outside boundaries");
+//				System.err.println("ls " + lowerStep + " cs " + currentStep + " hs " + higherStep);
+//			}
+//			
+//			//Safeguard..Test if step is very close to boundary or small 
+//			if(Math.abs(lowerStep - currentStep) < minZoomDiffTresh || Math.abs(higherStep - currentStep) < minZoomDiffTresh || currentStep < 0){
+//				currentStep = (lowerStep+higherStep)/2;
+//			}
+//			
+//			
+//			if(Double.isNaN(currentStep) || Double.isInfinite(currentStep)){
+//				currentStep = (lowerStep+higherStep)/2;
+//			}
+			currentStep = (lowerStep+higherStep)/2;
 //			System.out.println("Trying "+currentStep);
 			o.updateAlpha(currentStep);
 			if(debugLevel >=1){
 				steps.add(currentStep);
 				functionVals.add(o.getCurrentValue());
 				gradientDots.add(o.getCurrentGradient());
+				inZoom.add(true);
 			}
 			if(!WolfeConditions.suficientDecrease(o,c1)
 					|| o.getCurrentValue() >= o.getValue(lowerStepIter)){
@@ -288,6 +312,11 @@ public class WolfRuleLineSearch implements LineSearchMethod{
 				lowerStep = currentStep;
 				lowerStepIter = o.nrIterations;
 			}
+			
+			if(debugLevel >= 1){
+				System.out.println("New Lower: " + lowerStep + " new Higher: " + higherStep);
+			}
+			
 			zoomIter++;
 		}
 		return currentStep;

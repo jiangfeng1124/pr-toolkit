@@ -1,5 +1,8 @@
 package optimization.linesearch;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 import gnu.trove.TDoubleArrayList;
 import optimization.gradientBasedMethods.Objective;
 import util.ArrayMath;
@@ -159,11 +162,13 @@ public class DifferentiableLineSearchObjective {
 		}
 	}
 	
-	public void printSmallLineSearchSteps(){
+	
+	
+	public void printSmallLineSearchSteps(PrintStream out){
 		for(int i =0; i < steps.size();i++){
-			System.out.print(Printing.prettyPrint(steps.get(i), "0.0000E00",8) + " ");
+			out.print(Printing.prettyPrint(steps.get(i), "0.0000E00",8) + " ");
 		}
-		System.out.println();
+		out.println();
 	}
 	
 	public static void main(String[] args) {

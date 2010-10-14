@@ -8,7 +8,10 @@ import optimization.gradientBasedMethods.Objective;
 import optimization.gradientBasedMethods.Optimizer;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.linesearch.ArmijoLineSearchMinimization;
+import optimization.linesearch.GenericPickFirstStep;
+import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.LineSearchMethod;
+import optimization.linesearch.WolfRuleLineSearch;
 import optimization.stopCriteria.GradientL2Norm;
 import optimization.stopCriteria.StopingCriteria;
 import util.ArrayMath;
@@ -60,11 +63,6 @@ public class GeneralizedRosenbrock extends Objective{
 	}
 
 	
-
-	
-
-	
-	
 	public String toString(){
 		String  res ="";
 		for(int i = 0; i < parameters.length; i++){
@@ -74,37 +72,73 @@ public class GeneralizedRosenbrock extends Objective{
 		return res;
 	}
 	
-	public static void main(String[] args) {
-		
-		GeneralizedRosenbrock o = new GeneralizedRosenbrock(2);
+	public static void doGradientDescent(int dimensions, int maxIter){
+		GeneralizedRosenbrock o = new GeneralizedRosenbrock(dimensions);
 		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
-		;
-
 		System.out.println("Doing Gradient descent");
-		//LineSearchMethod wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.1);
+		LineSearchMethod ls = new WolfRuleLineSearch(new GenericPickFirstStep(1),100,0.001,0.1);
 		StopingCriteria stop = new GradientL2Norm(0.001);		
-		LineSearchMethod ls = new ArmijoLineSearchMinimization();
+//		LineSearchMethod ls = new ArmijoLineSearchMinimization();
 		Optimizer optimizer = new GradientDescent(ls);		
 		OptimizerStats stats = new OptimizerStats();
-		optimizer.setMaxIterations(1000);
+		optimizer.setMaxIterations(maxIter);
+		ls.setDebugLevel(2);
 		boolean succed = optimizer.optimize(o,stats, stop);
-		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
-		System.out.println("Doing Conjugate Gradient descent");
-		o = new GeneralizedRosenbrock(2);
-	//	wolfe = new WolfRuleLineSearch(new InterpolationPickFirstStep(1),100,0.001,0.1);
-		optimizer = new ConjugateGradient(ls);
-		stats = new OptimizerStats();
-		optimizer.setMaxIterations(1000);
-		succed = optimizer.optimize(o,stats,stop);
-		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
-		System.out.println("Doing Quasi newton descent");
-		o = new GeneralizedRosenbrock(2);
-		optimizer = new LBFGS(ls,10);
-		stats = new OptimizerStats();
-		optimizer.setMaxIterations(1000);
-		succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
 
 	}
+
+	public static void doConjugateGradientDescent(int dimensions, int maxIter){
+		GeneralizedRosenbrock o = new GeneralizedRosenbrock(dimensions);
+		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
+		System.out.println("Doing Gradient descent");
+		LineSearchMethod ls = new WolfRuleLineSearch(new GenericPickFirstStep(1),100,0.001,0.1);
+		StopingCriteria stop = new GradientL2Norm(0.001);		
+		Optimizer optimizer = new ConjugateGradient(ls);		
+		OptimizerStats stats = new OptimizerStats();
+		optimizer.setMaxIterations(maxIter);
+		boolean succed = optimizer.optimize(o,stats, stop);
+		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
+
+	}
+
+	
+	public static void doLBFGSDescent(int dimensions, int maxIter){
+		GeneralizedRosenbrock o = new GeneralizedRosenbrock(dimensions);
+		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
+		System.out.println("Doing Gradient descent");
+		LineSearchMethod ls = new WolfRuleLineSearch(new GenericPickFirstStep(1),100,0.001,0.1);
+		StopingCriteria stop = new GradientL2Norm(0.001);		
+		Optimizer optimizer = new LBFGS(ls,10);		
+		OptimizerStats stats = new OptimizerStats();
+		optimizer.setMaxIterations(maxIter);
+		boolean succed = optimizer.optimize(o,stats, stop);
+		System.out.println("Suceess " + succed + "/n"+stats.prettyPrint(1));
+	}
+	
+	public static Objective createObjective(int dimensions){
+		GeneralizedRosenbrock o = new GeneralizedRosenbrock(dimensions);
+		o.setDebugLevel(4);
+		return o;
+	}
+	
+	public static void main(String[] args) {
+		double precision = 1.E-5;
+		int dimensions = 10;
+		int maxIter = 1000;
+		Objective o = createObjective(dimensions);
+		LineSearchMethod wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(100),0.00001,0.9,100);
+//		wolfe.setDebugLevel(2);
+//		LineSearchMethod ls = new ArmijoLineSearchMinimization();
+		OptimizerStats stats = new OptimizerStats();
+		x2y2.optimizeWithGradientDescent(wolfe, stats, o,precision,maxIter);
+		o = createObjective(dimensions);
+		wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(100),0.00001,0.1,100);
+		x2y2.optimizeWithConjugateGradient(wolfe, stats, o, precision,maxIter);
+		o = createObjective(dimensions);
+		wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(1),0.00001,0.9,100);
+		x2y2.optimizeWithLBFGS(wolfe, stats, o, precision, maxIter);
+	}
+	
 	
 }

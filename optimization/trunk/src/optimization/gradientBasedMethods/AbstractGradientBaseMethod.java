@@ -51,6 +51,12 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 	public void updateStructuresAfterStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 	}
 	
+	public void updateStructuresBeginIteration(Objective o){
+		previousValue = currValue;
+		currValue = o.getValue();
+		gradient = o.getGradient();
+	}
+	
 	public boolean optimize(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
 		//Initialize structures
 			
@@ -58,39 +64,38 @@ public abstract class AbstractGradientBaseMethod implements Optimizer{
 		direction = new double[o.getNumParameters()];
 		initializeStructures(o, stats, stop);
 		for (currentProjectionIteration = 0; currentProjectionIteration < maxNumberOfIterations; currentProjectionIteration++){		
-//			System.out.println("starting iterations: parameters:" );
-//			o.printParameters();
-			previousValue = currValue;
-			currValue = o.getValue();
-			gradient = o.getGradient();
+			if(o.debugLevel > 3){
+				System.err.println("Iter: " + currentProjectionIteration + " : " + o.toString());
+			}
+			updateStructuresBeginIteration(o);
 			if(stop.stopOptimization(o)){
 				stats.collectFinalStats(this, o,true);
 				return true;
 			}	
-			
 			getDirection();
 			if(ArrayMath.dotProduct(gradient, direction) > 0){
 				throw new NotADescentDirectionException("Not a descent direction current stats\n" + stats.prettyPrint(1));
 			}
 			updateStructuresBeforeStep(o, stats, stop);
-			lso.reset(direction);
-			step = lineSearch.getStepSize(lso);
-//			System.out.println("Leave with step: " + step);
+			step = getStepSize(stats);
 			if(step==-1){
-				System.out.println("Failed to find step");
+				System.err.println("Failed to find step");
+				lso.printSmallLineSearchSteps(System.err);
 				stats.collectFinalStats(this, o,false);
 				return false;		
 			}
 			updateStructuresAfterStep( o, stats,  stop);
-//			previousValue = currValue;
-//			currValue = o.getValue();
-//			gradient = o.getGradient();
-			stats.collectIterationStats(this, o);
+			stats.collectIterationStats(this, o); 
 		}
 		stats.collectFinalStats(this, o,false);
 		return false;
 	}
 	
+	public double getStepSize(AbstractOptimizerStats stats){
+		lso.reset(direction);
+		double step = lineSearch.getStepSize(lso);
+		return step;
+	}
 	
 	public int getCurrentIteration() {
 		return currentProjectionIteration;

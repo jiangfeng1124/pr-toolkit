@@ -28,27 +28,31 @@ public class ConjugateGradient extends AbstractGradientBaseMethod{
 		previousGradient = new double[o.getNumParameters()];
 		previousDirection = new double[o.getNumParameters()];
 	}
-	@Override
-	public void updateStructuresBeforeStep(Objective o,AbstractOptimizerStats stats, StopingCriteria stop){
-		System.arraycopy(gradient, 0, previousGradient, 0, gradient.length);
-		System.arraycopy(direction, 0, previousDirection, 0, direction.length);	
-	}
 
+	@Override
+	public void updateStructuresBeginIteration(Objective o){
+		super.updateStructuresBeginIteration(o);
+		//Update previous gradient and direction
+		System.arraycopy(gradient, 0, previousGradient, 0, gradient.length);
+		System.arraycopy(direction, 0, previousDirection, 0, direction.length);
+	}
+	
 	@Override
 	public double[] getDirection(){
 		direction = ArrayMath.negation(gradient);
-		if(currentProjectionIteration != 1){
+		if(currentProjectionIteration != 0){
+			
 			//Using Polak-Ribiere method (book equation 5.45)
 			double b = ArrayMath.dotProduct(gradient, ArrayMath.arrayMinus(gradient, previousGradient))
 			/ArrayMath.dotProduct(previousGradient, previousGradient);
-			if(b<0){
-				System.out.println("Defaulting to gradient descent");
-				b = Math.max(b, 0);
-			}
+			
+			b = Math.max(b, 0);
+			
+			
 			ArrayMath.plusEquals(direction, previousDirection, b);
 			//Debug code
 			if(ArrayMath.dotProduct(direction, gradient) > 0){
-				System.out.println("Not an descent direction reseting to gradien");
+				System.err.println("ConjugateGradient::Not a descent direction setting direction to gradient");
 				direction = ArrayMath.negation(gradient);
 			}
 		}

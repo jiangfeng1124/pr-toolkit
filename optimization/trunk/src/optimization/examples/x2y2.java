@@ -55,14 +55,17 @@ public class x2y2 extends Objective{
 
 	
 	
-	public void optimizeWithGradientDescent(LineSearchMethod ls, OptimizerStats stats, x2y2 o){
+	
+	public static void optimizeWithGradientDescent(LineSearchMethod ls, OptimizerStats stats,
+			Objective o, double precision, int maxIterations){
+		stats.reset();
 		GradientDescent optimizer = new GradientDescent(ls);
-		StopingCriteria stop = new GradientL2Norm(0.001);
+		StopingCriteria stop = new GradientL2Norm(precision);
 //		optimizer.setGradientConvergenceValue(0.001);
-		optimizer.setMaxIterations(100);
+		optimizer.setMaxIterations(maxIterations);
 		boolean succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Ended optimzation Gradient Descent\n" + stats.prettyPrint(1));
-		System.out.println("Solution: " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
+		System.out.println("Solution: " + o.toString());
 		if(succed){
 			System.out.println("Ended optimization in " + optimizer.getCurrentIteration());
 		}else{
@@ -70,14 +73,16 @@ public class x2y2 extends Objective{
 		}
 	}
 	
-	public void optimizeWithConjugateGradient(LineSearchMethod ls, OptimizerStats stats, x2y2 o){
+	public static void optimizeWithConjugateGradient(LineSearchMethod ls, OptimizerStats stats, 
+			Objective o, double precision, int maxIterations){
+		stats.reset();
 		ConjugateGradient optimizer = new ConjugateGradient(ls);
-		StopingCriteria stop = new GradientL2Norm(0.001);
+		StopingCriteria stop = new GradientL2Norm(precision);
 
-		optimizer.setMaxIterations(10);
+		optimizer.setMaxIterations(maxIterations);
 		boolean succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Ended optimzation Conjugate Gradient\n" + stats.prettyPrint(1));
-		System.out.println("Solution: " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
+		System.out.println("Solution: " + o.toString());
 		if(succed){
 			System.out.println("Ended optimization in " + optimizer.getCurrentIteration());
 		}else{
@@ -85,38 +90,45 @@ public class x2y2 extends Objective{
 		}
 	}
 	
-	public void optimizeWithLBFGS(LineSearchMethod ls, OptimizerStats stats, x2y2 o){
+	public static void optimizeWithLBFGS(LineSearchMethod ls, OptimizerStats stats,
+			Objective o, double precision, int maxIterations){
+		stats.reset();
 		LBFGS optimizer = new LBFGS(ls,10);
-		StopingCriteria stop = new GradientL2Norm(0.001);
-		optimizer.setMaxIterations(10);
+		StopingCriteria stop = new GradientL2Norm(precision);
+		optimizer.setMaxIterations(maxIterations);
 		boolean succed = optimizer.optimize(o,stats,stop);
 		System.out.println("Ended optimzation LBFGS\n" + stats.prettyPrint(1));
-		System.out.println("Solution: " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
+		System.out.println("Solution: " + o.toString());
 		if(succed){
 			System.out.println("Ended optimization in " + optimizer.getCurrentIteration());
 		}else{
 			System.out.println("Failed to optimize");
 		}
 	}
+	public static Objective createObjective(){
+		x2y2 o = new x2y2(1,10);
+		o.setDebugLevel(4);
+		System.out.println("Created objective: " + o.toString());
+		
+		return o;
+	}
+
 	
 	public static void main(String[] args) {
-		x2y2 o = new x2y2(1,10);
-		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
-		o.setDebugLevel(4);
-		LineSearchMethod wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(1),0.001,0.9,100);;
+		double precision = 1.E-5;
+		int maxIter = 100;
+		Objective o = createObjective();
+		LineSearchMethod wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(100),0.00001,0.9,100);
+		wolfe.setDebugLevel(2);
 //		LineSearchMethod ls = new ArmijoLineSearchMinimization();
 		OptimizerStats stats = new OptimizerStats();
-		o.optimizeWithGradientDescent(wolfe, stats, o);
-		o = new x2y2(1,10);
-		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
-//		ls = new ArmijoLineSearchMinimization();
-		stats = new OptimizerStats();
-		o.optimizeWithConjugateGradient(wolfe, stats, o);
-		o = new x2y2(1,10);
-		System.out.println("Starting optimization " + " x0 " + o.parameters[0]+ " x1 " + o.parameters[1]);
-//		ls = new ArmijoLineSearchMinimization();
-		stats = new OptimizerStats();
-		o.optimizeWithLBFGS(wolfe, stats, o);	
+		optimizeWithGradientDescent(wolfe, stats, o,precision,maxIter);
+		o = createObjective();
+		wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(100),0.00001,0.1,100);
+		optimizeWithConjugateGradient(wolfe, stats, o, precision,maxIter);
+		o = createObjective();
+		wolfe = new WolfRuleLineSearch(new GenericPickFirstStep(1),0.00001,0.9,100);
+		optimizeWithLBFGS(wolfe, stats, o, precision, maxIter);
 	}
 	
 	public String toString(){

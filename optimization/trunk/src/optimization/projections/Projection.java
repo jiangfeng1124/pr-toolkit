@@ -1,6 +1,7 @@
 package optimization.projections;
 
 import util.ArrayMath;
+import util.ArrayPrinting;
 
 
 
@@ -38,24 +39,29 @@ public abstract class Projection {
 			double dotProd = ArrayMath.dotProduct(original1, x);
 			
 		//	System.out.println("dot " + dotProd);
-			if(dotProd > 0) return false;
+			if(dotProd > 0) {
+				System.out.println("Dot Product = " + dotProd);
+				System.out.println();
+				return false;
+			}
 		}
-		
-		//Perturbs the point a bit in all possible directions
-		for(int i = 0; i < original.length; i++){
-			double[] x = perturbePoint(projected,i);
-		//	System.out.println(Printing.doubleArrayToString(x, null, "perturbed"));
-			//If the same this returns zero so we are there.	
-			ArrayMath.minusEquals(x, projected, 1);
-		//	System.out.println(Printing.doubleArrayToString(x, null, "minus2"));
-			double dotProd = ArrayMath.dotProduct(original1, x);
-			
-		//	System.out.println("dot " + dotProd);
-			if(dotProd > 0) return false;
-		}
-		
-		
-		
+//		System.out.println(ArrayPrinting.doubleArrayToString(projected, null, "Projected before start perutbations"));
+//		//Perturbs the point a bit in all possible directions
+//		for(int i = 0; i < original.length; i++){
+//			double[] x = perturbePoint(projected,i);
+//		//	System.out.println(Printing.doubleArrayToString(x, null, "perturbed"));
+//			//If the same this returns zero so we are there.	
+//			ArrayMath.minusEquals(x, projected, 1);
+//		//	System.out.println(Printing.doubleArrayToString(x, null, "minus2"));
+//			double dotProd = ArrayMath.dotProduct(original1, x);
+//			
+//		//	System.out.println("dot " + dotProd);
+//			if(dotProd > 0) {
+//				System.out.println(ArrayPrinting.doubleArrayToString(x, null, "perturbed x for dim " + i));
+//				System.out.println("Dot Product for dimension i " + i + " = " + dotProd);
+//				return false;
+//			}
+//		}		
 		return true;
 	}
 

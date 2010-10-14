@@ -14,6 +14,7 @@ public abstract  class Objective {
 	protected int gradientCalls = 0;
 	protected int updateCalls = 0;
 	
+	
 	protected double[] parameters;
 	
 	//Contains a cache with the gradient

@@ -52,6 +52,9 @@ public class ArmijoLineSearchMinimizationAlongProjectionArc implements LineSearc
 	
 	GenericPickFirstStep strategy;
 	
+	public void setDebugLevel(int level){
+	}
+	
 	
 	public void reset(){
 		previousStepPicked = -1;;
@@ -115,7 +118,7 @@ public class ArmijoLineSearchMinimizationAlongProjectionArc implements LineSearc
 //		System.out.println("original value "+o.getOriginalValue());
 //		System.out.println("sufficient decrease" +c1*o.getCurrentGradient());
 //		System.out.println("Leavning line search used:");
-		o.printSmallLineSearchSteps();	
+		o.printSmallLineSearchSteps(System.err);	
 		
 		previousStepPicked = o.getAlpha();
 		return o.getAlpha();

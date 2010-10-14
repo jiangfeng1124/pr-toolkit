@@ -1,6 +1,5 @@
 package optimization.examples;
 
-
 import optimization.gradientBasedMethods.ProjectedGradientDescent;
 import optimization.gradientBasedMethods.ProjectedObjective;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
@@ -12,7 +11,7 @@ import optimization.projections.SimplexProjection;
 import optimization.stopCriteria.CompositeStopingCriteria;
 import optimization.stopCriteria.ProjectedGradientL2Norm;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.stopCriteria.ValueDifference;
+//import optimization.stopCriteria.ValueDifference;
 
 
 /**
@@ -72,10 +71,10 @@ public class x2y2WithConstraints extends ProjectedObjective{
 	public void optimizeWithProjectedGradientDescent(LineSearchMethod ls, OptimizerStats stats, x2y2WithConstraints o){
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(ls);
 		StopingCriteria stopGrad = new ProjectedGradientL2Norm(0.001);
-		StopingCriteria stopValue = new ValueDifference(0.001);
+//		StopingCriteria stopValue = new ValueDifference(0.001);
 		CompositeStopingCriteria compositeStop = new CompositeStopingCriteria();
 		compositeStop.add(stopGrad);
-		compositeStop.add(stopValue);
+//		compositeStop.add(stopValue);
 		
 		optimizer.setMaxIterations(5);
 		boolean succed = optimizer.optimize(o,stats,compositeStop);

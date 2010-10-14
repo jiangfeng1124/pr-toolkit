@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<project name="pr-parsing" default="all" basedir=".">
+<project name="optimization" default="all" basedir=".">
     <description>
 	build all packages
     </description>
@@ -29,9 +29,7 @@
         <javac srcdir="${src}" destdir="${build}" debug="true">
             <classpath>
 	    <pathelement location="${CLASSPATH}"/>
-	    <pathelement location="lib/trove-2.0.2.jar"/> 
-	    <pathelement location="lib/args4j-2.0.10.jar"/>
-	    <pathelement location="lib/commons-math-2.0.jar"/> 
+            <pathelement location="lib/trove-2.0.2.jar"/>
 	    </classpath>
 	</javac>
     </target>

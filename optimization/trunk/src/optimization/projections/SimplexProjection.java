@@ -41,16 +41,12 @@ public class SimplexProjection extends Projection{
 		for (int i = 0; i < ds.length; i++) {
 			currentSum+=ds[i];
 			theta = (currentSum-scale)/(i+1);
-			if(ds[i] <= theta){
+			if(ds[i] <= theta){			
 				break;
 			}
 			previousTheta = theta;
 		}
-		//DEBUG
-		if(previousTheta < 0){
-			System.out.println("Simple Projection: Theta is smaller than zero: " + previousTheta);
-			System.exit(-1);
-		}
+		
 		for (int i = 0; i < original.length; i++) {
 			original[i] = Math.max(original[i]-previousTheta, 0);
 		}
@@ -87,17 +83,17 @@ public class SimplexProjection extends Projection{
 	}
 	
 	public static void main(String[] args) {
-		SimplexProjection sp = new SimplexProjection(0);
+		SimplexProjection sp = new SimplexProjection(1);
+		int simplexDim = 2;
 		
-		
-		double[] point = sp.samplePoint(3);
+		double[] point = sp.samplePoint(simplexDim);
 		ArrayPrinting.printDoubleArray(point , "random 1 sum:" + ArrayMath.sum(point));
-		point = sp.samplePoint(3);
+		point = sp.samplePoint(simplexDim);
 		ArrayPrinting.printDoubleArray(point , "random 2 sum:" + ArrayMath.sum(point));
-		point = sp.samplePoint(3);
+		point = sp.samplePoint(simplexDim);
 		ArrayPrinting.printDoubleArray(point , "random 3 sum:" + ArrayMath.sum(point));
 		
-		double[] d = {0,1.1,-10};
+		double[] d = {4.33242324244221212121,4.2124621213121235342,-10};
 		double[] original = d.clone();
 		ArrayPrinting.printDoubleArray(d, "before");
 		
@@ -108,9 +104,11 @@ public class SimplexProjection extends Projection{
 	}
 	
 	
-	double epsilon = 1.E-10;
+	double epsilon = 1.E-100;
 	public double[] perturbePoint(double[] point, int parameter){
+		
 		double[] newPoint = point.clone();
+		ArrayPrinting.printDoubleArray(newPoint, "before pertubation");
 		if(MathUtil.almost(ArrayMath.sum(point), scale)){
 			newPoint[parameter]-=epsilon;
 		}
@@ -122,6 +120,7 @@ public class SimplexProjection extends Projection{
 		else{
 			newPoint[parameter]-=epsilon;
 		}
+		ArrayPrinting.printDoubleArray(newPoint, "after pertubation");
 		return newPoint;
 	}
 	
