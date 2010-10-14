@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import optimization.linesearch.NonNewtonInterpolationPickFirstStep;
 import optimization.gradientBasedMethods.ProjectedGradientDescent;
 import optimization.gradientBasedMethods.stats.ProjectedOptimizerStats;
 import optimization.linesearch.GenericPickFirstStep;
@@ -18,6 +19,8 @@ import optimization.stopCriteria.CompositeStopingCriteria;
 import optimization.stopCriteria.NormalizedProjectedGradientL2Norm;
 import optimization.stopCriteria.NormalizedValueDifference;
 import optimization.stopCriteria.StopingCriteria;
+import optimization.linesearch.ArmijoLineSearchMinimizationAlongProjectionArc;
+
 
 import learning.CorpusPR;
 import learning.stats.TrainStats;
@@ -87,8 +90,16 @@ public abstract class L1LMax implements CorpusConstraints {
 	int maxProjectionIterations = 200;
 	int minOccurrencesForProjection = 0;
 
+    double initialStep = 1000;
+
 	public L1LMax(DepCorpus corpus, DepModel model, ArrayList<WordInstance> toProject, PCType cType, PCType pType, 
 			boolean useRoot, boolean useDirection, double constraintStrength, int minOccurrencesForProjection, String fileOfAllowedTypes) throws IOException{
+
+	    System.out.println("L1LMax optimization parameters");
+	    System.out.println("c1: " + c1 + " c2: " + c2 + " sc: " + stoppingPrecision + " ms: " + maxStep + 
+				" mze: " + maxZoomEvals + " mei: " + maxExtrapolationIters);
+	    System.out.println("mProjIter: " + maxProjectionIterations + " minOccur: " + minOccurrencesForProjection);
+
 		this.corpus = corpus;
 		this.model = model;
 		this.cstraints = new ConstraintEnumerator(corpus, cType, pType, useRoot, useDirection);
@@ -173,6 +184,8 @@ public abstract class L1LMax implements CorpusConstraints {
 		return myCstrength;
 	}
 	
+    
+
 	@SuppressWarnings("unchecked")
 	public void project(AbstractCountTable counts,
 			AbstractSentenceDist[] posteriors, TrainStats trainStats, CorpusPR pr) {
@@ -205,8 +218,10 @@ public abstract class L1LMax implements CorpusConstraints {
 		ProjectedOptimizerStats stats = new ProjectedOptimizerStats();
 		L1LMaxObjective objective = new L1LMaxObjective(lambda, this, posteriors);
 		// objective.doTestGradient = true;
-		GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1);
-		LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2, 1000);
+		//GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1000);
+		
+		LineSearchMethod linesearch = new ArmijoLineSearchMinimizationAlongProjectionArc(new NonNewtonInterpolationPickFirstStep(initialStep));
+		//	LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2, 1000);
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(linesearch);
 		optimizer.setMaxIterations(maxProjectionIterations);
 //		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
