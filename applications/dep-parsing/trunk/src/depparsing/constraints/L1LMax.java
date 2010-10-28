@@ -4,6 +4,9 @@ import static util.Array.deepclone;
 import constraints.CorpusConstraints;
 
 import gnu.trove.TIntArrayList;
+
+import optimization.stopCriteria.ProjectedGradientL2Norm;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -221,15 +224,20 @@ public abstract class L1LMax implements CorpusConstraints {
 		//GenericPickFirstStep pickFirstStep = new GenericPickFirstStep(1000);
 		
 		LineSearchMethod linesearch = new ArmijoLineSearchMinimizationAlongProjectionArc(new NonNewtonInterpolationPickFirstStep(initialStep));
+//		LineSearchMethod linesearch = new WolfRuleLineSearch(new NonNewtonInterpolationPickFirstStep(initialStep));
 		//	LineSearchMethod linesearch = new WolfRuleLineSearch(pickFirstStep, c1, c2, 1000);
 		ProjectedGradientDescent optimizer = new ProjectedGradientDescent(linesearch);
 		optimizer.setMaxIterations(maxProjectionIterations);
 //		GradientAscentProjection optimizer = new GradientAscentProjection(linesearch,stoppingPrecision, maxProjectionIterations);
-        StopingCriteria stopGrad = new NormalizedProjectedGradientL2Norm(stoppingPrecision);
-        StopingCriteria stopValue = new NormalizedValueDifference(stoppingPrecision);
+//      StopingCriteria stopGrad = new NormalizedProjectedGradientL2Norm(stoppingPrecision);
+//      StopingCriteria stopValue = new NormalizedValueDifference(stoppingPrecision);
+		// old code: stoppingPrecision*numParams and no stopValue, ever. 
+        StopingCriteria stopGrad = new ProjectedGradientL2Norm(stoppingPrecision*numParams);
+     // StopingCriteria stopValue = new NormalizedValueDifference(stoppingPrecision);
         CompositeStopingCriteria stop = new CompositeStopingCriteria();
         stop.add(stopGrad);
-        stop.add(stopValue);
+//        stop.add(stopValue);
+        objective.setDebugLevel(3);
         boolean succed = optimizer.optimize(objective, stats,stop);
 		// make sure we update the dual params
 		objective.getValue();
