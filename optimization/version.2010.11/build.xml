@@ -18,7 +18,7 @@
 
     <target name="jar" depends="compile">
 	<mkdir dir="${dist}"/>
-	<jar destfile="${dist}/optimization-0.1.jar" >
+	<jar destfile="${dist}/optimization-2010.11.jar" >
 	    <fileset dir="${build}" />
 	    <fileset dir="${src}"/>
 	</jar>
