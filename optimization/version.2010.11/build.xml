@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<project name="optimization" default="all" basedir=".">
+    <description>
+	build all packages
+    </description>
+
+    <!-- set global properties for this build -->
+    <property name="src" location="src"/>
+    <property name="build" location="class"/>
+    <property name="dist" location="dist"/>
+
+    <target name="init">
+        <tstamp/>
+	<mkdir dir="${build}"/>
+    </target>
+
+    <target name="all" depends="compile"/>
+
+    <target name="jar" depends="compile">
+	<mkdir dir="${dist}"/>
+	<jar destfile="${dist}/optimization-0.1.jar" >
+	    <fileset dir="${build}" />
+	    <fileset dir="${src}"/>
+	</jar>
+    </target>
+ 
+    <!-- Compile the java code from ${src} into ${build} -->
+    <target name="compile" depends="init" description="compile the source" >
+        <javac srcdir="${src}" destdir="${build}" debug="true">
+            <classpath>
+	    <pathelement location="${CLASSPATH}"/>
+            <pathelement location="lib/trove-2.0.2.jar"/>
+	    </classpath>
+	</javac>
+    </target>
+
+    <!-- remove the auto-generated stuff -->
+    <target name="clean" description="Remove auto-generated files">
+	<delete dir="javadoc"/>
+	<delete dir="class"/>
+	<delete dir="dist"/>
+    </target>
+
+</project>
