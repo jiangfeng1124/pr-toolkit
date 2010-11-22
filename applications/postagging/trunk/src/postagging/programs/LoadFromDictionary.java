@@ -6,6 +6,7 @@ import gnu.trove.TIntIntHashMap;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -38,8 +39,8 @@ public class LoadFromDictionary {
 		return dic;
 	}
 	
-	public static int[][]  predictUsingDictionary(PosCorpus c, TIntIntHashMap dict){
-		ArrayList<WordInstance> test =c.testInstances.get(0).instanceList;
+	public static int[][]  predictUsingDictionary(PosCorpus c, TIntIntHashMap dict, PosInstanceList list){
+		ArrayList<WordInstance> test =list.instanceList;
 		int[][] predictions = new int[test.size()][];
 		for (int i = 0; i < predictions.length; i++) {
 			int[] words = test.get(i).words;
@@ -52,42 +53,48 @@ public class LoadFromDictionary {
 		return predictions;
 	}
 	
-	public static void main(String[] args) throws IOException {
-		PosCorpus c = new PosCorpus(args[0]);
-		TIntIntHashMap dict = loadDictionary(c, args[1]);
-		int nrStates = Integer.parseInt(args[2]);
-		int[][] predictions = predictUsingDictionary(c,dict);
-		int[][]  gold = new int[c.testInstances.get(0).instanceList.size()][];
-		for (int i = 0; i < gold.length; i++) {
-			PosInstance inst = (PosInstance) c.testInstances.get(0).instanceList.get(i);
-			gold[i] = inst.getTags();
-		}
-		int[][] words = new int[c.testInstances.get(0).instanceList.size()][];
-		for (int i = 0; i < words.length; i++) {
-			words[i] = c.testInstances.get(0).instanceList.get(i).words;
-		}
-		StringBuffer res = new StringBuffer();
-		int[][] mappingCounts = 
-			PosMapping.statePosCounts(c, Integer.MAX_VALUE, nrStates, predictions, c.getNrTags(),gold);
-		res.append(PosMapping.printMappingCounts(c,mappingCounts, nrStates,c.getNrTags())+"\n");
-		int[]  posteriorDecoding1ToManyMapping =  
-			postagging.evaluation.PosMapping.manyTo1Mapping(c,mappingCounts,Integer.MAX_VALUE, nrStates, predictions, c.getNrTags(),gold);
-		res.append(PosMapping.printMapping(c,posteriorDecoding1ToManyMapping));
-		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, predictions, Integer.MAX_VALUE);
-		res.append("Posterior UnSupervised 1 to many" + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
-		res.append("Posterior UnSupervised 1 to many" + 
-				postagging.evaluation.Evaluator.evaluatePerOccurences(c, Integer.MAX_VALUE, words,posteriorDecoding1ToMany,  gold)+"\n");
-		int[]  posteriorDecoding1to1Mapping =  
-			postagging.evaluation.PosMapping.oneToOnemapping(c, mappingCounts,Integer.MAX_VALUE,nrStates, predictions, c.getNrTags(),gold);;
-			res.append(PosMapping.printMapping(c,posteriorDecoding1to1Mapping));
-		int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, predictions, Integer.MAX_VALUE); 
-			res.append("Posterior UnSupervised 1 to 1" + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
-			res.append("Posterior UnSupervised 1 to 1" + 
-					postagging.evaluation.Evaluator.evaluatePerOccurences(c, Integer.MAX_VALUE, words,posteriorDecoding1to1,  gold)+"\n");
-			
+	
+public static String test(int[][] gold, int[][] predictions, int nrStates, PosCorpus corpus, PosInstanceList list){
 		
-			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,nrStates,c.getNrTags());
-			res.append(" Posterior E(Tag) " + infometric[0]+
+		int[][] words = new int[list.instanceList.size()][];
+		for (int i = 0; i < words.length; i++) {
+			words[i] = list.instanceList.get(i).words;
+		}
+		
+		StringBuffer res = new StringBuffer();        	
+		int[][] mappingCounts = 
+			PosMapping.statePosCounts(corpus, Integer.MAX_VALUE, nrStates, predictions,corpus.getNrTags(),gold);
+
+		String cm =PosMapping.printMappingCounts(corpus,mappingCounts, nrStates,
+				corpus.getNrTags()); 	
+		res.append("CM::"+cm.replace("\n", "\nCM::"));
+
+		res.append("\n");
+		int[]  posteriorDecoding1ToManyMapping =  
+			postagging.evaluation.PosMapping.manyTo1Mapping(corpus,mappingCounts,
+					Integer.MAX_VALUE, nrStates, predictions, corpus.getNrTags(),gold);
+		res.append("MANYTo1::"+PosMapping.printMapping(corpus,posteriorDecoding1ToManyMapping));
+		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, 
+				predictions, Integer.MAX_VALUE);
+		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
+		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many per bin: " + 
+				postagging.evaluation.Evaluator.evaluatePerOccurences(corpus, Integer.MAX_VALUE, 
+						words,posteriorDecoding1ToMany,  gold)+"\n");
+		int[]  posteriorDecoding1to1Mapping =  
+			postagging.evaluation.PosMapping.oneToOnemapping(corpus, mappingCounts,Integer.MAX_VALUE,nrStates, 
+					predictions, corpus.getNrTags(),gold);;
+			res.append("1To1::"+PosMapping.printMapping(corpus,posteriorDecoding1to1Mapping));
+			int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, 
+					predictions, Integer.MAX_VALUE); 
+			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
+			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
+					postagging.evaluation.Evaluator.evaluatePerOccurences(corpus,Integer.MAX_VALUE, words,
+							posteriorDecoding1to1,  gold)+"\n");
+
+			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,
+					nrStates,corpus.getNrTags());
+			res.append("loadPred" + "-"+"test"+" " 
+					+ " Posterior E(Tag) " + infometric[0]+
 					" E(Gold) " + infometric[1 ] +
 					" MI " + infometric[2] +
 					" H(Gold |Tag) " + infometric[3] +
@@ -97,8 +104,45 @@ public class LoadFromDictionary {
 					" Completeness " + infometric[7] +
 					" V " + infometric[8] +
 					" NVI " +  infometric[9] +
-					"\n");
+			"\n");
+
+			String out = "FINAL::"+res.toString().replace("\n", "\nFINAL::");
+			return out;
+	}
+	
+	public static void main(String[] args) throws IOException {
+		PosCorpus c = new PosCorpus(args[0]);
 		
-		System.out.println(res.toString());
+		TIntIntHashMap dict = loadDictionary(c, args[1]);
+		int nrStates = Integer.parseInt(args[2]);
+		if(nrStates == -1){
+			nrStates = c.getNrTags();
+		}
+		boolean savePredictions = Boolean.parseBoolean(args[3]);
+		String saveDir = args[4];
+		String model = args[5];
+		PosInstanceList test_list =  (PosInstanceList) c.testInstances.get(0);	
+		PosInstanceList train_list =  (PosInstanceList) c.trainInstances;
+		int[][] test_predictions = predictUsingDictionary(c,dict,test_list);
+		int[][] train_predictions = predictUsingDictionary(c,dict,train_list);
+		int[][]  gold = new int[test_list.instanceList.size()][];
+		for (int i = 0; i < gold.length; i++) {
+			PosInstance inst = (PosInstance) test_list.instanceList.get(i);
+			gold[i] = inst.getTags();
+		}
+		System.out.println(test(gold, test_predictions, nrStates, c,test_list));
+		
+		if(savePredictions){
+			String description = model+"_"+c.getName();
+			//Save predictions
+			util.FileSystem.createDir(saveDir);
+			PrintStream predictions = InputOutput.openWriter(saveDir+description + "-"+test_list.name+".posteriorDec");
+			predictions.print(((PosCorpus)c).printClusters(test_list, test_predictions));
+			predictions.close();
+			predictions = InputOutput.openWriter(saveDir+description + "-"+train_list.name+".posteriorDec");
+			predictions.print(((PosCorpus)c).printClusters(train_list, train_predictions));
+			predictions.close();
+				
+		}
 	}
 }

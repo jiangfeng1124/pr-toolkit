@@ -19,11 +19,10 @@ import optimization.linesearch.LineSearchMethod;
 import optimization.linesearch.NonNewtonInterpolationPickFirstStep;
 import optimization.projections.SimplexProjection;
 import optimization.stopCriteria.CompositeStopingCriteria;
+
 import optimization.stopCriteria.NormalizedProjectedGradientL2Norm;
 import optimization.stopCriteria.NormalizedValueDifference;
-import optimization.stopCriteria.ProjectedGradientL2Norm;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.stopCriteria.ValueDifference;
 import postagging.data.PosCorpus;
 import postagging.learning.stats.AccuracyStats;
 import postagging.model.PosHMMFinalState;
@@ -37,7 +36,6 @@ import learning.stats.MemoryStats;
 import learning.stats.TrainStats;
 import model.AbstractCountTable;
 import model.AbstractSentenceDist;
-import model.chain.hmm.HMMCountTable;
 import model.chain.hmm.HMM;
 import model.chain.hmm.HMMSentenceDist;
 
@@ -146,8 +144,7 @@ public class L1LMax implements CorpusConstraints{
 		mem.start();
 		
 		
-		//Make a copy of the original parameters:
-		//Initialize the gradient and the function values and the original posteriors cache
+		
 		if (pr != null){
 			trainStats.eStepStart(model, pr);
 		}
@@ -421,6 +418,7 @@ public class L1LMax implements CorpusConstraints{
 
 		
 		public double[] projectPoint2(double[] point) {
+			System.out.println("Calling projection");
 			return point;
 		}
 		
@@ -431,6 +429,7 @@ public class L1LMax implements CorpusConstraints{
 		 */
 		double[] newPoint  = new double[numberOfParameters];
 		public double[] projectPoint(double[] point) {
+			System.out.println("Calling projection");
 			//long initTime = System.currentTimeMillis();		
 			int[] wordTypeKeys = projectionMapping.keys();	
 			for (int i = 0; i < wordTypeKeys.length; i++) {

@@ -83,6 +83,11 @@ public class PosCorpus extends Corpus{
 					this.wordAlphabet,this.tagAlphabet, 
 					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
 					,fullVocab,minWordOccurs);
+		}else if(readerType.equalsIgnoreCase("acll2011")){
+			return PosInstanceList.readFromacl2011(name, fileName, 
+					this.wordAlphabet,this.tagAlphabet, 
+					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
+					,fullVocab,minWordOccurs);
 		}else if(readerType.equalsIgnoreCase("europarl")){
 			return PosInstanceList.readFromEuroparl
 			(name, fileName, 

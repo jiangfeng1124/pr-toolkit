@@ -29,17 +29,16 @@ import optimization.gradientBasedMethods.AbstractGradientBaseMethod;
 import optimization.gradientBasedMethods.LBFGS;
 import optimization.gradientBasedMethods.NotADescentDirectionException;
 import optimization.gradientBasedMethods.Optimizer;
+import optimization.gradientBasedMethods.stats.OptimizerStats;
 import optimization.gradientBasedMethods.stats.FeatureSplitOptimizerStats;
 import optimization.gradientBasedMethods.stats.OptimizerStats;
+import optimization.linesearch.WolfRuleLineSearch;
 import optimization.linesearch.InterpolationPickFirstStep;
 import optimization.linesearch.LineSearchMethod;
-import optimization.linesearch.WolfRuleLineSearch;
+
 import optimization.stopCriteria.AverageValueDifference;
 import optimization.stopCriteria.CompositeStopingCriteria;
-import optimization.stopCriteria.NormalizedGradientL2Norm;
-import optimization.stopCriteria.NormalizedValueDifference;
 import optimization.stopCriteria.StopingCriteria;
-import optimization.stopCriteria.ValueDifference;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -364,7 +363,7 @@ public class RunModel {
 			
 			
 			stats.addStats(new WordTypeL1LMaxStats(corpus,model,"2",minWordOccursL1LMax,baseOutputString+"/l1LMaxClusters/",50));
-			stats.addStats(new TransitionsTypeL1LMaxStats(corpus,model,"2",baseOutputString+"/l1LMaxClusters/",5));
+//			stats.addStats(new TransitionsTypeL1LMaxStats(corpus,model,"2",baseOutputString+"/l1LMaxClusters/",5));
 //			stats.addStats(new MeParametersStats(50,baseOutputString+"/me-parameters/"));
 			trainModel(corpus,model,stats);
 			
@@ -452,12 +451,7 @@ public class RunModel {
 		HMMDirectGradientObjective objective = new HMMDirectGradientObjective(model,gaussianPrior,constraints,optStats);
 		optStats.add(new DirectGradientFeatureOptimizationStats(feats,model.getNrRealStates(),objective));
 		WolfRuleLineSearch wolfe = 
-			new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
-//		CompositeStopingCriteria stop = new CompositeStopingCriteria();
-//		StopingCriteria stopGrad = new NormalizedGradientL2Norm(maxEntGradientConvergenceValue);
-//		StopingCriteria stopValue = new NormalizedValueDifference(maxEntValueConvergenceValue);
-//		stop.add(stopGrad);
-//		stop.add(stopValue);
+			new WolfRuleLineSearch(new InterpolationPickFirstStep(1),10E-4,0.9,maxEntMaxStepSize);
         StopingCriteria valueAvg = new AverageValueDifference(maxEntValueConvergenceValue);
         CompositeStopingCriteria stop = new CompositeStopingCriteria();
         stop.add(valueAvg);
@@ -617,7 +611,7 @@ public class RunModel {
 			
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),10E-4,0.9,maxEntMaxStepSize);
 			wolfe.setDebugLevel(0);
 			lss.add(wolfe);
 		
@@ -630,7 +624,7 @@ public class RunModel {
 			stop.add(valueAvg);
 			scs.add(stop);
 			optimization.gradientBasedMethods.LBFGS optimizer = 
-				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+				new optimization.gradientBasedMethods.LBFGS(wolfe,10);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			opt.add(optimizer);
 			int[][] featuresPos = new int[fxy.featuresPrefix.size()][];
@@ -668,7 +662,7 @@ public class RunModel {
 			
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),10E-4,0.9,maxEntMaxStepSize);
 			wolfe.setDebugLevel(0);
 			lss.add(wolfe);
 		
@@ -686,11 +680,12 @@ public class RunModel {
 
 			scs.add(stop);
 			optimization.gradientBasedMethods.LBFGS optimizer = 
-				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+				new optimization.gradientBasedMethods.LBFGS(wolfe,10);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			opt.add(optimizer);
 			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
 			oss.add(optStats);
+
 		}
 
 		System.out.println("Using transition max Ent training");
@@ -717,7 +712,7 @@ public class RunModel {
 			
 			// perform gradient descent
 			WolfRuleLineSearch wolfe = 
-				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),0.001,0.9,maxEntMaxStepSize);
+				new WolfRuleLineSearch(new InterpolationPickFirstStep(1),10E-4,0.9,maxEntMaxStepSize);
 			wolfe.setDebugLevel(0);
 			lss.add(wolfe);
 		
@@ -735,11 +730,12 @@ public class RunModel {
 
 			scs.add(stop);
 			optimization.gradientBasedMethods.LBFGS optimizer = 
-				new optimization.gradientBasedMethods.LBFGS(wolfe,30);
+				new optimization.gradientBasedMethods.LBFGS(wolfe,10);
 			optimizer.setMaxIterations(maxEntMaxIterations);
 			opt.add(optimizer);
 			optimization.gradientBasedMethods.stats.OptimizerStats optStats = new OptimizerStats();
 			oss.add(optStats);
+		
 		}
 
 		System.out.println("Using transition max Ent training");

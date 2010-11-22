@@ -137,6 +137,61 @@ public class PosInstanceList extends InstanceList{
 		
 		return il;
 	}
+
+	public static PosInstanceList readFromacl2011(String name, String fileName, Alphabet<String> words, 
+			Alphabet<String> tags,
+			boolean lowercase,
+			int minSentenceLength,int maxSentenceLenght,
+			int maxNrSentences, CountAlphabet fullAlphabet, int minWordOccurs)
+	throws UnsupportedEncodingException, FileNotFoundException, IOException{	
+		
+		PosInstanceList il = new PosInstanceList(name);
+		il.wordsAlphabet = words;
+		il.tagsAlphabet = tags;
+		il.name = name;
+		BufferedReader reader = InputOutput.openReader(fileName);
+		
+		Pattern whitespace = Pattern.compile("\\s+");
+		TIntArrayList wordsList  =new TIntArrayList();
+		TIntArrayList posList  =new TIntArrayList();
+		String line = reader.readLine();
+		int nrSentences = 0;
+		while(line != null) {
+			if(!line.matches("\\s*")){
+				String[] info = whitespace.split(line);
+				String word = normalize(info[0]);
+				if(lowercase){
+					word = word.toLowerCase();
+				}
+				if(fullAlphabet.getCounts(word) <= minWordOccurs){
+					//System.out.println("adding unk for word" + word);
+					word = "unk";
+				}
+				wordsList.add(words.lookupObject(word));
+				posList.add(tags.lookupObject(info[1]));
+			}
+			else { // Case of end of sentence
+				int sentenceSize = wordsList.size();
+				if(sentenceSize > minSentenceLength && sentenceSize <= maxSentenceLenght){
+					addDepInst(il, wordsList,posList);
+				}
+				wordsList.clear();
+				posList.clear();
+				nrSentences++;
+				if(nrSentences >= maxNrSentences){
+					break;
+				}
+			}
+			line = reader.readLine();
+		}	
+		// Add final dependency instance
+		// (need this in case file ends without a trailing newline)
+		if(wordsList.size() > 0)
+			addDepInst(il, wordsList,posList);
+		
+		return il;
+	}
+
 	
 	private static void addDepInst(PosInstanceList il, TIntArrayList wordsList, TIntArrayList posList)
 	{

@@ -32,7 +32,6 @@
 	    <pathelement location="${CLASSPATH}"/>
 	    <pathelement location="lib/trove-2.0.2.jar"/> 
 	    <pathelement location="lib/args4j-2.0.10.jar"/>
- 	    <pathelement location="lib/commons-math-2.0.jar"/>
 	    <pathelement location="lib/optimization-0.1.jar"/> 
 	    <pathelement location="lib/pr-toolkit-0.1.jar"/> 
 	    </classpath>
@@ -43,7 +42,6 @@
     <target name="clean" description="Remove auto-generated files">
 	<delete dir="javadoc"/>
 	<delete dir="class"/>
-	<delete dir="applications-class"/>
     </target>
 
 </project>

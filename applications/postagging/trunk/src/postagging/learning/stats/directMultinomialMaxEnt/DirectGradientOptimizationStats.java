@@ -38,7 +38,7 @@ public class DirectGradientOptimizationStats extends MultinomialMaxEntDirectTrai
 				Printing.prettyPrint(norm, "0.00000E00", 10)
 				+ " gradientNormalizedNorm "+ 
 				Printing.prettyPrint(norm/originalNorm, "0.00000E00", 10)
-				+ " value "+ Printing.prettyPrint(optimizer.getCurrentValue(), "0.000000E00",11));
+				+ " value "+ Printing.prettyPrint(optimizer.getCurrentValue(), "0.000000E00",11));	
 		if(!Double.isNaN(prevValue)){
 					res.append(" valueDiff "+ Printing.prettyPrint((prevValue-optimizer.getCurrentValue()), "0.000000E00",11));
 					res.append(" normValue "+ Printing.prettyPrint((1-(optimizer.getCurrentValue()/prevValue)), "0.000000E00",11));
