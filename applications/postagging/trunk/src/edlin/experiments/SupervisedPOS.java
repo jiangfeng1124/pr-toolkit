@@ -77,7 +77,9 @@ public class SupervisedPOS {
 		Alphabet yA = allTraining.get(0).yAlphabet;
 		// we don't know how to decode on the test set
 		// ArrayList<SequenceInstance> test = inPipe.getTest();
+		System.out.println("Prediction Files :" + me.predictionFiles);
 		for (String predFile: me.predictionFiles){
+			if(predFile == null) continue;
 			System.out.println("Loading predictions from: "+predFile);
 			BufferedReader in = InputOutput.openReader(predFile);
 			ArrayList<ArrayList<String>> newFeats = new ArrayList<ArrayList<String>>();

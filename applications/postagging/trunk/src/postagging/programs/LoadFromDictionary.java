@@ -54,7 +54,7 @@ public class LoadFromDictionary {
 	}
 	
 	
-public static String test(int[][] gold, int[][] predictions, int nrStates, PosCorpus corpus, PosInstanceList list){
+public static String test(int[][] gold, int[][] predictions, int nrStates, PosCorpus corpus, PosInstanceList list,String source){
 		
 		int[][] words = new int[list.instanceList.size()][];
 		for (int i = 0; i < words.length; i++) {
@@ -76,8 +76,8 @@ public static String test(int[][] gold, int[][] predictions, int nrStates, PosCo
 		res.append("MANYTo1::"+PosMapping.printMapping(corpus,posteriorDecoding1ToManyMapping));
 		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, 
 				predictions, Integer.MAX_VALUE);
-		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
-		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many per bin: " + 
+		res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
+		res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to many per bin: " + 
 				postagging.evaluation.Evaluator.evaluatePerOccurences(corpus, Integer.MAX_VALUE, 
 						words,posteriorDecoding1ToMany,  gold)+"\n");
 		int[]  posteriorDecoding1to1Mapping =  
@@ -86,14 +86,14 @@ public static String test(int[][] gold, int[][] predictions, int nrStates, PosCo
 			res.append("1To1::"+PosMapping.printMapping(corpus,posteriorDecoding1to1Mapping));
 			int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, 
 					predictions, Integer.MAX_VALUE); 
-			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
-			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
+			res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
+			res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
 					postagging.evaluation.Evaluator.evaluatePerOccurences(corpus,Integer.MAX_VALUE, words,
 							posteriorDecoding1to1,  gold)+"\n");
 
 			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,
 					nrStates,corpus.getNrTags());
-			res.append("loadPred" + "-"+"test"+" " 
+			res.append("loadPred" + "-"+source+" " 
 					+ " Posterior E(Tag) " + infometric[0]+
 					" E(Gold) " + infometric[1 ] +
 					" MI " + infometric[2] +
@@ -125,12 +125,19 @@ public static String test(int[][] gold, int[][] predictions, int nrStates, PosCo
 		PosInstanceList train_list =  (PosInstanceList) c.trainInstances;
 		int[][] test_predictions = predictUsingDictionary(c,dict,test_list);
 		int[][] train_predictions = predictUsingDictionary(c,dict,train_list);
-		int[][]  gold = new int[test_list.instanceList.size()][];
-		for (int i = 0; i < gold.length; i++) {
+		int[][]  test_gold = new int[test_list.instanceList.size()][];
+		for (int i = 0; i < test_gold.length; i++) {
 			PosInstance inst = (PosInstance) test_list.instanceList.get(i);
-			gold[i] = inst.getTags();
+			test_gold[i] = inst.getTags();
 		}
-		System.out.println(test(gold, test_predictions, nrStates, c,test_list));
+		int[][]  train_gold = new int[train_list.instanceList.size()][];
+		for (int i = 0; i < train_gold.length; i++) {
+			PosInstance inst = (PosInstance) train_list.instanceList.get(i);
+			train_gold[i] = inst.getTags();
+		}
+		
+		System.out.println(test(test_gold, test_predictions, nrStates, c,test_list,"test"));
+		System.out.println(test(train_gold, train_predictions, nrStates, c,train_list,"train"));
 		
 		if(savePredictions){
 			String description = model+"_"+c.getName();

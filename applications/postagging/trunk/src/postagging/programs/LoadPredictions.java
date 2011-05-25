@@ -12,6 +12,7 @@ import model.chain.PosteriorDecoder;
 
 import postagging.data.PosCorpus;
 import postagging.data.PosInstance;
+import postagging.data.PosInstanceList;
 import postagging.evaluation.PosMapping;
 import util.InputOutput;
 
@@ -53,7 +54,7 @@ public class LoadPredictions {
 		return predictions;
 	}
 	
-	public static String test(int[][] gold, int[][] predictions, int nrStates, PosCorpus corpus){
+	public static String test(int[][] gold, int[][] predictions, int nrStates, PosCorpus corpus,String source){
 		
 		int[][] words = new int[corpus.testInstances.get(0).instanceList.size()][];
 		for (int i = 0; i < words.length; i++) {
@@ -75,8 +76,8 @@ public class LoadPredictions {
 		res.append("MANYTo1::"+PosMapping.printMapping(corpus,posteriorDecoding1ToManyMapping));
 		int[][] posteriorDecoding1ToMany = PosMapping.mapToTags(posteriorDecoding1ToManyMapping, 
 				predictions, Integer.MAX_VALUE);
-		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
-		res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to many per bin: " + 
+		res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to many: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1ToMany, gold)+"\n");	
+		res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to many per bin: " + 
 				postagging.evaluation.Evaluator.evaluatePerOccurences(corpus, Integer.MAX_VALUE, 
 						words,posteriorDecoding1ToMany,  gold)+"\n");
 		int[]  posteriorDecoding1to1Mapping =  
@@ -85,14 +86,14 @@ public class LoadPredictions {
 			res.append("1To1::"+PosMapping.printMapping(corpus,posteriorDecoding1to1Mapping));
 			int[][] posteriorDecoding1to1 =  PosMapping.mapToTags(posteriorDecoding1to1Mapping, 
 					predictions, Integer.MAX_VALUE); 
-			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
-			res.append("loadPred" + "-"+"test"+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
+			res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to 1: " + postagging.evaluation.Evaluator.eval(posteriorDecoding1to1, gold)+"\n");
+			res.append("loadPred" + "-"+source+" " + "Posterior UnSupervised 1 to 1 per bin: " + 
 					postagging.evaluation.Evaluator.evaluatePerOccurences(corpus,Integer.MAX_VALUE, words,
 							posteriorDecoding1to1,  gold)+"\n");
 
 			double[] infometric = PosMapping.informationTheorethicMeasures(mappingCounts,
 					nrStates,corpus.getNrTags());
-			res.append("loadPred" + "-"+"test"+" " 
+			res.append("loadPred" + "-"+source+" " 
 					+ " Posterior E(Tag) " + infometric[0]+
 					" E(Gold) " + infometric[1 ] +
 					" MI " + infometric[2] +
@@ -112,15 +113,33 @@ public class LoadPredictions {
 	
 	public static void main(String[] args) throws IOException {
 		PosCorpus c = new PosCorpus(args[0]);
-		int[][] predictions = loadPredictions(c,args[1]);
+		
 		int nrStates = Integer.parseInt(args[2]);
-		int[][]  gold = new int[c.testInstances.get(0).instanceList.size()][];
-		for (int i = 0; i < gold.length; i++) {
-			PosInstance inst = (PosInstance) c.testInstances.get(0).instanceList.get(i);
-			gold[i] = inst.getTags();
+		boolean savePredictions = Boolean.parseBoolean(args[3]);
+		String saveDir = args[4];
+		String model = args[5];
+		PosInstanceList train_list =  (PosInstanceList) c.trainInstances;
+		
+		int[][] predictions = loadPredictions(c,args[1]);
+		
+		
+		int[][]  train_gold = new int[train_list.instanceList.size()][];
+		for (int i = 0; i < train_gold.length; i++) {
+			PosInstance inst = (PosInstance) train_list.instanceList.get(i);
+			train_gold[i] = inst.getTags();
 		}
 		
-		System.out.println(test(gold, predictions, nrStates, c));
+		System.out.println(test(train_gold, predictions, nrStates, c,"train"));
+		
+		if(savePredictions){
+			String description = model+"_"+c.getName();
+			//Save predictions
+			util.FileSystem.createDir(saveDir);
+			PrintStream predictionsW = InputOutput.openWriter(saveDir+description + "-"+train_list.name+".posteriorDec");
+			predictionsW.print(((PosCorpus)c).printClusters(train_list, predictions));
+			predictionsW.close();
+				
+		}
 	}
 	
 }

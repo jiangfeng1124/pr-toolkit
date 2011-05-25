@@ -83,7 +83,7 @@ public class PosCorpus extends Corpus{
 					this.wordAlphabet,this.tagAlphabet, 
 					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
 					,fullVocab,minWordOccurs);
-		}else if(readerType.equalsIgnoreCase("acll2011")){
+		}else if(readerType.equalsIgnoreCase("acl2011")){
 			return PosInstanceList.readFromacl2011(name, fileName, 
 					this.wordAlphabet,this.tagAlphabet, 
 					lowercase,minSentenceLenght,maxSentenceLenght, maxNumberOfSentences
@@ -95,7 +95,7 @@ public class PosCorpus extends Corpus{
 					lowercase,minSentenceLenght,maxSentenceLenght,
 					maxNumberOfSentences,fullVocab,minWordOccurs);
 		}else{
-			System.out.println("Unknow reader type");
+			System.out.println("Unknow reader type: " + readerType);
 			System.exit(-1);
 		}
 		return null;

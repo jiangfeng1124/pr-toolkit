@@ -144,7 +144,6 @@ public class L1LMax implements CorpusConstraints{
 		mem.start();
 		
 		
-		
 		if (pr != null){
 			trainStats.eStepStart(model, pr);
 		}
